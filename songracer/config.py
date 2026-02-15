@@ -90,8 +90,10 @@ class AudioConfig:
     singer_volume: float = 1.0
     countdown_sfx_enabled: bool = True
     countdown_sfx_volume: float = 0.4
+    countdown_sfx_path: str | None = None
     victory_sfx_enabled: bool = True
     victory_sfx_volume: float = 0.55
+    victory_sfx_path: str | None = None
 
 
 @dataclass(slots=True)
@@ -198,6 +200,16 @@ def load_config(path: str | Path) -> RaceConfig:
     cfg.render = _merge_dataclass(cfg.render, obj.get("render", {}))
     cfg.physics = _merge_dataclass(cfg.physics, obj.get("physics", {}))
     cfg.audio = _merge_dataclass(cfg.audio, obj.get("audio", {}))
+    if cfg.audio.countdown_sfx_path:
+        p = Path(cfg.audio.countdown_sfx_path)
+        if not p.is_absolute():
+            p = (config_path.parent / p).resolve()
+        cfg.audio.countdown_sfx_path = str(p)
+    if cfg.audio.victory_sfx_path:
+        p = Path(cfg.audio.victory_sfx_path)
+        if not p.is_absolute():
+            p = (config_path.parent / p).resolve()
+        cfg.audio.victory_sfx_path = str(p)
     cfg.background = _merge_dataclass(cfg.background, obj.get("background", {}))
     if cfg.background.image_path:
         image_path = Path(cfg.background.image_path)
@@ -281,6 +293,14 @@ def validate_config(cfg: RaceConfig) -> None:
             raise ConfigError(
                 f"background.image_path does not exist: {cfg.background.image_path}"
             )
+    if cfg.audio.countdown_sfx_path and not Path(cfg.audio.countdown_sfx_path).exists():
+        raise ConfigError(
+            f"audio.countdown_sfx_path does not exist: {cfg.audio.countdown_sfx_path}"
+        )
+    if cfg.audio.victory_sfx_path and not Path(cfg.audio.victory_sfx_path).exists():
+        raise ConfigError(
+            f"audio.victory_sfx_path does not exist: {cfg.audio.victory_sfx_path}"
+        )
 
     if not cfg.racers:
         raise ConfigError("At least one racer is required")

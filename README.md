@@ -46,7 +46,7 @@ python3 -m pip install -e ".[dev]"
 ### 2) Generate demo singer videos
 
 ```bash
-python3 scripts/generate_demo_media.py --count 5 --duration 30 --with-background
+python3 scripts/generate_demo_media.py --count 5 --duration 30 --with-background --with-sfx
 ```
 
 This creates synthetic demo assets in `assets/demo`.
@@ -84,6 +84,10 @@ python3 -m songracer render \
   - per-obstacle `fill_color`, `stroke_color`, `opacity`
 - Audio:
   - `switch_crossfade_ms` smooths audio on leader changes.
+  - optional file-based SFX:
+    - `audio.countdown_sfx_path`
+    - `audio.victory_sfx_path`
+  - if SFX paths are omitted, synthesized fallback SFX are used.
 - Race timing:
   - `countdown_seconds` added before race simulation starts.
 

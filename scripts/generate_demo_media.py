@@ -69,6 +69,77 @@ def create_background_image(out_path: Path, width: int = 1080, height: int = 192
     run(cmd)
 
 
+def create_sfx_countdown(out_path: Path) -> None:
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=760:sample_rate=48000:duration=0.14",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=700:sample_rate=48000:duration=0.14",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=640:sample_rate=48000:duration=0.14",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=1080:sample_rate=48000:duration=0.35",
+        "-filter_complex",
+        "[0:a]adelay=0|0[a0];"
+        "[1:a]adelay=1000|1000[a1];"
+        "[2:a]adelay=2000|2000[a2];"
+        "[3:a]adelay=3000|3000[a3];"
+        "[a0][a1][a2][a3]amix=inputs=4:normalize=0[out]",
+        "-map",
+        "[out]",
+        "-c:a",
+        "pcm_s16le",
+        str(out_path),
+    ]
+    run(cmd)
+
+
+def create_sfx_victory(out_path: Path) -> None:
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=660:sample_rate=48000:duration=0.16",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=880:sample_rate=48000:duration=0.16",
+        "-f",
+        "lavfi",
+        "-i",
+        "sine=frequency=1120:sample_rate=48000:duration=0.22",
+        "-filter_complex",
+        "[0:a]adelay=0|0[a0];"
+        "[1:a]adelay=160|160[a1];"
+        "[2:a]adelay=320|320[a2];"
+        "[a0][a1][a2]amix=inputs=3:normalize=0[out]",
+        "-map",
+        "[out]",
+        "-c:a",
+        "pcm_s16le",
+        str(out_path),
+    ]
+    run(cmd)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate synthetic demo singer videos")
     parser.add_argument("--count", type=int, default=5)
@@ -78,6 +149,11 @@ def main() -> None:
         "--with-background",
         action="store_true",
         help="Also generate assets/demo/background.png for image background mode.",
+    )
+    parser.add_argument(
+        "--with-sfx",
+        action="store_true",
+        help="Also generate assets/demo/countdown.wav and assets/demo/victory.wav.",
     )
     args = parser.parse_args()
 
@@ -96,6 +172,13 @@ def main() -> None:
         bg_path = out_dir / "background.png"
         print(f"Generating {bg_path.name}")
         create_background_image(bg_path)
+    if args.with_sfx:
+        countdown = out_dir / "countdown.wav"
+        victory = out_dir / "victory.wav"
+        print(f"Generating {countdown.name}")
+        create_sfx_countdown(countdown)
+        print(f"Generating {victory.name}")
+        create_sfx_victory(victory)
 
     print(f"Done. Generated {args.count} demo files in {out_dir}")
 

@@ -25,8 +25,10 @@
     "singer_volume": 1.0,
     "countdown_sfx_enabled": true,
     "countdown_sfx_volume": 0.44,
+    "countdown_sfx_path": "../assets/demo/countdown.wav",
     "victory_sfx_enabled": true,
-    "victory_sfx_volume": 0.55
+    "victory_sfx_volume": 0.55,
+    "victory_sfx_path": "../assets/demo/victory.wav"
   },
   "background": {
     "mode": "sky",

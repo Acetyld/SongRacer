@@ -71,3 +71,10 @@ def test_crop_center_bounds_validation(tmp_path: Path) -> None:
     cfg.racers[0].crop_center_x = 1.2
     with pytest.raises(ConfigError):
         validate_config(cfg)
+
+
+def test_audio_sfx_path_must_exist(tmp_path: Path) -> None:
+    cfg = _base_cfg(tmp_path)
+    cfg.audio.countdown_sfx_path = str(tmp_path / "missing_countdown.wav")
+    with pytest.raises(ConfigError):
+        validate_config(cfg)

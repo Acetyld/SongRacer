@@ -23,7 +23,9 @@
     "switch_crossfade_ms": 10.0,
     "countdown_silence": true,
     "countdown_sfx_enabled": true,
-    "victory_sfx_enabled": true
+    "countdown_sfx_path": "../assets/demo/countdown.wav",
+    "victory_sfx_enabled": true,
+    "victory_sfx_path": "../assets/demo/victory.wav"
   },
   "racers": [
     {

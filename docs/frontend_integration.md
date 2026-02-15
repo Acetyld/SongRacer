@@ -169,3 +169,14 @@ The frontend app in `frontend/` already implements:
 - preview and final job submission,
 - live job list polling,
 - artifact preview panel.
+
+## Notes on countdown/victory effects
+
+- Backend render pipeline includes:
+  - stylized countdown overlay (top HUD),
+  - winner overlay card,
+  - countdown + victory SFX.
+- SFX can be supplied as files via config:
+  - `audio.countdown_sfx_path`
+  - `audio.victory_sfx_path`
+  (otherwise synthesized defaults are used).

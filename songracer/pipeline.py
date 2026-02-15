@@ -123,52 +123,116 @@ def _mix_tone(
     out[start_sample:end] += wave
 
 
+def _load_audio_clip(path: str, sample_rate: int, channels: int) -> np.ndarray:
+    cmd = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        path,
+        "-f",
+        "s16le",
+        "-acodec",
+        "pcm_s16le",
+        "-ac",
+        str(channels),
+        "-ar",
+        str(sample_rate),
+        "-",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, check=False)
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"Failed decoding SFX '{path}': {proc.stderr.decode('utf-8', errors='ignore')}"
+        )
+    pcm = np.frombuffer(proc.stdout, dtype=np.int16)
+    if pcm.size == 0:
+        return np.zeros((0, channels), dtype=np.int16)
+    return pcm.reshape((-1, channels))
+
+
+def _mix_pcm_clip(
+    out: np.ndarray,
+    clip: np.ndarray,
+    start_sample: int,
+    volume: float,
+) -> None:
+    if clip.size == 0 or start_sample >= out.shape[0]:
+        return
+    if start_sample < 0:
+        clip = clip[-start_sample:]
+        start_sample = 0
+    if clip.size == 0:
+        return
+    end = min(out.shape[0], start_sample + clip.shape[0])
+    out[start_sample:end] += (clip[: end - start_sample].astype(np.float32) * volume).astype(
+        np.int32
+    )
+
+
 def _mix_sfx(cfg: RaceConfig, sim: SimulationResult, out: np.ndarray, sample_rate: int) -> None:
     # Countdown beeps (3,2,1 + GO tone).
     if cfg.audio.countdown_sfx_enabled and cfg.countdown_frames > 0:
-        max_tick = max(0, int(math.ceil(cfg.render.countdown_seconds)))
-        for tick in range(max_tick):
-            start = int(round(tick * sample_rate))
+        if cfg.audio.countdown_sfx_path:
+            clip = _load_audio_clip(
+                cfg.audio.countdown_sfx_path,
+                sample_rate=sample_rate,
+                channels=out.shape[1],
+            )
+            _mix_pcm_clip(out, clip, 0, cfg.audio.countdown_sfx_volume)
+        else:
+            max_tick = max(0, int(math.ceil(cfg.render.countdown_seconds)))
+            for tick in range(max_tick):
+                start = int(round(tick * sample_rate))
+                _mix_tone(
+                    out,
+                    sample_rate,
+                    start,
+                    duration_seconds=0.13,
+                    frequency=750.0 - tick * 35.0,
+                    volume=cfg.audio.countdown_sfx_volume,
+                )
+            go_start = int(round(cfg.render.countdown_seconds * sample_rate))
             _mix_tone(
                 out,
                 sample_rate,
-                start,
-                duration_seconds=0.13,
-                frequency=750.0 - tick * 35.0,
-                volume=cfg.audio.countdown_sfx_volume,
+                go_start,
+                duration_seconds=0.24,
+                frequency=1020.0,
+                volume=cfg.audio.countdown_sfx_volume * 1.1,
             )
-        go_start = int(round(cfg.render.countdown_seconds * sample_rate))
-        _mix_tone(
-            out,
-            sample_rate,
-            go_start,
-            duration_seconds=0.24,
-            frequency=1020.0,
-            volume=cfg.audio.countdown_sfx_volume * 1.1,
-        )
-        _mix_tone(
-            out,
-            sample_rate,
-            go_start + int(round(0.1 * sample_rate)),
-            duration_seconds=0.2,
-            frequency=1320.0,
-            volume=cfg.audio.countdown_sfx_volume * 0.8,
-        )
+            _mix_tone(
+                out,
+                sample_rate,
+                go_start + int(round(0.1 * sample_rate)),
+                duration_seconds=0.2,
+                frequency=1320.0,
+                volume=cfg.audio.countdown_sfx_volume * 0.8,
+            )
 
     # Winner jingle.
     if cfg.audio.victory_sfx_enabled and sim.winner_frame >= 0:
         start = int(round((sim.winner_frame / cfg.render.fps) * sample_rate))
-        notes = [660.0, 880.0, 1100.0]
-        note_len = 0.15
-        for idx, note in enumerate(notes):
-            _mix_tone(
-                out,
-                sample_rate,
-                start + int(round(idx * note_len * sample_rate)),
-                duration_seconds=note_len,
-                frequency=note,
-                volume=cfg.audio.victory_sfx_volume,
+        if cfg.audio.victory_sfx_path:
+            clip = _load_audio_clip(
+                cfg.audio.victory_sfx_path,
+                sample_rate=sample_rate,
+                channels=out.shape[1],
             )
+            _mix_pcm_clip(out, clip, start, cfg.audio.victory_sfx_volume)
+        else:
+            notes = [660.0, 880.0, 1100.0]
+            note_len = 0.15
+            for idx, note in enumerate(notes):
+                _mix_tone(
+                    out,
+                    sample_rate,
+                    start + int(round(idx * note_len * sample_rate)),
+                    duration_seconds=note_len,
+                    frequency=note,
+                    volume=cfg.audio.victory_sfx_volume,
+                )
 
 
 def _write_wav(path: Path, audio: np.ndarray, sample_rate: int, channels: int) -> None:
