@@ -27,11 +27,25 @@ const winnerHold = ref(3)
 const backgroundColor = ref('#6EC6FF')
 const previewScale = ref(0.32)
 const finalScale = ref(1.0)
+const worldHeight = ref(7600)
 const isBusy = ref(false)
 const racers = ref<RacerForm[]>([])
 const jobs = ref<JobRow[]>([])
 const statusMessage = ref('')
 const previewArtifactUrl = ref<string | null>(null)
+const obstacleJson = ref(
+  JSON.stringify(
+    [
+      { type: 'rect', x: 260, y: 860, width: 320, height: 30, angle_deg: -22, fill_color: '#111A31' },
+      { type: 'moving_rect', x: 760, y: 940, width: 310, height: 30, angle_deg: 18, amplitude: 120, frequency_hz: 0.23, axis: 'x', fill_color: '#1B2844' },
+      { type: 'ring_gap', x: 540, y: 1260, radius: 165, thickness: 36, rotation_speed_deg: 80, gap_size_deg: 62, fill_color: '#09101F' },
+      { type: 'spinner', x: 540, y: 1640, length: 320, thickness: 24, spin_speed_deg: 160, fill_color: '#151B30' },
+      { type: 'one_way_gate', x: 540, y: 1880, width: 620, height: 26, one_way: 'down', fill_color: '#1B2A40' },
+    ],
+    null,
+    2,
+  ),
+)
 
 let pollHandle: number | null = null
 
@@ -92,12 +106,21 @@ function setCrop(racer: RacerForm, e: MouseEvent) {
 }
 
 function buildInlineConfig() {
+  let obstacles: unknown = []
+  try {
+    obstacles = JSON.parse(obstacleJson.value || '[]')
+    if (!Array.isArray(obstacles)) {
+      throw new Error('Obstacle JSON must be an array')
+    }
+  } catch (err) {
+    throw new Error(`Invalid obstacle JSON: ${String(err)}`)
+  }
   return {
     seed: 13,
     render: {
       width: 1080,
       height: 1920,
-      world_height: 7600,
+      world_height: worldHeight.value,
       fps: 30,
       duration_seconds: duration.value,
       countdown_seconds: countdown.value,
@@ -123,13 +146,7 @@ function buildInlineConfig() {
       crop_center_x: r.cropCenterX,
       crop_center_y: r.cropCenterY,
     })),
-    obstacles: [
-      { type: 'rect', x: 260, y: 860, width: 320, height: 30, angle_deg: -22, fill_color: '#111A31' },
-      { type: 'moving_rect', x: 760, y: 940, width: 310, height: 30, angle_deg: 18, amplitude: 120, frequency_hz: 0.23, axis: 'x', fill_color: '#1B2844' },
-      { type: 'ring_gap', x: 540, y: 1260, radius: 165, thickness: 36, rotation_speed_deg: 80, gap_size_deg: 62, fill_color: '#09101F' },
-      { type: 'spinner', x: 540, y: 1640, length: 320, thickness: 24, spin_speed_deg: 160, fill_color: '#151B30' },
-      { type: 'one_way_gate', x: 540, y: 1880, width: 620, height: 26, one_way: 'down', fill_color: '#1B2A40' },
-    ],
+    obstacles,
   }
 }
 
@@ -269,6 +286,10 @@ onUnmounted(() => {
                 <input v-model.number="duration" type="number" min="1" class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100" />
               </label>
               <label class="text-sm text-slate-300">
+                World Height
+                <input v-model.number="worldHeight" type="number" min="1920" class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100" />
+              </label>
+              <label class="text-sm text-slate-300">
                 Countdown (seconds)
                 <input v-model.number="countdown" type="number" min="0" class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100" />
               </label>
@@ -312,6 +333,14 @@ onUnmounted(() => {
               >
                 Render Final
               </button>
+            </div>
+            <div class="mt-4">
+              <label class="mb-1 block text-sm text-slate-300">Obstacle JSON (full control)</label>
+              <textarea
+                v-model="obstacleJson"
+                rows="10"
+                class="w-full rounded-md border border-slate-600 bg-slate-950 px-2 py-2 text-xs text-slate-100"
+              />
             </div>
             <p class="mt-3 text-sm text-slate-300">{{ statusMessage }}</p>
           </div>
