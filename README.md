@@ -102,6 +102,8 @@ Endpoints:
 - `POST /render` with
   `{ "config_path": "...", "output_path": "...", "preview_scale": 1.0 }`
 
+Integration contract details: `docs/frontend_integration.md`
+
 ## Testing
 
 ```bash
