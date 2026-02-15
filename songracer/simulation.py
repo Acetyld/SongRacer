@@ -134,6 +134,7 @@ def simulate_race(cfg: RaceConfig) -> SimulationResult:
 
     winner_idx = -1
     winner_race_frame = -1
+    camera_prev = 0.0
 
     for frame in range(max_race_frames):
         t_frame = frame * dt
@@ -191,7 +192,11 @@ def simulate_race(cfg: RaceConfig) -> SimulationResult:
         leader = _leader_for_y(ys, prev_leader, cfg.physics.leader_hysteresis_px)
         positions_race.append(frame_positions)
         leaders_race.append(leader)
-        camera_race.append(_camera_for_frame(cfg, float(ys[leader])))
+        camera_now = _camera_for_frame(cfg, float(ys[leader]))
+        if camera_now < camera_prev:
+            camera_now = camera_prev
+        camera_prev = camera_now
+        camera_race.append(camera_now)
         states_race.append(1)
         prev_leader = leader
 

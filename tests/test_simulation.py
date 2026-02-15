@@ -90,4 +90,5 @@ def test_winner_auto_end_and_camera_follow(tmp_path: Path) -> None:
     assert sim.winner_frame >= cfg.countdown_frames
     assert sim.winner_index >= 0
     assert np.max(sim.camera_y) > 0
+    assert np.all(np.diff(sim.camera_y) >= -1e-6)
     assert 2 in sim.states.tolist()
