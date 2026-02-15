@@ -9,6 +9,7 @@ type RacerForm = {
   uploadedPath?: string
   cropCenterX: number
   cropCenterY: number
+  syncOffsetSeconds: number
 }
 
 type JobRow = {
@@ -33,6 +34,7 @@ const racers = ref<RacerForm[]>([])
 const jobs = ref<JobRow[]>([])
 const statusMessage = ref('')
 const previewArtifactUrl = ref<string | null>(null)
+const backendOnline = ref(true)
 const obstacleJson = ref(
   JSON.stringify(
     [
@@ -65,6 +67,7 @@ function handleFiles(ev: Event) {
       localPreviewUrl: URL.createObjectURL(file),
       cropCenterX: 0.5,
       cropCenterY: 0.45,
+      syncOffsetSeconds: 0,
     })
   }
   input.value = ''
@@ -88,8 +91,10 @@ async function uploadAll() {
       const payload = await resp.json()
       racer.uploadedPath = payload.path
     }
+    backendOnline.value = true
     statusMessage.value = 'Upload complete.'
   } catch (err) {
+    backendOnline.value = false
     statusMessage.value = `Upload failed: ${String(err)}`
   } finally {
     isBusy.value = false
@@ -145,6 +150,7 @@ function buildInlineConfig() {
       radius: 96,
       crop_center_x: r.cropCenterX,
       crop_center_y: r.cropCenterY,
+      sync_offset_seconds: r.syncOffsetSeconds,
     })),
     obstacles,
   }
@@ -170,11 +176,13 @@ async function createJob(isPreview: boolean) {
     if (!resp.ok) {
       throw new Error(await resp.text())
     }
+    backendOnline.value = true
     statusMessage.value = isPreview
       ? 'Preview job submitted.'
       : 'Final job submitted.'
     await refreshJobs()
   } catch (err) {
+    backendOnline.value = false
     statusMessage.value = `Job submit failed: ${String(err)}`
   } finally {
     isBusy.value = false
@@ -182,14 +190,58 @@ async function createJob(isPreview: boolean) {
 }
 
 async function refreshJobs() {
-  const resp = await fetch(`${apiBase.value}/jobs`)
-  if (!resp.ok) return
-  const data = await resp.json()
-  jobs.value = (data.jobs || []).slice().reverse()
+  try {
+    const resp = await fetch(`${apiBase.value}/jobs`)
+    if (!resp.ok) {
+      backendOnline.value = false
+      return
+    }
+    const data = await resp.json()
+    jobs.value = (data.jobs || []).slice().reverse()
+    backendOnline.value = true
+  } catch (_err) {
+    backendOnline.value = false
+  }
 }
 
 function openArtifact(job: JobRow) {
   previewArtifactUrl.value = `${apiBase.value}/jobs/${job.job_id}/artifact?ts=${Date.now()}`
+}
+
+async function autoSyncAudio() {
+  if (!uploadedReady.value) {
+    statusMessage.value = 'Upload videos before auto sync.'
+    return
+  }
+  isBusy.value = true
+  statusMessage.value = 'Analyzing waveform alignment...'
+  try {
+    const videoPaths = racers.value.map((r) => r.uploadedPath as string)
+    const resp = await fetch(`${apiBase.value}/sync/audio`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        video_paths: videoPaths,
+        sample_rate: 16000,
+        max_shift_seconds: 8.0,
+      }),
+    })
+    if (!resp.ok) {
+      throw new Error(await resp.text())
+    }
+    const payload = await resp.json()
+    const offsets: number[] = payload.offsets_seconds || []
+    racers.value.forEach((racer, idx) => {
+      racer.syncOffsetSeconds = Number(offsets[idx] ?? 0)
+    })
+    backendOnline.value = true
+    statusMessage.value = 'Auto sync offsets applied.'
+  } catch (err) {
+    backendOnline.value = false
+    statusMessage.value = `Auto sync failed: ${String(err)}`
+  } finally {
+    isBusy.value = false
+  }
 }
 
 onMounted(() => {
@@ -215,6 +267,12 @@ onUnmounted(() => {
         <h1 class="text-3xl font-bold tracking-tight text-cyan-300">SongRacer Studio</h1>
         <p class="mt-2 text-slate-300">
           Vue + TypeScript + Tailwind frontend for uploads, crop-center control, preview renders, and async job management.
+        </p>
+        <p
+          v-if="!backendOnline"
+          class="mt-3 rounded-lg border border-rose-400/40 bg-rose-900/40 px-3 py-2 text-sm text-rose-200"
+        >
+          Backend offline at {{ apiBase }}. Start API and refresh jobs.
         </p>
       </header>
 
@@ -266,6 +324,15 @@ onUnmounted(() => {
                 <p class="mt-2 text-[11px] text-slate-400">
                   Click preview to set face center ({{ racer.cropCenterX.toFixed(2) }}, {{ racer.cropCenterY.toFixed(2) }})
                 </p>
+                <label class="mt-2 block text-[11px] text-slate-300">
+                  Sync offset (sec)
+                  <input
+                    v-model.number="racer.syncOffsetSeconds"
+                    type="number"
+                    step="0.01"
+                    class="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                  />
+                </label>
               </article>
             </div>
           </div>
@@ -318,6 +385,13 @@ onUnmounted(() => {
                 @click="uploadAll"
               >
                 Upload Videos
+              </button>
+              <button
+                class="rounded-lg bg-fuchsia-500 px-4 py-2 text-sm font-semibold text-white hover:bg-fuchsia-400 disabled:opacity-50"
+                :disabled="!uploadedReady || isBusy"
+                @click="autoSyncAudio"
+              >
+                Auto Sync Audio
               </button>
               <button
                 class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50"

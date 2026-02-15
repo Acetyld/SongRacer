@@ -33,6 +33,7 @@ The top featured circle mirrors the current leader, the camera scrolls down the 
 - Single active audio source with configurable micro crossfade on leader switches.
 - Countdown and victory SFX mixed into output audio.
 - Anti-stuck racer boosts to prevent deadlocks.
+- Audio-wave auto sync across racers (`sync_offset_seconds`) via CLI/API/frontend.
 - Vue 3 + TypeScript + Tailwind frontend for uploads, crop-center selection, preview/final jobs.
 
 ## Quick Start
@@ -65,6 +66,14 @@ python3 -m songracer render \
   --output outputs/demo_5_racers.mp4
 ```
 
+### 5) Auto-sync racers by waveform (optional)
+
+```bash
+python3 -m songracer sync --config configs/snaptik_2_racers.json --write
+```
+
+This estimates per-racer `sync_offset_seconds` and writes them into the config.
+
 Preview faster at reduced scale:
 
 ```bash
@@ -84,6 +93,7 @@ python3 -m songracer render \
   - per-obstacle `fill_color`, `stroke_color`, `opacity`
 - Audio:
   - `switch_crossfade_ms` smooths audio on leader changes.
+  - `sync_offset_seconds` on each racer shifts source playback to align singers.
   - optional file-based SFX:
     - `audio.countdown_sfx_path`
     - `audio.victory_sfx_path`
@@ -109,6 +119,7 @@ Endpoints:
 
 - `GET /health`
 - `POST /uploads` (multipart video upload)
+- `POST /sync/audio` with `{ "video_paths": [...], "sample_rate": 16000, "max_shift_seconds": 8 }`
 - `POST /validate` with `{ "config_path": "..." }`
 - `POST /render` with
   `{ "config_path": "...", "output_path": "...", "preview_scale": 1.0 }`
@@ -130,6 +141,12 @@ npm run dev
 ```
 
 Open the Vite URL (usually `http://localhost:5173`), set API base to `http://localhost:8080`, upload singer videos, click each preview to set face center, then submit preview/final jobs.
+
+If frontend shows backend offline / connection refused, start API first:
+
+```bash
+python3 -m uvicorn songracer.api:app --host 0.0.0.0 --port 8080 --reload
+```
 
 ## Testing
 

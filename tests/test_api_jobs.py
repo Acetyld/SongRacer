@@ -39,6 +39,42 @@ def _make_video(path: Path, freq: int, duration: float = 2.0) -> None:
     )
 
 
+def _make_noise_video(path: Path, duration: float = 2.2, delay_ms: int = 0) -> None:
+    noise = f"anoisesrc=color=white:seed=42:duration={duration}:sample_rate=48000"
+    if delay_ms > 0:
+        af = f"adelay={delay_ms}|{delay_ms}"
+    else:
+        af = "anull"
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            f"testsrc=size=180x320:rate=24:duration={duration}",
+            "-f",
+            "lavfi",
+            "-i",
+            noise,
+            "-filter:a",
+            af,
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-shortest",
+            str(path),
+        ],
+        check=True,
+    )
+
+
 def test_async_render_job_lifecycle(tmp_path: Path) -> None:
     v1 = tmp_path / "v1.mp4"
     v2 = tmp_path / "v2.mp4"
@@ -170,3 +206,25 @@ def test_inline_job_submit_and_upload_endpoint(tmp_path: Path) -> None:
             time.sleep(0.05)
         assert status == "completed"
         assert out_path.exists()
+
+
+def test_audio_sync_endpoint_estimates_delay(tmp_path: Path) -> None:
+    v1 = tmp_path / "s1.mp4"
+    v2 = tmp_path / "s2.mp4"
+    _make_noise_video(v1, delay_ms=0)
+    _make_noise_video(v2, delay_ms=420)
+
+    with TestClient(app) as client:
+        resp = client.post(
+            "/sync/audio",
+            json={
+                "video_paths": [str(v1), str(v2)],
+                "sample_rate": 12000,
+                "max_shift_seconds": 2.0,
+            },
+        )
+        assert resp.status_code == 200
+        offsets = resp.json()["offsets_seconds"]
+        assert len(offsets) == 2
+        assert abs(offsets[0]) < 0.05
+        assert 0.25 <= abs(float(offsets[1])) <= 0.8

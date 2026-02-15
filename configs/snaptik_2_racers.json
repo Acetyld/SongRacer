@@ -78,7 +78,8 @@
       "crop_center_x": 0.5,
       "crop_center_y": 0.5,
       "border_color": "#101317",
-      "border_width": 4
+      "border_width": 4,
+      "sync_offset_seconds": 0.0
     },
     {
       "name": "Racer 2",
@@ -89,7 +90,8 @@
       "crop_center_x": 0.5,
       "crop_center_y": 0.5,
       "border_color": "#101317",
-      "border_width": 4
+      "border_width": 4,
+      "sync_offset_seconds": -1.1
     }
   ],
   "obstacles": [

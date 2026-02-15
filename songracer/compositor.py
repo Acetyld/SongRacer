@@ -39,9 +39,19 @@ class FrameCompositor:
         self.cfg = cfg
         self.width = cfg.render.width
         self.height = cfg.render.height
-        self.label_font = self._load_font(max(18, int(round(self.width * 0.028))))
-        self.countdown_font = self._load_font(cfg.hud_style.countdown_font_size)
-        self.winner_font = self._load_font(cfg.hud_style.winner_font_size)
+        scale_h = self.height / 1920.0
+        self.label_font = self._load_font(max(18, int(round(self.width * 0.032))))
+        countdown_size = max(
+            int(round(cfg.hud_style.countdown_font_size * scale_h)),
+            int(round(self.height * 0.125)),
+        )
+        winner_size = max(
+            int(round(cfg.hud_style.winner_font_size * scale_h)),
+            int(round(self.height * 0.08)),
+        )
+        self.countdown_font_px = countdown_size
+        self.countdown_font = self._load_font(countdown_size)
+        self.winner_font = self._load_font(winner_size)
         self._circle_masks: dict[int, Image.Image] = {}
         self._background_base = self._build_background()
 
@@ -309,8 +319,8 @@ class FrameCompositor:
             )
 
         if countdown_text:
-            panel_w = int(self.width * 0.44)
-            panel_h = int(self.height * 0.12)
+            panel_w = int(self.width * 0.58)
+            panel_h = int(self.height * 0.16)
             panel_x0 = int((self.width - panel_w) * 0.5)
             panel_y0 = int(self.cfg.hud_style.countdown_top_y)
             panel_x1 = panel_x0 + panel_w
@@ -324,7 +334,7 @@ class FrameCompositor:
             )
             tw = draw.textlength(countdown_text, font=self.countdown_font)
             tx = (self.width - tw) * 0.5
-            ty = panel_y0 + (panel_h - self.cfg.hud_style.countdown_font_size) * 0.45
+            ty = panel_y0 + (panel_h - self.countdown_font_px) * 0.42
             draw.text(
                 (tx, ty),
                 countdown_text,
@@ -337,8 +347,8 @@ class FrameCompositor:
         if winner_text:
             overlay = Image.new("RGBA", (self.width, self.height), _hex_to_rgba("#000000", 0.25))
             canvas.alpha_composite(overlay)
-            box_w = int(self.width * 0.82)
-            box_h = int(self.height * 0.24)
+            box_w = int(self.width * 0.88)
+            box_h = int(self.height * 0.29)
             x0 = int((self.width - box_w) * 0.5)
             y0 = int((self.height - box_h) * 0.5)
             x1 = x0 + box_w
@@ -362,7 +372,7 @@ class FrameCompositor:
             )
             tw = draw.textlength(winner_text, font=self.winner_font)
             draw.text(
-                ((self.width - tw) * 0.5, y0 + box_h * 0.42),
+                ((self.width - tw) * 0.5, y0 + box_h * 0.45),
                 winner_text,
                 font=self.winner_font,
                 fill=_hex_to_rgba(self.cfg.hud_style.winner_text_color, 1.0),

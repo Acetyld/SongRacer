@@ -161,9 +161,16 @@ class VideoSource:
         out = np.zeros((count, self.audio_channels), dtype=np.int16)
         if count == 0:
             return out
-        end = min(self.audio_pcm.shape[0], start + count)
-        if end > start:
-            out[: end - start] = self.audio_pcm[start:end]
+        src_start = start
+        dst_start = 0
+        if src_start < 0:
+            dst_start = min(count, -src_start)
+            src_start = 0
+        if dst_start >= count:
+            return out
+        end = min(self.audio_pcm.shape[0], src_start + (count - dst_start))
+        if end > src_start:
+            out[dst_start : dst_start + (end - src_start)] = self.audio_pcm[src_start:end]
         return out
 
     def close(self) -> None:

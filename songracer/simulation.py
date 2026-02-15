@@ -70,6 +70,8 @@ def _expand_obstacle_configs(cfg: RaceConfig) -> list:
 
     rng = np.random.default_rng(cfg.seed + 911)
     expanded = []
+    min_blocker_gap = max(90.0, cfg.render.height * 0.085)
+    last_blocker_y = -1e9
     for repeat_idx in range(cfg.render.obstacle_stream_repeats):
         y_off = repeat_idx * cfg.render.obstacle_stream_spacing
         for obs in cfg.obstacles:
@@ -91,8 +93,44 @@ def _expand_obstacle_configs(cfg: RaceConfig) -> list:
                             cfg.render.obstacle_stream_jitter_x * 0.4,
                         )
                     )
+            clone = _sanitize_obstacle_config(clone, cfg)
+            if clone.type in {"rect", "moving_rect", "one_way_gate", "spinner"}:
+                if clone.y < (last_blocker_y + min_blocker_gap):
+                    delta = (last_blocker_y + min_blocker_gap) - clone.y
+                    clone.y += delta
+                    if clone.pivot_y is not None:
+                        clone.pivot_y += delta
+                last_blocker_y = clone.y
             expanded.append(clone)
     return expanded
+
+
+def _sanitize_obstacle_config(obs, cfg: RaceConfig):
+    safe_margin = cfg.render.width * 0.12
+
+    if obs.type in {"rect", "moving_rect", "one_way_gate"} and obs.width is not None:
+        obs.width = min(obs.width, cfg.render.width * 0.72)
+        half_w = obs.width * 0.5
+        min_x = safe_margin + half_w
+        max_x = cfg.render.width - safe_margin - half_w
+        obs.x = float(np.clip(obs.x, min_x, max_x))
+
+    if obs.type == "spinner":
+        obs.length = min(obs.length, cfg.render.width * 0.66)
+        half = obs.length * 0.5
+        min_x = safe_margin + half
+        max_x = cfg.render.width - safe_margin - half
+        obs.x = float(np.clip(obs.x, min_x, max_x))
+
+    if obs.type in {"circle", "ring_gap"} and obs.radius is not None:
+        obs.radius = min(obs.radius, cfg.render.width * 0.23)
+        min_x = safe_margin + obs.radius
+        max_x = cfg.render.width - safe_margin - obs.radius
+        obs.x = float(np.clip(obs.x, min_x, max_x))
+
+    if obs.type == "pendulum" and obs.length is not None:
+        obs.length = min(obs.length, cfg.render.height * 0.24)
+    return obs
 
 
 def _camera_for_frame(cfg: RaceConfig, leader_y: float) -> float:
@@ -127,7 +165,6 @@ def simulate_race(cfg: RaceConfig) -> SimulationResult:
     prev_leader: int | None = None
     best_y = [r.y for r in cfg.racers]
     stuck_frames = [0 for _ in cfg.racers]
-    rng = np.random.default_rng(cfg.seed + 101)
 
     substeps = max(1, cfg.physics.substeps)
     sub_dt = dt / substeps
@@ -182,8 +219,17 @@ def simulate_race(cfg: RaceConfig) -> SimulationResult:
                 and stuck_frames[i] >= cfg.physics.stuck_window_frames
                 and p.y < (goal_y - cfg.racers[i].radius)
             ):
+                near_left = p.x < (racer.radius * 1.4)
+                near_right = p.x > (cfg.render.width - racer.radius * 1.4)
+                if near_left:
+                    push_x = cfg.physics.stuck_nudge_x * 4.0
+                elif near_right:
+                    push_x = -cfg.physics.stuck_nudge_x * 4.0
+                else:
+                    direction = 1.0 if ((frame // cfg.physics.stuck_window_frames) + i) % 2 == 0 else -1.0
+                    push_x = cfg.physics.stuck_nudge_x * direction
                 vel[i] = Vec2(
-                    vel[i].x + float(rng.uniform(-cfg.physics.stuck_nudge_x, cfg.physics.stuck_nudge_x)),
+                    vel[i].x + push_x,
                     vel[i].y + cfg.physics.stuck_boost_y,
                 )
                 stuck_frames[i] = 0

@@ -68,7 +68,7 @@ def _compose_audio(
             prev_active = active
             continue
 
-        playhead = float(sim.playheads[frame, active])
+        playhead = float(sim.playheads[frame, active] + cfg.racers[active].sync_offset_seconds)
         src_start = int(round(playhead * sr))
         seg = (
             sources[active].audio_slice_samples(src_start, count).astype(np.float32)
@@ -301,7 +301,9 @@ def _render_video_with_audio(
 
             frame_playheads = sim.playheads[frame]
             racer_frames = [
-                sources[idx].frame_at(float(frame_playheads[idx]))
+                sources[idx].frame_at(
+                    float(frame_playheads[idx] + cfg.racers[idx].sync_offset_seconds)
+                )
                 for idx in range(len(cfg.racers))
             ]
             if frame < cfg.countdown_frames:

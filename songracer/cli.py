@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .config import RaceConfig, load_config, validate_config
 from .pipeline import render_race
+from .sync import apply_offsets_to_config_json, estimate_video_sync_offsets
 
 
 def _scaled_config(cfg: RaceConfig, scale: float) -> RaceConfig:
@@ -70,6 +71,21 @@ def build_parser() -> argparse.ArgumentParser:
 
     val_p = sub.add_parser("validate", help="Validate config file")
     val_p.add_argument("--config", required=True, help="Path to JSON config")
+
+    sync_p = sub.add_parser("sync", help="Estimate sync offsets from racer audio waveforms")
+    sync_p.add_argument("--config", required=True, help="Path to JSON config")
+    sync_p.add_argument("--sample-rate", type=int, default=16000)
+    sync_p.add_argument("--max-shift-seconds", type=float, default=8.0)
+    sync_p.add_argument(
+        "--write",
+        action="store_true",
+        help="Write sync_offset_seconds into config JSON.",
+    )
+    sync_p.add_argument(
+        "--output-config",
+        default="",
+        help="Optional output config path (used with --write).",
+    )
     return p
 
 
@@ -101,6 +117,30 @@ def main(argv: list[str] | None = None) -> None:
                 indent=2,
             )
         )
+        return
+
+    if args.cmd == "sync":
+        cfg = load_config(args.config)
+        offsets = estimate_video_sync_offsets(
+            [r.video_path for r in cfg.racers],
+            sample_rate=args.sample_rate,
+            max_shift_seconds=args.max_shift_seconds,
+        )
+        payload = {
+            "offsets_seconds": offsets,
+            "racers": [
+                {"name": cfg.racers[idx].name, "offset_seconds": offsets[idx]}
+                for idx in range(len(cfg.racers))
+            ],
+        }
+        if args.write:
+            out_path = apply_offsets_to_config_json(
+                args.config,
+                offsets,
+                output_path=args.output_config or None,
+            )
+            payload["written_config"] = str(out_path)
+        print(json.dumps(payload, indent=2))
         return
 
     raise SystemExit(f"Unknown command: {args.cmd}")

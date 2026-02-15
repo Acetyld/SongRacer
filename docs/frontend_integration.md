@@ -125,6 +125,27 @@ Response:
 }
 ```
 
+### `POST /sync/audio`
+Estimate audio-wave sync offsets for uploaded videos.
+
+Request:
+
+```json
+{
+  "video_paths": ["/workspace/uploads/a.mp4", "/workspace/uploads/b.mp4"],
+  "sample_rate": 16000,
+  "max_shift_seconds": 8.0
+}
+```
+
+Response:
+
+```json
+{
+  "offsets_seconds": [0.0, -1.1]
+}
+```
+
 ### `POST /jobs/from-config`
 Create an async render job directly from inline config JSON (no pre-written config file needed).
 
@@ -166,6 +187,7 @@ Response:
 The frontend app in `frontend/` already implements:
 - video upload flow,
 - per-racer crop center selection,
+- per-racer audio sync offsets (+ one-click auto-sync via `/sync/audio`),
 - preview and final job submission,
 - live job list polling,
 - artifact preview panel.

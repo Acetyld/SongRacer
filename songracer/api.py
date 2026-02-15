@@ -18,6 +18,7 @@ from .cli import _scaled_config
 from .config import ConfigError, load_config, validate_config
 from .jobs import JobManager
 from .pipeline import render_race
+from .sync import SyncError, estimate_video_sync_offsets
 
 
 job_manager = JobManager(max_workers=2)
@@ -66,6 +67,12 @@ class InlineJobRequest(BaseModel):
     preview_scale: float = Field(1.0, ge=0.01, le=1.0)
 
 
+class AudioSyncRequest(BaseModel):
+    video_paths: list[str]
+    sample_rate: int = Field(16000, ge=4000, le=96000)
+    max_shift_seconds: float = Field(8.0, ge=0.0, le=30.0)
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -79,6 +86,19 @@ def upload_video(file: UploadFile = File(...)) -> dict[str, str]:
     with out_path.open("wb") as fp:
         shutil.copyfileobj(file.file, fp)
     return {"path": str(out_path), "filename": out_path.name}
+
+
+@app.post("/sync/audio")
+def sync_audio(payload: AudioSyncRequest) -> dict[str, Any]:
+    try:
+        offsets = estimate_video_sync_offsets(
+            payload.video_paths,
+            sample_rate=payload.sample_rate,
+            max_shift_seconds=payload.max_shift_seconds,
+        )
+    except SyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"offsets_seconds": offsets}
 
 
 @app.post("/validate")

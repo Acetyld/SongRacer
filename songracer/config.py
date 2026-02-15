@@ -103,6 +103,7 @@ class RacerConfig:
     x: float
     y: float
     radius: float
+    sync_offset_seconds: float = 0.0
     crop_center_x: float = 0.5
     crop_center_y: float = 0.5
     border_color: Color = "#101318"
@@ -313,6 +314,8 @@ def validate_config(cfg: RaceConfig) -> None:
             raise ConfigError(f"Racer #{idx} crop_center_x must be in [0,1]")
         if not 0 <= racer.crop_center_y <= 1:
             raise ConfigError(f"Racer #{idx} crop_center_y must be in [0,1]")
+        if abs(racer.sync_offset_seconds) > 30:
+            raise ConfigError(f"Racer #{idx} sync_offset_seconds out of bounds [-30,30]")
         if not Path(racer.video_path).exists():
             raise ConfigError(f"Racer #{idx} video does not exist: {racer.video_path}")
 
