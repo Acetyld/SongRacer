@@ -48,13 +48,13 @@ This creates synthetic demo assets in `assets/demo`.
 ### 3) Validate config
 
 ```bash
-songracer validate --config configs/demo_5_racers.json
+python3 -m songracer validate --config configs/demo_5_racers.json
 ```
 
 ### 4) Render
 
 ```bash
-songracer render \
+python3 -m songracer render \
   --config configs/demo_5_racers.json \
   --output outputs/demo_5_racers.mp4
 ```
@@ -62,7 +62,7 @@ songracer render \
 Preview faster at reduced scale:
 
 ```bash
-songracer render \
+python3 -m songracer render \
   --config configs/demo_5_racers.json \
   --output outputs/demo_preview.mp4 \
   --preview-scale 0.5

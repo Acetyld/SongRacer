@@ -25,3 +25,6 @@ songracer = "songracer.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["songracer*"]

@@ -120,7 +120,7 @@ class MovingRectObstacle(RectObstacle):
         return Vec2(self.x + offset, self.y)
 
     def visual(self, t: float) -> dict:
-        v = super().visual(t)
+        v = RectObstacle.visual(self, t)
         v["type"] = "moving_rect"
         return v
 
@@ -320,10 +320,10 @@ class OneWayGateObstacle(RectObstacle):
             # Blocks downward movement, lets upward pass.
             if velocity.y <= 0:
                 return position, velocity
-        return super().resolve(position, velocity, racer_radius, t, physics)
+        return RectObstacle.resolve(self, position, velocity, racer_radius, t, physics)
 
     def visual(self, t: float) -> dict:
-        v = super().visual(t)
+        v = RectObstacle.visual(self, t)
         v["type"] = "one_way_gate"
         return v
 

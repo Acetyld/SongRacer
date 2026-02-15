@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+*.egg-info/
 
 assets/demo/*.mp4
 outputs/
