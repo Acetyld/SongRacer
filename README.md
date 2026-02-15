@@ -9,14 +9,17 @@ At every frame, the bottom-most racer is the active singer:
 - their audio is audible,
 - all non-leaders stay frozen.
 
-The top featured circle mirrors the current leader and a countdown (`3,2,1,GO`) is rendered before the race starts.
+The top featured circle mirrors the current leader, the camera scrolls down the level, a stylized countdown (`3,2,1,GO`) plays with SFX, and a winner sequence closes the race.
 
 ## Features
 
 - Fully configurable race settings via JSON:
   - duration, FPS, and output resolution (defaults portrait 1080x1920)
+  - world height + camera-follow behavior
+  - auto-finish winner rules
   - physics tuning
   - racer count and video inputs
+  - per-racer crop center (`crop_center_x`, `crop_center_y`)
   - background mode/colors/image
   - obstacle styling/colors
 - Multiple obstacle types:
@@ -28,7 +31,9 @@ The top featured circle mirrors the current leader and a countdown (`3,2,1,GO`) 
   - `one_way_gate`
   - `spinner`
 - Single active audio source with configurable micro crossfade on leader switches.
-- CLI renderer + minimal FastAPI endpoints for future frontend integration.
+- Countdown and victory SFX mixed into output audio.
+- Anti-stuck racer boosts to prevent deadlocks.
+- Vue 3 + TypeScript + Tailwind frontend for uploads, crop-center selection, preview/final jobs.
 
 ## Quick Start
 
@@ -86,6 +91,7 @@ See:
 - `configs/demo_5_racers.json` (full obstacle set)
 - `configs/demo_gradient_background.json`
 - `configs/demo_image_background.json`
+- `configs/demo_auto_finish.json` (winner auto-end showcase)
 
 ## API (frontend-ready scaffold)
 
@@ -98,21 +104,40 @@ uvicorn songracer.api:app --host 0.0.0.0 --port 8080
 Endpoints:
 
 - `GET /health`
+- `POST /uploads` (multipart video upload)
 - `POST /validate` with `{ "config_path": "..." }`
 - `POST /render` with
   `{ "config_path": "...", "output_path": "...", "preview_scale": 1.0 }`
 - `POST /jobs` with
   `{ "config_path": "...", "output_path": "...", "preview_scale": 1.0 }`
+- `POST /jobs/from-config` with inline config JSON payload
 - `GET /jobs`
 - `GET /jobs/{job_id}`
 - `GET /jobs/{job_id}/artifact`
 
 Integration contract details: `docs/frontend_integration.md`
 
+## Frontend (Vue + TypeScript + Tailwind)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the Vite URL (usually `http://localhost:5173`), set API base to `http://localhost:8080`, upload singer videos, click each preview to set face center, then submit preview/final jobs.
+
 ## Testing
 
 ```bash
 pytest -q
+```
+
+Frontend build check:
+
+```bash
+cd frontend
+npm run build
 ```
 
 ## Troubleshooting

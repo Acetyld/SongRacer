@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 import shutil
 from typing import Any
@@ -40,6 +41,8 @@ app.add_middleware(
 
 UPLOAD_DIR = Path("/workspace/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+JOB_CONFIG_DIR = Path("/workspace/job_configs")
+JOB_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class ValidateRequest(BaseModel):
@@ -55,6 +58,12 @@ class RenderRequest(BaseModel):
 class JobSubmitResponse(BaseModel):
     job_id: str
     state: str
+
+
+class InlineJobRequest(BaseModel):
+    config: dict[str, Any]
+    output_path: str | None = None
+    preview_scale: float = Field(1.0, ge=0.01, le=1.0)
 
 
 @app.get("/health")
@@ -107,6 +116,27 @@ def create_job(payload: RenderRequest) -> JobSubmitResponse:
         job = job_manager.submit(
             config_path=payload.config_path,
             output_path=payload.output_path,
+            preview_scale=payload.preview_scale,
+        )
+    except ConfigError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return JobSubmitResponse(job_id=job.job_id, state=job.state)
+
+
+@app.post("/jobs/from-config", response_model=JobSubmitResponse)
+def create_job_from_config(payload: InlineJobRequest) -> JobSubmitResponse:
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+    config_path = JOB_CONFIG_DIR / f"job_{ts}.json"
+    config_path.write_text(json.dumps(payload.config, indent=2))
+    output_path = payload.output_path or f"/workspace/outputs/job_{ts}.mp4"
+    try:
+        # upfront validation for immediate error feedback
+        cfg = load_config(config_path)
+        cfg = _scaled_config(cfg, payload.preview_scale)
+        validate_config(cfg)
+        job = job_manager.submit(
+            config_path=str(config_path),
+            output_path=output_path,
             preview_scale=payload.preview_scale,
         )
     except ConfigError as exc:

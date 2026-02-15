@@ -111,11 +111,61 @@ Get a single job status and stats/error payload.
 ### `GET /jobs/{job_id}/artifact`
 Download generated MP4 once job is `completed`.
 
+### `POST /uploads`
+Upload a singer video asset.
+
+Request: multipart form-data (`file` field)
+
+Response:
+
+```json
+{
+  "path": "/workspace/uploads/20260215T....mp4",
+  "filename": "20260215T....mp4"
+}
+```
+
+### `POST /jobs/from-config`
+Create an async render job directly from inline config JSON (no pre-written config file needed).
+
+Request:
+
+```json
+{
+  "config": { "... full songracer config ..." },
+  "output_path": "/workspace/outputs/my_job.mp4",
+  "preview_scale": 0.35
+}
+```
+
+Response:
+
+```json
+{
+  "job_id": "abc123...",
+  "state": "queued"
+}
+```
+
 ## Expected Frontend Workflow
 
 1. Upload user videos to a server-side asset folder.
 2. Build JSON config referencing those server-side paths.
-3. Call `/validate`.
-4. Call `/jobs` to create render.
-5. Poll `/jobs/{job_id}` until `completed` or `failed`.
-6. Download `/jobs/{job_id}/artifact` when complete.
+3. Either:
+   - write config file and call `/validate` + `/jobs`, or
+   - submit inline config using `/jobs/from-config`.
+4. Poll `/jobs/{job_id}` until `completed` or `failed`.
+5. Download `/jobs/{job_id}/artifact` when complete.
+
+## Frontend stack used
+
+- Vue 3
+- TypeScript
+- Tailwind CSS
+
+The frontend app in `frontend/` already implements:
+- video upload flow,
+- per-racer crop center selection,
+- preview and final job submission,
+- live job list polling,
+- artifact preview panel.

@@ -114,3 +114,59 @@ def test_async_render_job_lifecycle(tmp_path: Path) -> None:
 
         artifact = client.get(f"/jobs/{job_id}/artifact")
         assert artifact.status_code == 200
+
+
+def test_inline_job_submit_and_upload_endpoint(tmp_path: Path) -> None:
+    v1 = tmp_path / "u1.mp4"
+    _make_video(v1, freq=410)
+    with TestClient(app) as client:
+        with v1.open("rb") as fp:
+            up = client.post("/uploads", files={"file": ("u1.mp4", fp, "video/mp4")})
+        assert up.status_code == 200
+        uploaded_path = up.json()["path"]
+        assert Path(uploaded_path).exists()
+
+        out_path = tmp_path / "inline_job.mp4"
+        payload = {
+            "config": {
+                "render": {
+                    "width": 180,
+                    "height": 320,
+                    "world_height": 700,
+                    "fps": 20,
+                    "duration_seconds": 6.0,
+                    "countdown_seconds": 1.0,
+                    "goal_margin": 80.0,
+                    "winner_hold_seconds": 1.0,
+                    "auto_end_on_winner": True,
+                },
+                "background": {"mode": "solid", "solid_color": "#75CCFF"},
+                "racers": [
+                    {
+                        "name": "InlineA",
+                        "video_path": uploaded_path,
+                        "x": 90,
+                        "y": 120,
+                        "radius": 35,
+                        "crop_center_x": 0.5,
+                        "crop_center_y": 0.45,
+                    }
+                ],
+                "obstacles": [],
+            },
+            "output_path": str(out_path),
+            "preview_scale": 1.0,
+        }
+        create = client.post("/jobs/from-config", json=payload)
+        assert create.status_code == 200
+        job_id = create.json()["job_id"]
+
+        status = "queued"
+        for _ in range(200):
+            poll = client.get(f"/jobs/{job_id}")
+            status = poll.json()["state"]
+            if status in {"completed", "failed"}:
+                break
+            time.sleep(0.05)
+        assert status == "completed"
+        assert out_path.exists()

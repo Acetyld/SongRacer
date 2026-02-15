@@ -7,3 +7,5 @@ assets/demo/*.mp4
 assets/demo/*.png
 outputs/
 tmp/
+uploads/
+job_configs/
