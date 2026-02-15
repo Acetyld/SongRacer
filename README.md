@@ -101,6 +101,11 @@ Endpoints:
 - `POST /validate` with `{ "config_path": "..." }`
 - `POST /render` with
   `{ "config_path": "...", "output_path": "...", "preview_scale": 1.0 }`
+- `POST /jobs` with
+  `{ "config_path": "...", "output_path": "...", "preview_scale": 1.0 }`
+- `GET /jobs`
+- `GET /jobs/{job_id}`
+- `GET /jobs/{job_id}/artifact`
 
 Integration contract details: `docs/frontend_integration.md`
 

@@ -44,7 +44,7 @@ Response:
 ```
 
 ### `POST /render`
-Run a render job immediately (sync request in v0.1).
+Run a render job immediately (synchronous).
 
 Request:
 
@@ -67,19 +67,55 @@ Response:
 }
 ```
 
+### `POST /jobs`
+Create an asynchronous render job.
+
+Request:
+
+```json
+{
+  "config_path": "/abs/path/to/config.json",
+  "output_path": "/abs/path/to/output.mp4",
+  "preview_scale": 1.0
+}
+```
+
+Response:
+
+```json
+{
+  "job_id": "5f0e5d8f1f994166b5f4a0df4e7e933d",
+  "state": "queued"
+}
+```
+
+### `GET /jobs`
+List current job records.
+
+Response:
+
+```json
+{
+  "jobs": [
+    {
+      "job_id": "...",
+      "state": "running"
+    }
+  ]
+}
+```
+
+### `GET /jobs/{job_id}`
+Get a single job status and stats/error payload.
+
+### `GET /jobs/{job_id}/artifact`
+Download generated MP4 once job is `completed`.
+
 ## Expected Frontend Workflow
 
 1. Upload user videos to a server-side asset folder.
 2. Build JSON config referencing those server-side paths.
 3. Call `/validate`.
-4. Call `/render`.
-5. Serve/download resulting MP4.
-
-## Recommended Next Step for Production
-
-- Replace sync `/render` with async jobs:
-  - `POST /jobs` -> returns `job_id`
-  - `GET /jobs/{job_id}` -> status/progress
-  - `GET /jobs/{job_id}/artifact` -> MP4 download
-
-This avoids request timeouts for longer renders (e.g. 30s @ 1080x1920).
+4. Call `/jobs` to create render.
+5. Poll `/jobs/{job_id}` until `completed` or `failed`.
+6. Download `/jobs/{job_id}/artifact` when complete.
