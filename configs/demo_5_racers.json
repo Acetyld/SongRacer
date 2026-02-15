@@ -1,0 +1,181 @@
+{
+  "seed": 19,
+  "render": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "duration_seconds": 18.0,
+    "countdown_seconds": 3.0,
+    "preview_scale": 1.0
+  },
+  "audio": {
+    "sample_rate": 48000,
+    "channels": 2,
+    "switch_crossfade_ms": 12.0,
+    "countdown_silence": true
+  },
+  "background": {
+    "mode": "sky",
+    "gradient_top": "#62C8FF",
+    "gradient_bottom": "#7ED4FF",
+    "cloud_color": "#ECF5FF",
+    "cloud_count": 18
+  },
+  "top_circle": {
+    "diameter": 280,
+    "y": 250,
+    "border_color": "#0C1016",
+    "border_width": 8
+  },
+  "label_style": {
+    "color": "#FFFFFF",
+    "stroke_color": "#0F1520",
+    "stroke_width": 3,
+    "offset_y": 26
+  },
+  "physics": {
+    "gravity": 1750.0,
+    "damping": 0.996,
+    "restitution": 0.58,
+    "max_speed": 1650.0,
+    "substeps": 2,
+    "leader_hysteresis_px": 4.0
+  },
+  "racers": [
+    {
+      "name": "Inki",
+      "video_path": "../assets/demo/singer_1.mp4",
+      "x": 320,
+      "y": 420,
+      "radius": 96,
+      "border_color": "#101317",
+      "border_width": 4
+    },
+    {
+      "name": "Sonia",
+      "video_path": "../assets/demo/singer_2.mp4",
+      "x": 470,
+      "y": 390,
+      "radius": 96,
+      "border_color": "#101317",
+      "border_width": 4
+    },
+    {
+      "name": "Makeza",
+      "video_path": "../assets/demo/singer_3.mp4",
+      "x": 610,
+      "y": 410,
+      "radius": 96,
+      "border_color": "#101317",
+      "border_width": 4
+    },
+    {
+      "name": "Gihooo",
+      "video_path": "../assets/demo/singer_4.mp4",
+      "x": 760,
+      "y": 370,
+      "radius": 96,
+      "border_color": "#101317",
+      "border_width": 4
+    },
+    {
+      "name": "Luna",
+      "video_path": "../assets/demo/singer_5.mp4",
+      "x": 900,
+      "y": 430,
+      "radius": 96,
+      "border_color": "#101317",
+      "border_width": 4
+    }
+  ],
+  "obstacles": [
+    {
+      "type": "rect",
+      "x": 250,
+      "y": 680,
+      "width": 340,
+      "height": 30,
+      "angle_deg": -22,
+      "fill_color": "#13161E",
+      "stroke_color": "#000000",
+      "opacity": 0.95
+    },
+    {
+      "type": "moving_rect",
+      "x": 760,
+      "y": 760,
+      "width": 300,
+      "height": 34,
+      "angle_deg": 18,
+      "amplitude": 110,
+      "frequency_hz": 0.23,
+      "axis": "x",
+      "fill_color": "#1C2442",
+      "stroke_color": "#0A1028",
+      "opacity": 0.95
+    },
+    {
+      "type": "circle",
+      "x": 360,
+      "y": 980,
+      "radius": 90,
+      "fill_color": "#232C4A",
+      "stroke_color": "#09142A",
+      "opacity": 0.95
+    },
+    {
+      "type": "ring_gap",
+      "x": 760,
+      "y": 1080,
+      "radius": 155,
+      "thickness": 36,
+      "rotation_speed_deg": 72,
+      "gap_center_deg": 270,
+      "gap_size_deg": 65,
+      "fill_color": "#0A101C",
+      "stroke_color": "#01050F",
+      "opacity": 1.0
+    },
+    {
+      "type": "pendulum",
+      "x": 540,
+      "y": 1260,
+      "pivot_x": 540,
+      "pivot_y": 1260,
+      "length": 270,
+      "thickness": 26,
+      "angle_deg": 0,
+      "amplitude": 42,
+      "frequency_hz": 0.26,
+      "fill_color": "#101931",
+      "stroke_color": "#050A18",
+      "opacity": 0.95
+    },
+    {
+      "type": "one_way_gate",
+      "x": 540,
+      "y": 1530,
+      "width": 620,
+      "height": 24,
+      "angle_deg": 0,
+      "one_way": "down",
+      "fill_color": "#1B2A40",
+      "stroke_color": "#091321",
+      "opacity": 0.96
+    },
+    {
+      "type": "moving_rect",
+      "x": 420,
+      "y": 1700,
+      "width": 280,
+      "height": 30,
+      "angle_deg": -20,
+      "amplitude": 95,
+      "frequency_hz": 0.33,
+      "axis": "y",
+      "fill_color": "#1F2235",
+      "stroke_color": "#090B16",
+      "opacity": 0.95
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "seed": 42,
+  "render": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "duration_seconds": 10.0,
+    "countdown_seconds": 3.0,
+    "preview_scale": 1.0
+  },
+  "background": {
+    "mode": "gradient",
+    "gradient_top": "#673AB7",
+    "gradient_bottom": "#03A9F4",
+    "cloud_count": 0
+  },
+  "racers": [
+    {
+      "name": "SingerA",
+      "video_path": "../assets/demo/singer_1.mp4",
+      "x": 390,
+      "y": 420,
+      "radius": 100
+    },
+    {
+      "name": "SingerB",
+      "video_path": "../assets/demo/singer_2.mp4",
+      "x": 690,
+      "y": 420,
+      "radius": 100
+    }
+  ],
+  "obstacles": [
+    {
+      "type": "ring_gap",
+      "x": 540,
+      "y": 980,
+      "radius": 180,
+      "thickness": 40,
+      "rotation_speed_deg": 90,
+      "gap_center_deg": 220,
+      "gap_size_deg": 50,
+      "fill_color": "#111111",
+      "stroke_color": "#000000",
+      "opacity": 1.0
+    }
+  ]
+}

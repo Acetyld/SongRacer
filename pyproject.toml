@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "songracer"
+version = "0.1.0"
+description = "Configurable autonomous singer race renderer to MP4"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26.0",
+  "pillow>=10.0.0",
+  "fastapi>=0.116.0",
+  "uvicorn>=0.35.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2.0",
+]
+
+[project.scripts]
+songracer = "songracer.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
