@@ -45,6 +45,8 @@ class VideoSource:
     square_size: int
     audio_sample_rate: int
     audio_channels: int
+    crop_center_x: float = 0.5
+    crop_center_y: float = 0.5
     _video_proc: subprocess.Popen | None = None
     _frame_index: int = -1
     _last_frame: np.ndarray | None = None
@@ -62,8 +64,11 @@ class VideoSource:
             )
 
     def _start_video_stream(self) -> None:
+        cx = max(0.0, min(1.0, float(self.crop_center_x)))
+        cy = max(0.0, min(1.0, float(self.crop_center_y)))
         vf = (
-            "crop='min(iw,ih)':'min(iw,ih)',"
+            "crop='min(iw,ih)':'min(iw,ih)':"
+            f"'(iw-min(iw,ih))*{cx}':'(ih-min(iw,ih))*{cy}',"
             f"scale={self.square_size}:{self.square_size},fps={self.fps}"
         )
         cmd = [
@@ -178,7 +183,9 @@ def open_sources(
     square_size: int,
     sample_rate: int,
     channels: int,
+    crop_centers: list[tuple[float, float]] | None = None,
 ) -> list[VideoSource]:
+    centers = crop_centers or [(0.5, 0.5) for _ in video_paths]
     return [
         VideoSource(
             path=p,
@@ -186,6 +193,8 @@ def open_sources(
             square_size=square_size,
             audio_sample_rate=sample_rate,
             audio_channels=channels,
+            crop_center_x=centers[idx][0],
+            crop_center_y=centers[idx][1],
         )
-        for p in video_paths
+        for idx, p in enumerate(video_paths)
     ]

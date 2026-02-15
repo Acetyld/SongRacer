@@ -1,0 +1,49 @@
+{
+  "seed": 11,
+  "render": {
+    "width": 1080,
+    "height": 1920,
+    "world_height": 3200,
+    "fps": 30,
+    "duration_seconds": 20.0,
+    "countdown_seconds": 3.0,
+    "goal_margin": 140.0,
+    "camera_follow": true,
+    "camera_lead_ratio": 0.38,
+    "auto_end_on_winner": true,
+    "winner_hold_seconds": 2.6
+  },
+  "background": {
+    "mode": "solid",
+    "solid_color": "#6EC6FF"
+  },
+  "audio": {
+    "sample_rate": 48000,
+    "channels": 2,
+    "switch_crossfade_ms": 10.0,
+    "countdown_silence": true,
+    "countdown_sfx_enabled": true,
+    "victory_sfx_enabled": true
+  },
+  "racers": [
+    {
+      "name": "Alpha",
+      "video_path": "../assets/demo/singer_1.mp4",
+      "x": 390,
+      "y": 380,
+      "radius": 110,
+      "crop_center_x": 0.5,
+      "crop_center_y": 0.45
+    },
+    {
+      "name": "Beta",
+      "video_path": "../assets/demo/singer_2.mp4",
+      "x": 690,
+      "y": 420,
+      "radius": 110,
+      "crop_center_x": 0.5,
+      "crop_center_y": 0.45
+    }
+  ],
+  "obstacles": []
+}

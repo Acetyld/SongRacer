@@ -50,4 +50,4 @@ def test_regression_timeline_hash_stable() -> None:
     )
 
     sim = simulate_race(cfg)
-    assert timeline_hash(sim) == "e7595cf84971d7e4971d6779e613892f6010ca5d5f5400b6e0bddb1a910a0f5c"
+    assert timeline_hash(sim) == "e4a7730cfee6b515cbe9e8cfbd0ed4c18eea718b60167ee5149ba2205917825c"

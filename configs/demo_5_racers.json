@@ -3,16 +3,30 @@
   "render": {
     "width": 1080,
     "height": 1920,
+    "world_height": 9800,
     "fps": 30,
-    "duration_seconds": 18.0,
+    "duration_seconds": 32.0,
     "countdown_seconds": 3.0,
+    "goal_margin": 160.0,
+    "camera_follow": true,
+    "camera_lead_ratio": 0.36,
+    "auto_end_on_winner": true,
+    "winner_hold_seconds": 3.2,
+    "obstacle_stream_spacing": 1140.0,
+    "obstacle_stream_jitter_x": 150.0,
+    "obstacle_stream_repeats": 7,
     "preview_scale": 1.0
   },
   "audio": {
     "sample_rate": 48000,
     "channels": 2,
     "switch_crossfade_ms": 12.0,
-    "countdown_silence": true
+    "countdown_silence": true,
+    "singer_volume": 1.0,
+    "countdown_sfx_enabled": true,
+    "countdown_sfx_volume": 0.44,
+    "victory_sfx_enabled": true,
+    "victory_sfx_volume": 0.55
   },
   "background": {
     "mode": "sky",
@@ -33,13 +47,26 @@
     "stroke_width": 3,
     "offset_y": 26
   },
+  "hud_style": {
+    "countdown_font_size": 150,
+    "countdown_top_y": 62,
+    "countdown_text_color": "#FFFFFF",
+    "countdown_panel_color": "#0B1220",
+    "winner_font_size": 94,
+    "winner_text_color": "#FFE98E",
+    "winner_panel_color": "#111E34"
+  },
   "physics": {
     "gravity": 1750.0,
     "damping": 0.996,
     "restitution": 0.58,
     "max_speed": 1650.0,
     "substeps": 2,
-    "leader_hysteresis_px": 4.0
+    "leader_hysteresis_px": 4.0,
+    "stuck_window_frames": 45,
+    "stuck_speed_threshold": 55.0,
+    "stuck_boost_y": 480.0,
+    "stuck_nudge_x": 130.0
   },
   "racers": [
     {
@@ -48,6 +75,8 @@
       "x": 320,
       "y": 420,
       "radius": 96,
+      "crop_center_x": 0.5,
+      "crop_center_y": 0.4,
       "border_color": "#101317",
       "border_width": 4
     },
@@ -57,6 +86,8 @@
       "x": 470,
       "y": 390,
       "radius": 96,
+      "crop_center_x": 0.5,
+      "crop_center_y": 0.45,
       "border_color": "#101317",
       "border_width": 4
     },
@@ -66,6 +97,8 @@
       "x": 610,
       "y": 410,
       "radius": 96,
+      "crop_center_x": 0.5,
+      "crop_center_y": 0.5,
       "border_color": "#101317",
       "border_width": 4
     },
@@ -75,6 +108,8 @@
       "x": 760,
       "y": 370,
       "radius": 96,
+      "crop_center_x": 0.5,
+      "crop_center_y": 0.5,
       "border_color": "#101317",
       "border_width": 4
     },
@@ -84,6 +119,8 @@
       "x": 900,
       "y": 430,
       "radius": 96,
+      "crop_center_x": 0.5,
+      "crop_center_y": 0.5,
       "border_color": "#101317",
       "border_width": 4
     }

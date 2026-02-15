@@ -39,9 +39,18 @@ class FrameCompositor:
         self.cfg = cfg
         self.width = cfg.render.width
         self.height = cfg.render.height
-        self.font = ImageFont.load_default()
+        self.label_font = self._load_font(max(18, int(round(self.width * 0.028))))
+        self.countdown_font = self._load_font(cfg.hud_style.countdown_font_size)
+        self.winner_font = self._load_font(cfg.hud_style.winner_font_size)
         self._circle_masks: dict[int, Image.Image] = {}
         self._background_base = self._build_background()
+
+    @staticmethod
+    def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+        try:
+            return ImageFont.truetype("DejaVuSans-Bold.ttf", size)
+        except OSError:
+            return ImageFont.load_default()
 
     def _build_background(self) -> Image.Image:
         bg_mode = self.cfg.background.mode
@@ -126,7 +135,9 @@ class FrameCompositor:
         self._circle_masks[diameter] = mask
         return mask
 
-    def _draw_obstacles(self, draw: ImageDraw.ImageDraw, obstacle_visuals: list[dict]) -> None:
+    def _draw_obstacles(
+        self, draw: ImageDraw.ImageDraw, obstacle_visuals: list[dict], camera_y: float
+    ) -> None:
         for o in obstacle_visuals:
             fill = _hex_to_rgba(o.get("fill_color", "#111111"), o.get("opacity", 1.0))
             stroke = _hex_to_rgba(o.get("stroke_color", "#000000"), o.get("opacity", 1.0))
@@ -135,7 +146,7 @@ class FrameCompositor:
                 self._draw_rotated_rect(
                     draw,
                     o["x"],
-                    o["y"],
+                    o["y"] - camera_y,
                     o["width"],
                     o["height"],
                     math.radians(o.get("angle_deg", 0.0)),
@@ -144,29 +155,36 @@ class FrameCompositor:
                 )
             elif t == "circle":
                 x = o["x"]
-                y = o["y"]
+                y = o["y"] - camera_y
                 r = o["radius"]
+                if y + r < -32 or y - r > self.height + 32:
+                    continue
                 draw.ellipse((x - r, y - r, x + r, y + r), fill=fill, outline=stroke, width=3)
             elif t == "ring_gap":
-                self._draw_ring_gap(draw, o, fill, stroke)
+                self._draw_ring_gap(draw, o, fill, stroke, camera_y)
             elif t == "pendulum":
+                y0 = o["y0"] - camera_y
+                y1 = o["y1"] - camera_y
                 draw.line(
-                    (o["x0"], o["y0"], o["x1"], o["y1"]),
+                    (o["x0"], y0, o["x1"], y1),
                     fill=fill,
                     width=max(2, int(o["thickness"])),
                 )
                 draw.ellipse(
-                    (o["x0"] - 8, o["y0"] - 8, o["x0"] + 8, o["y0"] + 8),
+                    (o["x0"] - 8, y0 - 8, o["x0"] + 8, y0 + 8),
                     fill=stroke,
                 )
             elif t == "spinner":
+                y0 = o["y0"] - camera_y
+                y1 = o["y1"] - camera_y
+                cy = o["y"] - camera_y
                 draw.line(
-                    (o["x0"], o["y0"], o["x1"], o["y1"]),
+                    (o["x0"], y0, o["x1"], y1),
                     fill=fill,
                     width=max(2, int(o["thickness"])),
                 )
                 draw.ellipse(
-                    (o["x"] - 9, o["y"] - 9, o["x"] + 9, o["y"] + 9),
+                    (o["x"] - 9, cy - 9, o["x"] + 9, cy + 9),
                     fill=stroke,
                 )
 
@@ -198,8 +216,9 @@ class FrameCompositor:
         o: dict,
         fill: tuple[int, int, int, int],
         stroke: tuple[int, int, int, int],
+        camera_y: float,
     ) -> None:
-        x, y = o["x"], o["y"]
+        x, y = o["x"], o["y"] - camera_y
         radius = o["radius"]
         thickness = max(2, int(o["thickness"]))
         gap_center = o["gap_center_deg"]
@@ -220,12 +239,14 @@ class FrameCompositor:
         racer_radii: list[float],
         leader: int,
         obstacle_visuals: list[dict],
+        camera_y: float = 0.0,
         countdown_text: str | None = None,
+        winner_text: str | None = None,
     ) -> np.ndarray:
         canvas = self._background_base.copy()
         draw = ImageDraw.Draw(canvas, "RGBA")
 
-        self._draw_obstacles(draw, obstacle_visuals)
+        self._draw_obstacles(draw, obstacle_visuals, camera_y)
 
         # Top featured leader circle.
         top_d = self.cfg.top_circle.diameter
@@ -242,13 +263,13 @@ class FrameCompositor:
             width=self.cfg.top_circle.border_width,
         )
         leader_name = racer_names[leader]
-        tw = draw.textlength(leader_name, font=self.font)
+        tw = draw.textlength(leader_name, font=self.label_font)
         tx = (self.width - tw) * 0.5
         ty = top_y + top_d + 10
         draw.text(
             (tx, ty),
             leader_name,
-            font=self.font,
+            font=self.label_font,
             fill=_hex_to_rgba(self.cfg.label_style.color, 1.0),
             stroke_width=self.cfg.label_style.stroke_width,
             stroke_fill=_hex_to_rgba(self.cfg.label_style.stroke_color, 1.0),
@@ -257,8 +278,10 @@ class FrameCompositor:
         for i, (pos, radius) in enumerate(zip(positions, racer_radii)):
             diam = int(round(radius * 2))
             x = int(round(pos[0] - radius))
-            y = int(round(pos[1] - radius))
+            y = int(round((pos[1] - camera_y) - radius))
             if diam < 4:
+                continue
+            if y > self.height + 20 or (y + diam) < -20:
                 continue
 
             frame_img = Image.fromarray(racer_frames[i], mode="RGB").resize(
@@ -273,30 +296,78 @@ class FrameCompositor:
             )
 
             name = racer_names[i]
-            tw = draw.textlength(name, font=self.font)
+            tw = draw.textlength(name, font=self.label_font)
             tx = pos[0] - tw / 2
-            ty = pos[1] - radius - self.cfg.label_style.offset_y
+            ty = (pos[1] - camera_y) - radius - self.cfg.label_style.offset_y
             draw.text(
                 (tx, ty),
                 name,
-                font=self.font,
+                font=self.label_font,
                 fill=_hex_to_rgba(self.cfg.label_style.color, 1.0),
                 stroke_width=self.cfg.label_style.stroke_width,
                 stroke_fill=_hex_to_rgba(self.cfg.label_style.stroke_color, 1.0),
             )
 
         if countdown_text:
-            text = countdown_text
-            tw = draw.textlength(text, font=self.font)
+            panel_w = int(self.width * 0.44)
+            panel_h = int(self.height * 0.12)
+            panel_x0 = int((self.width - panel_w) * 0.5)
+            panel_y0 = int(self.cfg.hud_style.countdown_top_y)
+            panel_x1 = panel_x0 + panel_w
+            panel_y1 = panel_y0 + panel_h
+            draw.rounded_rectangle(
+                (panel_x0, panel_y0, panel_x1, panel_y1),
+                radius=26,
+                fill=_hex_to_rgba(self.cfg.hud_style.countdown_panel_color, 0.84),
+                outline=_hex_to_rgba("#FFFFFF", 0.28),
+                width=3,
+            )
+            tw = draw.textlength(countdown_text, font=self.countdown_font)
             tx = (self.width - tw) * 0.5
-            ty = self.height * 0.45
+            ty = panel_y0 + (panel_h - self.cfg.hud_style.countdown_font_size) * 0.45
             draw.text(
                 (tx, ty),
-                text,
-                font=self.font,
-                fill=_hex_to_rgba("#ffffff", 1.0),
-                stroke_width=4,
+                countdown_text,
+                font=self.countdown_font,
+                fill=_hex_to_rgba(self.cfg.hud_style.countdown_text_color, 1.0),
+                stroke_width=6,
+                stroke_fill=_hex_to_rgba("#0B111E", 1.0),
+            )
+
+        if winner_text:
+            overlay = Image.new("RGBA", (self.width, self.height), _hex_to_rgba("#000000", 0.25))
+            canvas.alpha_composite(overlay)
+            box_w = int(self.width * 0.82)
+            box_h = int(self.height * 0.24)
+            x0 = int((self.width - box_w) * 0.5)
+            y0 = int((self.height - box_h) * 0.5)
+            x1 = x0 + box_w
+            y1 = y0 + box_h
+            draw.rounded_rectangle(
+                (x0, y0, x1, y1),
+                radius=34,
+                fill=_hex_to_rgba(self.cfg.hud_style.winner_panel_color, 0.93),
+                outline=_hex_to_rgba("#FFEAA0", 0.9),
+                width=4,
+            )
+            label = "WINNER"
+            ltw = draw.textlength(label, font=self.label_font)
+            draw.text(
+                ((self.width - ltw) * 0.5, y0 + 22),
+                label,
+                font=self.label_font,
+                fill=_hex_to_rgba("#FFFFFF", 0.95),
+                stroke_width=2,
                 stroke_fill=_hex_to_rgba("#111111", 1.0),
+            )
+            tw = draw.textlength(winner_text, font=self.winner_font)
+            draw.text(
+                ((self.width - tw) * 0.5, y0 + box_h * 0.42),
+                winner_text,
+                font=self.winner_font,
+                fill=_hex_to_rgba(self.cfg.hud_style.winner_text_color, 1.0),
+                stroke_width=4,
+                stroke_fill=_hex_to_rgba("#21190B", 1.0),
             )
 
         return np.array(canvas.convert("RGB"), dtype=np.uint8)

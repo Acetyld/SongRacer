@@ -71,3 +71,23 @@ def test_simulation_deterministic_hash(tmp_path: Path) -> None:
     sim1 = simulate_race(cfg)
     sim2 = simulate_race(cfg)
     assert timeline_hash(sim1) == timeline_hash(sim2)
+
+
+def test_winner_auto_end_and_camera_follow(tmp_path: Path) -> None:
+    cfg = _basic_config(tmp_path)
+    cfg.render.height = 426
+    cfg.render.world_height = 880
+    cfg.render.duration_seconds = 8.0
+    cfg.render.goal_margin = 110
+    cfg.render.winner_hold_seconds = 1.0
+    cfg.render.auto_end_on_winner = True
+    cfg.render.camera_follow = True
+    cfg.render.camera_lead_ratio = 0.2
+
+    sim = simulate_race(cfg)
+    full_cap = int(round((cfg.render.countdown_seconds + cfg.render.duration_seconds) * cfg.render.fps))
+    assert sim.positions.shape[0] < full_cap
+    assert sim.winner_frame >= cfg.countdown_frames
+    assert sim.winner_index >= 0
+    assert np.max(sim.camera_y) > 0
+    assert 2 in sim.states.tolist()

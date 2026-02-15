@@ -51,12 +51,12 @@ def _compose_audio(
 ) -> np.ndarray:
     sr = cfg.audio.sample_rate
     channels = cfg.audio.channels
-    total_samples = int(round(cfg.total_seconds * sr))
+    total_samples = int(round((sim.positions.shape[0] / cfg.render.fps) * sr))
     out = np.zeros((total_samples, channels), dtype=np.int32)
     fade_n = int(round(sr * cfg.audio.switch_crossfade_ms / 1000.0))
     prev_active = -1
 
-    for frame in range(cfg.total_frames):
+    for frame in range(sim.positions.shape[0]):
         start = int(round(frame * sr / cfg.render.fps))
         end = int(round((frame + 1) * sr / cfg.render.fps))
         count = max(0, end - start)
@@ -70,7 +70,10 @@ def _compose_audio(
 
         playhead = float(sim.playheads[frame, active])
         src_start = int(round(playhead * sr))
-        seg = sources[active].audio_slice_samples(src_start, count).astype(np.int32)
+        seg = (
+            sources[active].audio_slice_samples(src_start, count).astype(np.float32)
+            * cfg.audio.singer_volume
+        ).astype(np.int32)
 
         if prev_active >= 0 and active != prev_active and fade_n > 0:
             cross = min(fade_n, count, start)
@@ -90,7 +93,82 @@ def _compose_audio(
 
         prev_active = active
 
+    _mix_sfx(cfg, sim, out, sr)
     return np.clip(out, -32768, 32767).astype(np.int16)
+
+
+def _mix_tone(
+    out: np.ndarray,
+    sample_rate: int,
+    start_sample: int,
+    duration_seconds: float,
+    frequency: float,
+    volume: float,
+) -> None:
+    count = int(round(duration_seconds * sample_rate))
+    if count <= 0 or start_sample >= out.shape[0]:
+        return
+    end = min(out.shape[0], start_sample + count)
+    count = end - start_sample
+    t = np.arange(count, dtype=np.float32) / float(sample_rate)
+    env = np.ones((count,), dtype=np.float32)
+    fade = min(count // 4, int(0.012 * sample_rate))
+    if fade > 1:
+        ramp = np.linspace(0.0, 1.0, fade, dtype=np.float32)
+        env[:fade] *= ramp
+        env[-fade:] *= ramp[::-1]
+    tone = np.sin(2.0 * math.pi * frequency * t) * env
+    amp = float(14000.0 * volume)
+    wave = (tone * amp).astype(np.int32).reshape((-1, 1))
+    out[start_sample:end] += wave
+
+
+def _mix_sfx(cfg: RaceConfig, sim: SimulationResult, out: np.ndarray, sample_rate: int) -> None:
+    # Countdown beeps (3,2,1 + GO tone).
+    if cfg.audio.countdown_sfx_enabled and cfg.countdown_frames > 0:
+        max_tick = max(0, int(math.ceil(cfg.render.countdown_seconds)))
+        for tick in range(max_tick):
+            start = int(round(tick * sample_rate))
+            _mix_tone(
+                out,
+                sample_rate,
+                start,
+                duration_seconds=0.13,
+                frequency=750.0 - tick * 35.0,
+                volume=cfg.audio.countdown_sfx_volume,
+            )
+        go_start = int(round(cfg.render.countdown_seconds * sample_rate))
+        _mix_tone(
+            out,
+            sample_rate,
+            go_start,
+            duration_seconds=0.24,
+            frequency=1020.0,
+            volume=cfg.audio.countdown_sfx_volume * 1.1,
+        )
+        _mix_tone(
+            out,
+            sample_rate,
+            go_start + int(round(0.1 * sample_rate)),
+            duration_seconds=0.2,
+            frequency=1320.0,
+            volume=cfg.audio.countdown_sfx_volume * 0.8,
+        )
+
+    # Winner jingle.
+    if cfg.audio.victory_sfx_enabled and sim.winner_frame >= 0:
+        start = int(round((sim.winner_frame / cfg.render.fps) * sample_rate))
+        notes = [660.0, 880.0, 1100.0]
+        note_len = 0.15
+        for idx, note in enumerate(notes):
+            _mix_tone(
+                out,
+                sample_rate,
+                start + int(round(idx * note_len * sample_rate)),
+                duration_seconds=note_len,
+                frequency=note,
+                volume=cfg.audio.victory_sfx_volume,
+            )
 
 
 def _write_wav(path: Path, audio: np.ndarray, sample_rate: int, channels: int) -> None:
@@ -152,9 +230,10 @@ def _render_video_with_audio(
 
         racer_names = [r.name for r in cfg.racers]
         racer_radii = [r.radius for r in cfg.racers]
-        for frame in range(cfg.total_frames):
+        total_frames = sim.positions.shape[0]
+        for frame in range(total_frames):
             if frame % cfg.render.fps == 0:
-                print(f"rendering frame {frame}/{cfg.total_frames}")
+                print(f"rendering frame {frame}/{total_frames}")
 
             frame_playheads = sim.playheads[frame]
             racer_frames = [
@@ -166,6 +245,9 @@ def _render_video_with_audio(
             else:
                 sim_time = (frame - cfg.countdown_frames) / cfg.render.fps
             obstacle_visuals = [obs.visual(sim_time) for obs in sim.obstacles]
+            winner_text = None
+            if sim.winner_frame >= 0 and frame >= sim.winner_frame and sim.winner_index >= 0:
+                winner_text = racer_names[sim.winner_index]
             canvas = compositor.render(
                 frame_index=frame,
                 sim_time=sim_time,
@@ -175,7 +257,9 @@ def _render_video_with_audio(
                 racer_radii=racer_radii,
                 leader=int(sim.leaders[frame]),
                 obstacle_visuals=obstacle_visuals,
+                camera_y=float(sim.camera_y[frame]),
                 countdown_text=_countdown_text(cfg, frame),
+                winner_text=winner_text,
             )
             proc.stdin.write(canvas.tobytes())
 
@@ -199,6 +283,7 @@ def render_race(config: RaceConfig | str | Path, output_path: str | Path) -> Ren
         square_size=decode_size,
         sample_rate=cfg.audio.sample_rate,
         channels=cfg.audio.channels,
+        crop_centers=[(r.crop_center_x, r.crop_center_y) for r in cfg.racers],
     )
     try:
         _render_video_with_audio(cfg, sim, sources, output)
@@ -208,7 +293,7 @@ def render_race(config: RaceConfig | str | Path, output_path: str | Path) -> Ren
 
     return RenderStats(
         output_path=str(output),
-        total_frames=cfg.total_frames,
+        total_frames=sim.positions.shape[0],
         leaders_switches=_count_switches(sim.active_leaders),
         timeline_hash=timeline_hash(sim),
     )

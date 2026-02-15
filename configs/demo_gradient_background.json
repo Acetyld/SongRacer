@@ -3,9 +3,13 @@
   "render": {
     "width": 1080,
     "height": 1920,
+    "world_height": 7600,
     "fps": 30,
     "duration_seconds": 10.0,
     "countdown_seconds": 3.0,
+    "camera_follow": true,
+    "obstacle_stream_spacing": 980.0,
+    "obstacle_stream_repeats": 5,
     "preview_scale": 1.0
   },
   "background": {

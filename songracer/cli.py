@@ -15,9 +15,18 @@ def _scaled_config(cfg: RaceConfig, scale: float) -> RaceConfig:
     out = copy.deepcopy(cfg)
     out.render.width = max(16, int(round(cfg.render.width * scale)))
     out.render.height = max(16, int(round(cfg.render.height * scale)))
+    out.render.world_height = max(out.render.height, int(round(cfg.render.world_height * scale)))
+    out.render.goal_margin = max(1.0, cfg.render.goal_margin * scale)
+    out.render.obstacle_stream_spacing = cfg.render.obstacle_stream_spacing * scale
+    out.render.obstacle_stream_jitter_x = cfg.render.obstacle_stream_jitter_x * scale
     out.top_circle.diameter = max(20, int(round(cfg.top_circle.diameter * scale)))
     out.top_circle.y = int(round(cfg.top_circle.y * scale))
     out.label_style.offset_y = max(2, int(round(cfg.label_style.offset_y * scale)))
+    out.hud_style.countdown_font_size = max(
+        20, int(round(cfg.hud_style.countdown_font_size * scale))
+    )
+    out.hud_style.countdown_top_y = int(round(cfg.hud_style.countdown_top_y * scale))
+    out.hud_style.winner_font_size = max(20, int(round(cfg.hud_style.winner_font_size * scale)))
 
     for racer in out.racers:
         racer.x *= scale

@@ -64,3 +64,10 @@ def test_spinner_obstacle_type_is_valid(tmp_path: Path) -> None:
     cfg = _base_cfg(tmp_path)
     cfg.obstacles = [ObstacleConfig(type="spinner", x=100, y=180, length=90, thickness=12)]
     validate_config(cfg)
+
+
+def test_crop_center_bounds_validation(tmp_path: Path) -> None:
+    cfg = _base_cfg(tmp_path)
+    cfg.racers[0].crop_center_x = 1.2
+    with pytest.raises(ConfigError):
+        validate_config(cfg)

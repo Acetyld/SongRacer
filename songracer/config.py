@@ -30,6 +30,17 @@ class LabelStyleConfig:
 
 
 @dataclass(slots=True)
+class HudStyleConfig:
+    countdown_font_size: int = 132
+    countdown_top_y: int = 54
+    countdown_text_color: Color = "#FFFFFF"
+    countdown_panel_color: Color = "#0B1220"
+    winner_font_size: int = 92
+    winner_text_color: Color = "#FFE88A"
+    winner_panel_color: Color = "#101A2E"
+
+
+@dataclass(slots=True)
 class TopCircleConfig:
     diameter: int = 260
     y: int = 210
@@ -45,15 +56,28 @@ class PhysicsConfig:
     max_speed: float = 1800.0
     substeps: int = 2
     leader_hysteresis_px: float = 3.0
+    stuck_window_frames: int = 45
+    stuck_speed_threshold: float = 46.0
+    stuck_boost_y: float = 420.0
+    stuck_nudge_x: float = 110.0
 
 
 @dataclass(slots=True)
 class RenderConfig:
     width: int = 1080
     height: int = 1920
+    world_height: int = 6200
     fps: int = 30
     duration_seconds: float = 30.0
     countdown_seconds: float = 3.0
+    goal_margin: float = 130.0
+    camera_follow: bool = True
+    camera_lead_ratio: float = 0.35
+    auto_end_on_winner: bool = True
+    winner_hold_seconds: float = 3.0
+    obstacle_stream_spacing: float = 980.0
+    obstacle_stream_jitter_x: float = 130.0
+    obstacle_stream_repeats: int = 1
     preview_scale: float = 1.0
 
 
@@ -63,6 +87,11 @@ class AudioConfig:
     channels: int = 2
     switch_crossfade_ms: float = 12.0
     countdown_silence: bool = True
+    singer_volume: float = 1.0
+    countdown_sfx_enabled: bool = True
+    countdown_sfx_volume: float = 0.4
+    victory_sfx_enabled: bool = True
+    victory_sfx_volume: float = 0.55
 
 
 @dataclass(slots=True)
@@ -72,6 +101,8 @@ class RacerConfig:
     x: float
     y: float
     radius: float
+    crop_center_x: float = 0.5
+    crop_center_y: float = 0.5
     border_color: Color = "#101318"
     border_width: int = 4
 
@@ -110,6 +141,7 @@ class RaceConfig:
     audio: AudioConfig = field(default_factory=AudioConfig)
     background: BackgroundConfig = field(default_factory=BackgroundConfig)
     label_style: LabelStyleConfig = field(default_factory=LabelStyleConfig)
+    hud_style: HudStyleConfig = field(default_factory=HudStyleConfig)
     top_circle: TopCircleConfig = field(default_factory=TopCircleConfig)
     racers: list[RacerConfig] = field(default_factory=list)
     obstacles: list[ObstacleConfig] = field(default_factory=list)
@@ -173,6 +205,7 @@ def load_config(path: str | Path) -> RaceConfig:
             image_path = (config_path.parent / image_path).resolve()
         cfg.background.image_path = str(image_path)
     cfg.label_style = _merge_dataclass(cfg.label_style, obj.get("label_style", {}))
+    cfg.hud_style = _merge_dataclass(cfg.hud_style, obj.get("hud_style", {}))
     cfg.top_circle = _merge_dataclass(cfg.top_circle, obj.get("top_circle", {}))
 
     cfg.racers = []
@@ -202,18 +235,41 @@ def load_config(path: str | Path) -> RaceConfig:
 def validate_config(cfg: RaceConfig) -> None:
     _require_positive(cfg.render.width, "render.width")
     _require_positive(cfg.render.height, "render.height")
+    if cfg.render.world_height < cfg.render.height:
+        raise ConfigError("render.world_height must be >= render.height")
     _require_positive(cfg.render.fps, "render.fps")
     _require_positive(cfg.render.duration_seconds, "render.duration_seconds")
     if cfg.render.countdown_seconds < 0:
         raise ConfigError("render.countdown_seconds must be >= 0")
     if not 0 < cfg.render.preview_scale <= 1.0:
         raise ConfigError("render.preview_scale must be in (0, 1]")
+    if cfg.render.goal_margin < 0:
+        raise ConfigError("render.goal_margin must be >= 0")
+    if cfg.render.winner_hold_seconds < 0:
+        raise ConfigError("render.winner_hold_seconds must be >= 0")
+    if cfg.render.obstacle_stream_spacing < 0:
+        raise ConfigError("render.obstacle_stream_spacing must be >= 0")
+    if cfg.render.obstacle_stream_repeats < 0:
+        raise ConfigError("render.obstacle_stream_repeats must be >= 0")
+    if not 0 <= cfg.render.camera_lead_ratio <= 1:
+        raise ConfigError("render.camera_lead_ratio must be in [0,1]")
     _require_positive(cfg.audio.sample_rate, "audio.sample_rate")
     if cfg.audio.channels not in (1, 2):
         raise ConfigError("audio.channels must be 1 or 2")
     if cfg.audio.switch_crossfade_ms < 0:
         raise ConfigError("audio.switch_crossfade_ms must be >= 0")
+    for field_name, value in [
+        ("audio.singer_volume", cfg.audio.singer_volume),
+        ("audio.countdown_sfx_volume", cfg.audio.countdown_sfx_volume),
+        ("audio.victory_sfx_volume", cfg.audio.victory_sfx_volume),
+    ]:
+        if not 0 <= value <= 2:
+            raise ConfigError(f"{field_name} must be in [0,2]")
     _require_positive(cfg.physics.substeps, "physics.substeps")
+    if cfg.physics.stuck_window_frames < 0:
+        raise ConfigError("physics.stuck_window_frames must be >= 0")
+    if cfg.physics.stuck_speed_threshold < 0:
+        raise ConfigError("physics.stuck_speed_threshold must be >= 0")
     if cfg.background.mode not in {"sky", "solid", "gradient", "image"}:
         raise ConfigError("background.mode must be one of: sky, solid, gradient, image")
     if not 0 <= cfg.background.image_opacity <= 1:
@@ -233,6 +289,10 @@ def validate_config(cfg: RaceConfig) -> None:
             raise ConfigError(f"Racer #{idx} name is required")
         if racer.radius <= 0:
             raise ConfigError(f"Racer #{idx} radius must be > 0")
+        if not 0 <= racer.crop_center_x <= 1:
+            raise ConfigError(f"Racer #{idx} crop_center_x must be in [0,1]")
+        if not 0 <= racer.crop_center_y <= 1:
+            raise ConfigError(f"Racer #{idx} crop_center_y must be in [0,1]")
         if not Path(racer.video_path).exists():
             raise ConfigError(f"Racer #{idx} video does not exist: {racer.video_path}")
 

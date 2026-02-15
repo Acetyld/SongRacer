@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from pathlib import Path
+import shutil
 from typing import Any
 
+from fastapi import File
 from fastapi import FastAPI, HTTPException
+from fastapi import UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -25,6 +31,15 @@ async def _lifespan(_: FastAPI):
 
 
 app = FastAPI(title="SongRacer API", version="0.1.0", lifespan=_lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+UPLOAD_DIR = Path("/workspace/uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class ValidateRequest(BaseModel):
@@ -45,6 +60,16 @@ class JobSubmitResponse(BaseModel):
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/uploads")
+def upload_video(file: UploadFile = File(...)) -> dict[str, str]:
+    suffix = Path(file.filename or "upload.mp4").suffix or ".mp4"
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+    out_path = UPLOAD_DIR / f"{ts}{suffix}"
+    with out_path.open("wb") as fp:
+        shutil.copyfileobj(file.file, fp)
+    return {"path": str(out_path), "filename": out_path.name}
 
 
 @app.post("/validate")
