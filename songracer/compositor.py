@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+from pathlib import Path
 import random
 
 import numpy as np
@@ -66,6 +67,16 @@ class FrameCompositor:
                     255,
                 )
                 draw.line([(0, y), (self.width, y)], fill=row, width=1)
+            return base
+
+        if bg_mode == "image":
+            image_path = Path(self.cfg.background.image_path or "")
+            img = Image.open(image_path).convert("RGBA")
+            img = img.resize((self.width, self.height), resample=Image.Resampling.BILINEAR)
+            if self.cfg.background.image_opacity < 1.0:
+                alpha = int(max(0, min(255, round(255 * self.cfg.background.image_opacity))))
+                img.putalpha(alpha)
+            base.alpha_composite(img)
             return base
 
         # sky preset default
@@ -146,6 +157,16 @@ class FrameCompositor:
                 )
                 draw.ellipse(
                     (o["x0"] - 8, o["y0"] - 8, o["x0"] + 8, o["y0"] + 8),
+                    fill=stroke,
+                )
+            elif t == "spinner":
+                draw.line(
+                    (o["x0"], o["y0"], o["x1"], o["y1"]),
+                    fill=fill,
+                    width=max(2, int(o["thickness"])),
+                )
+                draw.ellipse(
+                    (o["x"] - 9, o["y"] - 9, o["x"] + 9, o["y"] + 9),
                     fill=stroke,
                 )
 

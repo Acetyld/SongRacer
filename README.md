@@ -17,7 +17,7 @@ The top featured circle mirrors the current leader and a countdown (`3,2,1,GO`) 
   - duration, FPS, and output resolution (defaults portrait 1080x1920)
   - physics tuning
   - racer count and video inputs
-  - background mode/colors
+  - background mode/colors/image
   - obstacle styling/colors
 - Multiple obstacle types:
   - `rect`
@@ -26,6 +26,7 @@ The top featured circle mirrors the current leader and a countdown (`3,2,1,GO`) 
   - `moving_rect`
   - `pendulum`
   - `one_way_gate`
+  - `spinner`
 - Single active audio source with configurable micro crossfade on leader switches.
 - CLI renderer + minimal FastAPI endpoints for future frontend integration.
 
@@ -40,7 +41,7 @@ python3 -m pip install -e ".[dev]"
 ### 2) Generate demo singer videos
 
 ```bash
-python3 scripts/generate_demo_media.py --count 5 --duration 30
+python3 scripts/generate_demo_media.py --count 5 --duration 30 --with-background
 ```
 
 This creates synthetic demo assets in `assets/demo`.
@@ -71,8 +72,9 @@ python3 -m songracer render \
 ## Config Notes
 
 - Background:
-  - `background.mode`: `sky` | `solid` | `gradient`
+  - `background.mode`: `sky` | `solid` | `gradient` | `image`
   - color fields are hex strings (`#RRGGBB`)
+  - image mode uses `background.image_path` and optional `background.image_opacity` (0..1)
 - Obstacle color/style:
   - per-obstacle `fill_color`, `stroke_color`, `opacity`
 - Audio:
@@ -80,7 +82,10 @@ python3 -m songracer render \
 - Race timing:
   - `countdown_seconds` added before race simulation starts.
 
-See `configs/demo_5_racers.json` and `configs/demo_gradient_background.json`.
+See:
+- `configs/demo_5_racers.json` (full obstacle set)
+- `configs/demo_gradient_background.json`
+- `configs/demo_image_background.json`
 
 ## API (frontend-ready scaffold)
 
@@ -102,3 +107,14 @@ Endpoints:
 ```bash
 pytest -q
 ```
+
+## Troubleshooting
+
+- **Config validates but render fails quickly**:
+  - ensure `ffmpeg` and `ffprobe` are installed and available in PATH.
+- **Image background errors**:
+  - verify `background.image_path` points to a real file; paths in config can be relative to the config file.
+- **Input videos are very long/high-res and slow down render**:
+  - use `--preview-scale 0.5` while iterating.
+- **Audio crackles on rapid leader changes**:
+  - increase `audio.switch_crossfade_ms` slightly (e.g. 12 -> 20).

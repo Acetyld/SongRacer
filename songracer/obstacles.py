@@ -328,6 +328,66 @@ class OneWayGateObstacle(RectObstacle):
         return v
 
 
+@dataclass(slots=True)
+class SpinnerObstacle:
+    x: float
+    y: float
+    length: float
+    thickness: float
+    angle_deg: float
+    spin_speed_deg: float
+    fill_color: str
+    stroke_color: str
+    opacity: float
+
+    def _segment(self, t: float) -> tuple[Vec2, Vec2]:
+        angle = math.radians(self.angle_deg + self.spin_speed_deg * t)
+        half = self.length * 0.5
+        c = Vec2(self.x, self.y)
+        p0 = c + rotate(Vec2(-half, 0.0), angle)
+        p1 = c + rotate(Vec2(half, 0.0), angle)
+        return p0, p1
+
+    def resolve(
+        self,
+        position: Vec2,
+        velocity: Vec2,
+        racer_radius: float,
+        t: float,
+        physics: PhysicsConfig,
+    ) -> tuple[Vec2, Vec2]:
+        p0, p1 = self._segment(t)
+        seg = p1 - p0
+        seg_len2 = max(1e-6, seg.dot(seg))
+        proj = clamp((position - p0).dot(seg) / seg_len2, 0.0, 1.0)
+        closest = p0 + seg * proj
+        delta = position - closest
+        dist = delta.length()
+        min_dist = racer_radius + self.thickness * 0.5
+        if dist >= min_dist:
+            return position, velocity
+        normal = delta.normalized()
+        corrected = closest + normal * min_dist
+        reflected = _bounce(velocity, normal, physics.restitution)
+        return corrected, reflected
+
+    def visual(self, t: float) -> dict:
+        p0, p1 = self._segment(t)
+        return {
+            "type": "spinner",
+            "x0": p0.x,
+            "y0": p0.y,
+            "x1": p1.x,
+            "y1": p1.y,
+            "x": self.x,
+            "y": self.y,
+            "thickness": self.thickness,
+            "fill_color": self.fill_color,
+            "stroke_color": self.stroke_color,
+            "opacity": self.opacity,
+        }
+
+
 def build_obstacles(obstacles: list[ObstacleConfig]) -> list[Obstacle]:
     out: list[Obstacle] = []
     for obs in obstacles:
@@ -410,6 +470,20 @@ def build_obstacles(obstacles: list[ObstacleConfig]) -> list[Obstacle]:
                     height=obs.height or 24,
                     angle_deg=obs.angle_deg,
                     one_way=obs.one_way,
+                    fill_color=obs.fill_color,
+                    stroke_color=obs.stroke_color,
+                    opacity=obs.opacity,
+                )
+            )
+        elif obs.type == "spinner":
+            out.append(
+                SpinnerObstacle(
+                    x=obs.x,
+                    y=obs.y,
+                    length=obs.length,
+                    thickness=obs.thickness,
+                    angle_deg=obs.angle_deg,
+                    spin_speed_deg=obs.spin_speed_deg,
                     fill_color=obs.fill_color,
                     stroke_color=obs.stroke_color,
                     opacity=obs.opacity,

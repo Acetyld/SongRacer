@@ -46,11 +46,39 @@ def create_demo_video(out_path: Path, duration: float, freq: int, hue_deg: int) 
     run(cmd)
 
 
+def create_background_image(out_path: Path, width: int = 1080, height: int = 1920) -> None:
+    vf = (
+        f"testsrc2=size={width}x{height}:rate=1:duration=1,"
+        "hue=h=210:s=0.4,"
+        "boxblur=4:2"
+    )
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        vf,
+        "-frames:v",
+        "1",
+        str(out_path),
+    ]
+    run(cmd)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate synthetic demo singer videos")
     parser.add_argument("--count", type=int, default=5)
     parser.add_argument("--duration", type=float, default=30.0)
     parser.add_argument("--output-dir", default="assets/demo")
+    parser.add_argument(
+        "--with-background",
+        action="store_true",
+        help="Also generate assets/demo/background.png for image background mode.",
+    )
     args = parser.parse_args()
 
     out_dir = Path(args.output_dir).resolve()
@@ -63,6 +91,11 @@ def main() -> None:
         hue = (idx * 55) % 360
         print(f"Generating {out_path.name} freq={freq} hue={hue}")
         create_demo_video(out_path, args.duration, freq, hue)
+
+    if args.with_background:
+        bg_path = out_dir / "background.png"
+        print(f"Generating {bg_path.name}")
+        create_background_image(bg_path)
 
     print(f"Done. Generated {args.count} demo files in {out_dir}")
 

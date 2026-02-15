@@ -96,6 +96,7 @@ class ObstacleConfig:
     pivot_x: float | None = None
     pivot_y: float | None = None
     one_way: str = "down"
+    spin_speed_deg: float = 120.0
     fill_color: Color = "#0d1220"
     stroke_color: Color = "#000000"
     opacity: float = 0.95
@@ -166,6 +167,11 @@ def load_config(path: str | Path) -> RaceConfig:
     cfg.physics = _merge_dataclass(cfg.physics, obj.get("physics", {}))
     cfg.audio = _merge_dataclass(cfg.audio, obj.get("audio", {}))
     cfg.background = _merge_dataclass(cfg.background, obj.get("background", {}))
+    if cfg.background.image_path:
+        image_path = Path(cfg.background.image_path)
+        if not image_path.is_absolute():
+            image_path = (config_path.parent / image_path).resolve()
+        cfg.background.image_path = str(image_path)
     cfg.label_style = _merge_dataclass(cfg.label_style, obj.get("label_style", {}))
     cfg.top_circle = _merge_dataclass(cfg.top_circle, obj.get("top_circle", {}))
 
@@ -208,6 +214,17 @@ def validate_config(cfg: RaceConfig) -> None:
     if cfg.audio.switch_crossfade_ms < 0:
         raise ConfigError("audio.switch_crossfade_ms must be >= 0")
     _require_positive(cfg.physics.substeps, "physics.substeps")
+    if cfg.background.mode not in {"sky", "solid", "gradient", "image"}:
+        raise ConfigError("background.mode must be one of: sky, solid, gradient, image")
+    if not 0 <= cfg.background.image_opacity <= 1:
+        raise ConfigError("background.image_opacity must be in [0,1]")
+    if cfg.background.mode == "image":
+        if not cfg.background.image_path:
+            raise ConfigError("background.image_path is required when background.mode='image'")
+        if not Path(cfg.background.image_path).exists():
+            raise ConfigError(
+                f"background.image_path does not exist: {cfg.background.image_path}"
+            )
 
     if not cfg.racers:
         raise ConfigError("At least one racer is required")
@@ -226,6 +243,7 @@ def validate_config(cfg: RaceConfig) -> None:
         "moving_rect",
         "pendulum",
         "one_way_gate",
+        "spinner",
     }
     for idx, obs in enumerate(cfg.obstacles):
         if obs.type not in allowed_obstacles:

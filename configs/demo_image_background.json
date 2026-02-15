@@ -1,0 +1,64 @@
+{
+  "seed": 8,
+  "render": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "duration_seconds": 8.0,
+    "countdown_seconds": 2.0
+  },
+  "background": {
+    "mode": "image",
+    "image_path": "../assets/demo/background.png",
+    "image_opacity": 0.88
+  },
+  "racers": [
+    {
+      "name": "Rhea",
+      "video_path": "../assets/demo/singer_1.mp4",
+      "x": 340,
+      "y": 440,
+      "radius": 100
+    },
+    {
+      "name": "Kai",
+      "video_path": "../assets/demo/singer_2.mp4",
+      "x": 540,
+      "y": 390,
+      "radius": 100
+    },
+    {
+      "name": "Noa",
+      "video_path": "../assets/demo/singer_3.mp4",
+      "x": 760,
+      "y": 430,
+      "radius": 100
+    }
+  ],
+  "obstacles": [
+    {
+      "type": "spinner",
+      "x": 540,
+      "y": 960,
+      "length": 330,
+      "thickness": 26,
+      "spin_speed_deg": 190,
+      "fill_color": "#151A2B",
+      "stroke_color": "#070B16",
+      "opacity": 0.95
+    },
+    {
+      "type": "ring_gap",
+      "x": 540,
+      "y": 1380,
+      "radius": 170,
+      "thickness": 38,
+      "rotation_speed_deg": 80,
+      "gap_center_deg": 250,
+      "gap_size_deg": 60,
+      "fill_color": "#0A111C",
+      "stroke_color": "#03070D",
+      "opacity": 1.0
+    }
+  ]
+}

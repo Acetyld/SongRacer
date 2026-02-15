@@ -152,6 +152,18 @@
       "opacity": 0.95
     },
     {
+      "type": "spinner",
+      "x": 300,
+      "y": 1400,
+      "length": 260,
+      "thickness": 24,
+      "angle_deg": 0,
+      "spin_speed_deg": 130,
+      "fill_color": "#1A1932",
+      "stroke_color": "#060513",
+      "opacity": 0.95
+    },
+    {
       "type": "one_way_gate",
       "x": 540,
       "y": 1530,

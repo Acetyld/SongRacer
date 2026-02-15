@@ -6,6 +6,7 @@ import subprocess
 from songracer.config import (
     AudioConfig,
     BackgroundConfig,
+    ObstacleConfig,
     RaceConfig,
     RacerConfig,
     RenderConfig,
@@ -54,7 +55,20 @@ def test_render_short_mp4(tmp_path: Path) -> None:
             RacerConfig(name="P1", video_path=str(v1), x=100, y=120, radius=38),
             RacerConfig(name="P2", video_path=str(v2), x=170, y=120, radius=38),
         ],
-        obstacles=[],
+        obstacles=[
+            ObstacleConfig(
+                type="spinner",
+                x=130,
+                y=260,
+                length=120,
+                thickness=14,
+                angle_deg=10,
+                spin_speed_deg=170,
+                fill_color="#1A2034",
+                stroke_color="#090D18",
+                opacity=0.95,
+            )
+        ],
     )
 
     output = tmp_path / "race.mp4"
