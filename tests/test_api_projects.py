@@ -70,6 +70,9 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         bootstrap = client.get("/builder/bootstrap")
         assert bootstrap.status_code == 200
         bootstrap_body = bootstrap.json()
+        bootstrap_second = client.get("/builder/bootstrap")
+        assert bootstrap_second.status_code == 200
+        assert bootstrap_second.json() == bootstrap_body
         assert "capabilities" in bootstrap_body
         assert "obstacle_types" in bootstrap_body
         assert "templates" in bootstrap_body
