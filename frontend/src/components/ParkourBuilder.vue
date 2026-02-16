@@ -909,6 +909,14 @@ function applyPreset(preset: 'starter' | 'rings' | 'gates') {
   selectedIds.value = first ? [first] : []
 }
 
+function clearObstacles() {
+  obstacles.value = []
+  selectedId.value = null
+  selectedIds.value = []
+  lockedIds.value = []
+  hiddenIds.value = []
+}
+
 function moveSelectedLayer(delta: -1 | 1) {
   if (!selectedId.value) return
   const idx = obstacles.value.findIndex((o) => o.id === selectedId.value)
@@ -1432,6 +1440,13 @@ onUnmounted(() => {
         @click="applyPreset('gates')"
       >
         Preset: Gates
+      </button>
+      <button
+        class="rounded border border-rose-600/50 bg-rose-900/30 px-2 py-1 text-[11px] text-rose-200 hover:bg-rose-800/40 disabled:opacity-40"
+        :disabled="obstacles.length === 0"
+        @click="clearObstacles"
+      >
+        Clear Obstacles
       </button>
       <button
         class="rounded border border-violet-600/50 bg-violet-900/30 px-2 py-1 text-[11px] text-violet-200 hover:bg-violet-800/40 disabled:opacity-40"

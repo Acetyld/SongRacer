@@ -362,6 +362,7 @@ The frontend app in `frontend/` already implements:
 - clipboard copy/paste for obstacle groups,
 - adjustable snap-size grid and align-X/align-Y helpers,
 - obstacle JSON import/export actions scoped to builder layout,
+- one-click clear/reset action for obstacle layout,
 - local browser persistence for builder tuning preferences (grid/snap/preview knobs),
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
