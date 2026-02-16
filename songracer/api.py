@@ -16,7 +16,17 @@ from pydantic import BaseModel, Field
 
 from .analyze import analyze_config_risk
 from .cli import _scaled_config
-from .config import ConfigError, load_config, load_config_obj, validate_config
+from .config import (
+    ConfigError,
+    ObstacleConfig,
+    PhysicsConfig,
+    RaceConfig,
+    RacerConfig,
+    RenderConfig,
+    load_config,
+    load_config_obj,
+    validate_config,
+)
 from .db import (
     create_project,
     delete_project,
@@ -28,6 +38,7 @@ from .db import (
 )
 from .jobs import JobManager
 from .pipeline import render_race
+from .simulation import simulate_race
 from .storage import resolve_writable_dir
 from .sync import (
     SyncError,
@@ -141,6 +152,126 @@ class AnalyzeConfigPayload(BaseModel):
     config: dict[str, Any]
 
 
+class PreviewRacerPayload(BaseModel):
+    name: str = Field("Racer")
+    x: float
+    y: float
+    radius: float = Field(80.0, gt=1.0)
+
+
+class PreviewRenderPayload(BaseModel):
+    width: int = Field(1080, ge=128, le=2160)
+    height: int = Field(1920, ge=128, le=3840)
+    world_height: int = Field(6200, ge=256, le=20000)
+    fps: int = Field(30, ge=10, le=120)
+    duration_seconds: float = Field(12.0, gt=0.2, le=60.0)
+    countdown_seconds: float = Field(0.0, ge=0.0, le=10.0)
+    goal_margin: float = Field(130.0, ge=0.0, le=4000.0)
+    camera_follow: bool = True
+    camera_lead_ratio: float = Field(0.35, ge=0.0, le=1.0)
+    auto_end_on_winner: bool = True
+    winner_hold_seconds: float = Field(2.0, ge=0.0, le=10.0)
+    obstacle_stream_spacing: float = Field(0.0, ge=0.0, le=10000.0)
+    obstacle_stream_jitter_x: float = Field(0.0, ge=0.0, le=2000.0)
+    obstacle_stream_repeats: int = Field(1, ge=0, le=20)
+
+
+class PreviewPhysicsPayload(BaseModel):
+    gravity: float = Field(1800.0, ge=0.0, le=8000.0)
+    damping: float = Field(0.997, gt=0.0, le=1.0)
+    restitution: float = Field(0.6, ge=0.0, le=1.0)
+    max_speed: float = Field(1800.0, gt=10.0, le=12000.0)
+    substeps: int = Field(2, ge=1, le=8)
+    leader_hysteresis_px: float = Field(3.0, ge=0.0, le=100.0)
+    stuck_window_frames: int = Field(45, ge=0, le=500)
+    stuck_speed_threshold: float = Field(46.0, ge=0.0, le=1200.0)
+    stuck_boost_y: float = Field(420.0, ge=0.0, le=6000.0)
+    stuck_nudge_x: float = Field(110.0, ge=0.0, le=2000.0)
+
+
+class PreviewSimRequest(BaseModel):
+    seed: int = 13
+    render: PreviewRenderPayload = Field(default_factory=PreviewRenderPayload)
+    physics: PreviewPhysicsPayload = Field(default_factory=PreviewPhysicsPayload)
+    racers: list[PreviewRacerPayload]
+    obstacles: list[dict[str, Any]] = Field(default_factory=list)
+    sample_fps: int = Field(15, ge=4, le=60)
+    max_frames: int = Field(300, ge=30, le=1500)
+
+
+def _build_preview_cfg(payload: PreviewSimRequest) -> RaceConfig:
+    render = RenderConfig(
+        width=payload.render.width,
+        height=payload.render.height,
+        world_height=max(payload.render.height, payload.render.world_height),
+        fps=payload.render.fps,
+        duration_seconds=payload.render.duration_seconds,
+        countdown_seconds=payload.render.countdown_seconds,
+        goal_margin=payload.render.goal_margin,
+        camera_follow=payload.render.camera_follow,
+        camera_lead_ratio=payload.render.camera_lead_ratio,
+        auto_end_on_winner=payload.render.auto_end_on_winner,
+        winner_hold_seconds=payload.render.winner_hold_seconds,
+        obstacle_stream_spacing=payload.render.obstacle_stream_spacing,
+        obstacle_stream_jitter_x=payload.render.obstacle_stream_jitter_x,
+        obstacle_stream_repeats=payload.render.obstacle_stream_repeats,
+    )
+    physics = PhysicsConfig(
+        gravity=payload.physics.gravity,
+        damping=payload.physics.damping,
+        restitution=payload.physics.restitution,
+        max_speed=payload.physics.max_speed,
+        substeps=payload.physics.substeps,
+        leader_hysteresis_px=payload.physics.leader_hysteresis_px,
+        stuck_window_frames=payload.physics.stuck_window_frames,
+        stuck_speed_threshold=payload.physics.stuck_speed_threshold,
+        stuck_boost_y=payload.physics.stuck_boost_y,
+        stuck_nudge_x=payload.physics.stuck_nudge_x,
+    )
+    racers = [
+        RacerConfig(
+            name=r.name,
+            video_path="__preview__.mp4",
+            x=r.x,
+            y=r.y,
+            radius=r.radius,
+        )
+        for r in payload.racers
+    ]
+    obstacles: list[ObstacleConfig] = []
+    allowed_types = {
+        "rect",
+        "circle",
+        "ring_gap",
+        "moving_rect",
+        "pendulum",
+        "one_way_gate",
+        "spinner",
+    }
+    for idx, obs in enumerate(payload.obstacles):
+        if not isinstance(obs, dict):
+            raise HTTPException(status_code=400, detail=f"Invalid obstacle at index {idx}")
+        obs_type = str(obs.get("type", ""))
+        if obs_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid obstacle type '{obs_type}' at index {idx}",
+            )
+        try:
+            obstacles.append(ObstacleConfig(**obs))
+        except TypeError as exc:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid obstacle at index {idx}: {exc}"
+            ) from exc
+    return RaceConfig(
+        seed=payload.seed,
+        render=render,
+        physics=physics,
+        racers=racers,
+        obstacles=obstacles,
+    )
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -244,6 +375,55 @@ def validate_config_inline(payload: ValidateConfigPayload) -> dict[str, Any]:
 @app.post("/analyze/config")
 def analyze_config(payload: AnalyzeConfigPayload) -> dict[str, Any]:
     return analyze_config_risk(payload.config)
+
+
+@app.post("/preview/simulate")
+def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
+    if not payload.racers:
+        raise HTTPException(status_code=400, detail="At least one racer is required")
+    cfg = _build_preview_cfg(payload)
+    sim = simulate_race(cfg)
+    step = max(1, int(round(cfg.render.fps / max(1, payload.sample_fps))))
+    frame_ids = list(range(0, sim.positions.shape[0], step))
+    if len(frame_ids) > payload.max_frames:
+        frame_ids = frame_ids[: payload.max_frames]
+
+    positions: list[list[list[float]]] = []
+    leaders: list[int] = []
+    camera_y: list[float] = []
+    states: list[int] = []
+    obstacle_visuals: list[list[dict[str, Any]]] = []
+    for frame in frame_ids:
+        positions.append(sim.positions[frame].tolist())
+        leaders.append(int(sim.leaders[frame]))
+        camera_y.append(float(sim.camera_y[frame]))
+        states.append(int(sim.states[frame]))
+        if frame < cfg.countdown_frames:
+            sim_time = 0.0
+        else:
+            sim_time = float((frame - cfg.countdown_frames) / cfg.render.fps)
+        obstacle_visuals.append([obs.visual(sim_time) for obs in sim.obstacles])
+
+    effective_sample_fps = cfg.render.fps / step
+    return {
+        "world": {
+            "width": cfg.render.width,
+            "height": cfg.render.height,
+            "world_height": cfg.render.world_height,
+        },
+        "fps": cfg.render.fps,
+        "sample_fps": effective_sample_fps,
+        "frame_indices": frame_ids,
+        "countdown_frames": cfg.countdown_frames,
+        "winner_index": int(sim.winner_index),
+        "winner_frame": int(sim.winner_frame),
+        "goal_y": float(sim.goal_y),
+        "positions": positions,
+        "leaders": leaders,
+        "camera_y": camera_y,
+        "states": states,
+        "obstacle_visuals": obstacle_visuals,
+    }
 
 
 @app.post("/render")
