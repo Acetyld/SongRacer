@@ -139,6 +139,45 @@ def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
         assert body["total_sample_frames"] == len(body["frame_indices"])
 
 
+def test_preview_simulate_defaulted_request_cache_hit_consistency() -> None:
+    payload = {
+        "render": {
+            "width": 320,
+            "height": 560,
+            "world_height": 1600,
+            "fps": 30,
+            "duration_seconds": 2.0,
+            "countdown_seconds": 0.0,
+        },
+        "racers": [{"name": "A", "x": 140, "y": 90, "radius": 24}],
+        "obstacles": [{"type": "rect", "x": 160, "y": 300, "width": 180, "height": 24}],
+    }
+    with TestClient(app) as client:
+        capabilities = client.get("/builder/capabilities")
+        assert capabilities.status_code == 200
+        caps = capabilities.json()
+        default_sample_fps = int(caps["preview"]["sample_fps"]["default"])
+        default_max_frames = int(caps["preview"]["max_frames"]["default"])
+
+        cleared = client.post("/preview/cache/clear")
+        assert cleared.status_code == 200
+        first = client.post("/preview/simulate", json=payload)
+        second = client.post("/preview/simulate", json=payload)
+        assert first.status_code == 200
+        assert second.status_code == 200
+        first_body = first.json()
+        second_body = second.json()
+        assert first_body["cache_hit"] is False
+        assert second_body["cache_hit"] is True
+        assert first_body["requested_sample_fps"] == default_sample_fps
+        assert second_body["requested_sample_fps"] == default_sample_fps
+        assert first_body["requested_max_frames"] == default_max_frames
+        assert second_body["requested_max_frames"] == default_max_frames
+        normalized_first = {k: v for k, v in first_body.items() if k != "cache_hit"}
+        normalized_second = {k: v for k, v in second_body.items() if k != "cache_hit"}
+        assert normalized_first == normalized_second
+
+
 def test_preview_simulate_respects_max_frames_cap() -> None:
     payload = {
         "render": {
