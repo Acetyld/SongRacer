@@ -68,6 +68,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert cap_body["generator"]["count"]["max"] >= 100
         assert cap_body["generator"]["safe_target_max_risk"]["max"] == 100
         assert cap_body["generator"]["safe_max_attempts"]["max"] >= 16
+        gen_caps = cap_body["generator"]
         for section in ("preview", "generator"):
             for bounds in cap_body[section].values():
                 assert bounds["min"] <= bounds["default"] <= bounds["max"]
@@ -128,6 +129,52 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         )
         assert generated2.status_code == 200
         assert generated2.json()["obstacles"] == generated_body["obstacles"]
+        generated_edge_min = client.post(
+            "/templates/obstacles/generate",
+            json={
+                "count": int(gen_caps["count"]["min"]),
+                "start_y": float(gen_caps["start_y"]["min"]),
+                "spacing": float(gen_caps["spacing"]["min"]),
+                "width": float(gen_caps["width"]["min"]),
+                "seed": int(gen_caps["seed"]["min"]),
+            },
+        )
+        assert generated_edge_min.status_code == 200
+        assert generated_edge_min.json()["count"] == int(gen_caps["count"]["min"])
+        generated_edge_max = client.post(
+            "/templates/obstacles/generate",
+            json={
+                "count": int(gen_caps["count"]["min"]),
+                "start_y": float(gen_caps["start_y"]["max"]),
+                "spacing": float(gen_caps["spacing"]["max"]),
+                "width": float(gen_caps["width"]["max"]),
+                "seed": int(gen_caps["seed"]["max"]),
+            },
+        )
+        assert generated_edge_max.status_code == 200
+        assert generated_edge_max.json()["count"] == int(gen_caps["count"]["min"])
+        generated_invalid = client.post(
+            "/templates/obstacles/generate",
+            json={
+                "count": int(gen_caps["count"]["min"]) - 1,
+                "start_y": 950,
+                "spacing": 240,
+                "width": 1080,
+                "seed": 99,
+            },
+        )
+        assert generated_invalid.status_code == 422
+        generated_invalid_spacing = client.post(
+            "/templates/obstacles/generate",
+            json={
+                "count": int(gen_caps["count"]["min"]),
+                "start_y": 950,
+                "spacing": float(gen_caps["spacing"]["max"]) + 1.0,
+                "width": 1080,
+                "seed": 99,
+            },
+        )
+        assert generated_invalid_spacing.status_code == 422
         generated_safe = client.post(
             "/templates/obstacles/generate-safe",
             json={
@@ -153,6 +200,58 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert generated_safe_body["accepted"] == (
             generated_safe_body["risk_score"] <= generated_safe_body["target_max_risk"]
         )
+        generated_safe_edge_min = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": int(gen_caps["count"]["min"]),
+                "start_y": float(gen_caps["start_y"]["min"]),
+                "spacing": float(gen_caps["spacing"]["min"]),
+                "width": float(gen_caps["width"]["min"]),
+                "seed": int(gen_caps["seed"]["min"]),
+                "target_max_risk": int(gen_caps["safe_target_max_risk"]["min"]),
+                "max_attempts": int(gen_caps["safe_max_attempts"]["min"]),
+            },
+        )
+        assert generated_safe_edge_min.status_code == 200
+        generated_safe_edge_max = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": int(gen_caps["count"]["min"]),
+                "start_y": float(gen_caps["start_y"]["max"]),
+                "spacing": float(gen_caps["spacing"]["max"]),
+                "width": float(gen_caps["width"]["max"]),
+                "seed": int(gen_caps["seed"]["max"]),
+                "target_max_risk": int(gen_caps["safe_target_max_risk"]["max"]),
+                "max_attempts": int(gen_caps["safe_max_attempts"]["max"]),
+            },
+        )
+        assert generated_safe_edge_max.status_code == 200
+        generated_safe_invalid_risk = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": int(gen_caps["count"]["min"]),
+                "start_y": 950,
+                "spacing": 240,
+                "width": 1080,
+                "seed": 99,
+                "target_max_risk": int(gen_caps["safe_target_max_risk"]["max"]) + 1,
+                "max_attempts": int(gen_caps["safe_max_attempts"]["min"]),
+            },
+        )
+        assert generated_safe_invalid_risk.status_code == 422
+        generated_safe_invalid_attempts = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": int(gen_caps["count"]["min"]),
+                "start_y": 950,
+                "spacing": 240,
+                "width": 1080,
+                "seed": 99,
+                "target_max_risk": int(gen_caps["safe_target_max_risk"]["min"]),
+                "max_attempts": int(gen_caps["safe_max_attempts"]["min"]) - 1,
+            },
+        )
+        assert generated_safe_invalid_attempts.status_code == 422
 
         generated_safe_strict = client.post(
             "/templates/obstacles/generate-safe",
