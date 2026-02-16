@@ -34,7 +34,8 @@ Response:
 {
   "preview": {
     "sample_fps": { "min": 4, "max": 60, "default": 15 },
-    "max_frames": { "min": 30, "max": 1500, "default": 300 }
+    "max_frames": { "min": 30, "max": 1500, "default": 300 },
+    "world_height": { "min": 256, "max": 20000, "default": 6200 }
   },
   "generator": {
     "count": { "min": 1, "max": 200, "default": 8 },
@@ -573,13 +574,13 @@ The frontend app in `frontend/` already implements:
 - safe generation status badge summarizes returned risk/attempts/acceptance and is invalidated after subsequent layout/visibility edits,
 - safe generation status badge also surfaces the resolved analysis height used by backend scoring,
 - safe generation status is invalidated when obstacle visibility/layout or safe risk/attempt/analysis-height context changes,
-- UI displays live min/max limits from `/builder/capabilities` for preview and safe-generation controls (sample fps, frame cap, generator count, safe risk/attempts/analysis-height),
+- UI displays live min/max limits from `/builder/capabilities` for preview and safe-generation controls (sample fps, frame cap, world-height, generator count, safe risk/attempts/analysis-height),
 - capability summary also shows effective clamped safe analysis height and effective clamped preview world height currently used for requests,
 - builder has a one-click reset action to restore preview/generation knobs to capability defaults,
 - restored persisted numeric knobs (sample fps/frame cap/generator controls) are clamped to capability ranges before being applied,
 - safe-generation requests derive `analysis_height` from the active builder world height and clamp it to `/builder/capabilities.generator.safe_analysis_height`,
 - live preview auto-refreshes when race timing controls (`duration/countdown/winner_hold`), racer lineup, or world-height inputs change,
-- preview simulation requests clamp world-height to backend-supported bounds before calling `/preview/simulate`,
+- preview simulation requests clamp world-height to `/builder/capabilities.preview.world_height` bounds before calling `/preview/simulate`,
 - risk analysis requests use the same effective clamped analysis height as safe-generation scoring,
 - changing the configured API base triggers bootstrap reload plus preview/risk refresh against the new backend,
 - changing API base also clears the previously shown safe-generation result badge to avoid stale cross-backend status,

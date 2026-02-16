@@ -96,8 +96,6 @@ const emit = defineEmits<{
 
 const courseWidth = 1080
 const courseViewportHeight = 1920
-const previewWorldHeightMin = 256
-const previewWorldHeightMax = 20000
 const viewportHeight = 980
 const FALLBACK_PALETTE_TYPES: ObstacleType[] = [
   'rect',
@@ -153,6 +151,7 @@ function defaultBuilderCaps() {
     preview: {
       sample_fps: { min: 4, max: 60, default: 15 },
       max_frames: { min: 30, max: 1500, default: 300 },
+      world_height: { min: 256, max: 20000, default: 6200 },
     },
     generator: {
       count: { min: 1, max: 200, default: 8 },
@@ -1463,6 +1462,7 @@ function applyBuilderCapabilities(body: unknown) {
     preview: {
       sample_fps: normalizeCapRange(p.sample_fps, fallback.preview.sample_fps),
       max_frames: normalizeCapRange(p.max_frames, fallback.preview.max_frames),
+      world_height: normalizeCapRange(p.world_height, fallback.preview.world_height),
     },
     generator: {
       count: normalizeCapRange(g.count, fallback.generator.count),
@@ -2053,6 +2053,7 @@ function builderLimitsText(): string {
   return [
     `limits: preview fps ${formatCapNumber(caps.preview.sample_fps.min)}-${formatCapNumber(caps.preview.sample_fps.max)}`,
     `frames ${formatCapNumber(caps.preview.max_frames.min)}-${formatCapNumber(caps.preview.max_frames.max)}`,
+    `world h ${formatCapNumber(caps.preview.world_height.min)}-${formatCapNumber(caps.preview.world_height.max)}`,
     `gen count ${formatCapNumber(caps.generator.count.min)}-${formatCapNumber(caps.generator.count.max)}`,
     `safe risk ${formatCapNumber(caps.generator.safe_target_max_risk.min)}-${formatCapNumber(caps.generator.safe_target_max_risk.max)}`,
     `safe tries ${formatCapNumber(caps.generator.safe_max_attempts.min)}-${formatCapNumber(caps.generator.safe_max_attempts.max)}`,
@@ -2074,9 +2075,9 @@ function safeAnalysisHeightForRequest(): number {
 function previewWorldHeightForRequest(): number {
   return clampRounded(
     Number(props.worldHeight),
-    previewWorldHeightMin,
-    previewWorldHeightMax,
-    courseViewportHeight,
+    builderCaps.value.preview.world_height.min,
+    builderCaps.value.preview.world_height.max,
+    builderCaps.value.preview.world_height.default,
   )
 }
 

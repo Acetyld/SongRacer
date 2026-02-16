@@ -139,28 +139,58 @@ def test_preview_simulate_sampling_bounds_follow_capabilities_contract() -> None
         max_fps = int(caps["sample_fps"]["max"])
         min_frames = int(caps["max_frames"]["min"])
         max_frames = int(caps["max_frames"]["max"])
+        min_world_height = int(caps["world_height"]["min"])
+        max_world_height = int(caps["world_height"]["max"])
 
         valid_low = {
-            **base,
+            **{
+                **base,
+                "render": {
+                    **base["render"],
+                    "world_height": min_world_height,
+                },
+            },
             "sample_fps": min_fps,
             "max_frames": max_frames,
         }
         valid_high = {
-            **base,
+            **{
+                **base,
+                "render": {
+                    **base["render"],
+                    "world_height": max_world_height,
+                },
+            },
             "sample_fps": max_fps,
             "max_frames": min_frames,
         }
         assert client.post("/preview/simulate", json=valid_low).status_code == 200
         assert client.post("/preview/simulate", json=valid_high).status_code == 200
 
-        invalid_low_fps = {**base, "sample_fps": min_fps - 1, "max_frames": min_frames}
-        invalid_high_fps = {**base, "sample_fps": max_fps + 1, "max_frames": min_frames}
-        invalid_low_frames = {**base, "sample_fps": min_fps, "max_frames": min_frames - 1}
-        invalid_high_frames = {**base, "sample_fps": min_fps, "max_frames": max_frames + 1}
+        invalid_low_fps = {**valid_low, "sample_fps": min_fps - 1}
+        invalid_high_fps = {**valid_low, "sample_fps": max_fps + 1}
+        invalid_low_frames = {**valid_low, "max_frames": min_frames - 1}
+        invalid_high_frames = {**valid_low, "max_frames": max_frames + 1}
+        invalid_low_world_height = {
+            **valid_low,
+            "render": {
+                **valid_low["render"],
+                "world_height": min_world_height - 1,
+            },
+        }
+        invalid_high_world_height = {
+            **valid_low,
+            "render": {
+                **valid_low["render"],
+                "world_height": max_world_height + 1,
+            },
+        }
         assert client.post("/preview/simulate", json=invalid_low_fps).status_code == 422
         assert client.post("/preview/simulate", json=invalid_high_fps).status_code == 422
         assert client.post("/preview/simulate", json=invalid_low_frames).status_code == 422
         assert client.post("/preview/simulate", json=invalid_high_frames).status_code == 422
+        assert client.post("/preview/simulate", json=invalid_low_world_height).status_code == 422
+        assert client.post("/preview/simulate", json=invalid_high_world_height).status_code == 422
 
 
 def test_preview_simulate_reports_no_winner_with_negative_fields() -> None:

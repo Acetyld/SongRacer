@@ -238,7 +238,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - preview winner metadata uses `winner_index=-1` and `winner_frame=-1` when no finisher is reached,
 - builder UI preferences (grid/snap/preview tuning) persist locally in browser storage,
 - persisted builder numeric knobs are clamped to capability ranges when restored from local storage,
-- builder UI surfaces capability limits fetched from backend contract (preview fps/frames, generator count, safe risk/attempts, safe analysis height).
+- builder UI surfaces capability limits fetched from backend contract (preview fps/frames/world-height, generator count, safe risk/attempts, safe analysis height).
 - capability summary also shows effective safe analysis height and effective clamped preview world height used for backend requests.
 - builder includes a one-click action to reset preview/generator knobs to capability defaults.
 - safe procedural generation in builder derives `analysis_height` from current world-height and clamps it to capability bounds before request submission.
@@ -249,7 +249,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - builder risk analysis uses the same effective clamped analysis-height context as safe-generation scoring.
 - switching builder API base now refreshes bootstrap metadata and re-runs preview/risk requests against the new backend.
 - switching builder API base also clears prior safe-generation result badge to avoid cross-backend stale status.
-- builder preview requests clamp world-height to backend-supported bounds before simulation calls.
+- builder preview requests clamp world-height to capability-advertised bounds before simulation calls.
 - keep raw obstacle JSON synchronized for full-control edits.
 
 Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.

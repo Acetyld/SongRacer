@@ -65,6 +65,7 @@ _BUILDER_CAPABILITIES = {
     "preview": {
         "sample_fps": {"min": 4, "max": 60, "default": 15},
         "max_frames": {"min": 30, "max": 1500, "default": 300},
+        "world_height": {"min": 256, "max": 20000, "default": 6200},
     },
     "generator": {
         "count": {"min": 1, "max": 200, "default": 8},
@@ -79,6 +80,7 @@ _BUILDER_CAPABILITIES = {
 }
 _PREVIEW_SAMPLE_FPS_CAPS = _BUILDER_CAPABILITIES["preview"]["sample_fps"]
 _PREVIEW_MAX_FRAMES_CAPS = _BUILDER_CAPABILITIES["preview"]["max_frames"]
+_PREVIEW_WORLD_HEIGHT_CAPS = _BUILDER_CAPABILITIES["preview"]["world_height"]
 _GENERATOR_COUNT_CAPS = _BUILDER_CAPABILITIES["generator"]["count"]
 _GENERATOR_START_Y_CAPS = _BUILDER_CAPABILITIES["generator"]["start_y"]
 _GENERATOR_SPACING_CAPS = _BUILDER_CAPABILITIES["generator"]["spacing"]
@@ -202,7 +204,11 @@ class PreviewRacerPayload(BaseModel):
 class PreviewRenderPayload(BaseModel):
     width: int = Field(1080, ge=128, le=2160)
     height: int = Field(1920, ge=128, le=3840)
-    world_height: int = Field(6200, ge=256, le=20000)
+    world_height: int = Field(
+        _PREVIEW_WORLD_HEIGHT_CAPS["default"],
+        ge=_PREVIEW_WORLD_HEIGHT_CAPS["min"],
+        le=_PREVIEW_WORLD_HEIGHT_CAPS["max"],
+    )
     fps: int = Field(30, ge=10, le=120)
     duration_seconds: float = Field(12.0, gt=0.2, le=60.0)
     countdown_seconds: float = Field(0.0, ge=0.0, le=10.0)
