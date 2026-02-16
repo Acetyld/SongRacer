@@ -52,6 +52,10 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
     }
 
     with TestClient(app) as client:
+        info = client.get("/system/info")
+        assert info.status_code == 200
+        assert "db_path" in info.json()
+
         created = client.post(
             "/projects",
             json={"name": "My Project", "config": payload_config},
@@ -66,6 +70,19 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         fetched = client.get(f"/projects/{project_id}")
         assert fetched.status_code == 200
         assert fetched.json()["name"] == "My Project"
+
+        exported = client.get(f"/projects/{project_id}/export")
+        assert exported.status_code == 200
+        assert exported.json()["name"] == "My Project"
+        assert exported.json()["config"]["render"]["fps"] == 20
+
+        imported = client.post(
+            "/projects/import",
+            json={"name": "Imported Copy", "config": exported.json()["config"]},
+        )
+        assert imported.status_code == 200
+        imported_id = imported.json()["id"]
+        assert imported_id != project_id
 
         updated_config = json.loads(json.dumps(payload_config))
         updated_config["render"]["duration_seconds"] = 2.2
@@ -114,6 +131,8 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         deleted = client.delete(f"/projects/{project_id}")
         assert deleted.status_code == 200
         assert deleted.json()["deleted"] is True
+        deleted_imported = client.delete(f"/projects/{imported_id}")
+        assert deleted_imported.status_code == 200
 
         missing = client.get(f"/projects/{project_id}")
         assert missing.status_code == 404

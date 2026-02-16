@@ -12,7 +12,7 @@ from .storage import resolve_writable_file
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
-def _db_path() -> Path:
+def get_db_path() -> Path:
     return resolve_writable_file(
         env_var="SONGRACER_DB_PATH",
         preferred_file=PROJECT_ROOT / "songracer.db",
@@ -30,7 +30,7 @@ class ProjectRecord:
 
 
 def _conn() -> sqlite3.Connection:
-    db_path = _db_path()
+    db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn

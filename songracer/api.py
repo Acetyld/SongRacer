@@ -16,7 +16,15 @@ from pydantic import BaseModel, Field
 
 from .cli import _scaled_config
 from .config import ConfigError, load_config, validate_config
-from .db import create_project, delete_project, get_project, init_db, list_projects, update_project
+from .db import (
+    create_project,
+    delete_project,
+    get_db_path,
+    get_project,
+    init_db,
+    list_projects,
+    update_project,
+)
 from .jobs import JobManager
 from .pipeline import render_race
 from .storage import resolve_writable_dir
@@ -100,6 +108,11 @@ class ProjectPayload(BaseModel):
     config: dict[str, Any]
 
 
+class ProjectImportPayload(BaseModel):
+    name: str | None = Field(default=None, max_length=200)
+    config: dict[str, Any]
+
+
 class ProjectRenderPayload(BaseModel):
     preview_scale: float = Field(1.0, ge=0.01, le=1.0)
     output_path: str | None = None
@@ -114,6 +127,18 @@ class ProjectSyncPayload(BaseModel):
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/system/info")
+def system_info() -> dict[str, Any]:
+    db_path = get_db_path()
+    return {
+        "storage_root": str(STORAGE_ROOT),
+        "upload_dir": str(UPLOAD_DIR),
+        "job_config_dir": str(JOB_CONFIG_DIR),
+        "output_dir": str(OUTPUT_DIR),
+        "db_path": str(db_path),
+    }
 
 
 @app.post("/uploads")
@@ -259,6 +284,19 @@ def projects_create(payload: ProjectPayload) -> dict[str, Any]:
     }
 
 
+@app.post("/projects/import")
+def projects_import(payload: ProjectImportPayload) -> dict[str, Any]:
+    name = payload.name or "Imported Project"
+    record = create_project(name, payload.config)
+    return {
+        "id": record.id,
+        "name": record.name,
+        "config": record.config,
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+    }
+
+
 @app.get("/projects/{project_id}")
 def projects_get(project_id: int) -> dict[str, Any]:
     try:
@@ -271,6 +309,19 @@ def projects_get(project_id: int) -> dict[str, Any]:
         "config": record.config,
         "created_at": record.created_at,
         "updated_at": record.updated_at,
+    }
+
+
+@app.get("/projects/{project_id}/export")
+def projects_export(project_id: int) -> dict[str, Any]:
+    try:
+        record = get_project(project_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Project not found") from exc
+    return {
+        "name": record.name,
+        "config": record.config,
+        "exported_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
