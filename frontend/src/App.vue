@@ -48,6 +48,12 @@ type RangeCaps = {
   default: number
 }
 
+const FALLBACK_WORLD_HEIGHT_CAPS: RangeCaps = {
+  min: 256,
+  max: 20000,
+  default: 6200,
+}
+
 const apiBase = ref('http://localhost:8080')
 const title = ref('SongRacer Job')
 const duration = ref(24)
@@ -57,8 +63,8 @@ const backgroundColor = ref('#6EC6FF')
 const previewScale = ref(0.32)
 const finalScale = ref(1.0)
 const outputPathInput = ref('')
-const worldHeight = ref(7600)
-const worldHeightCaps = ref<RangeCaps>({ min: 256, max: 20000, default: 6200 })
+const worldHeight = ref(FALLBACK_WORLD_HEIGHT_CAPS.default)
+const worldHeightCaps = ref<RangeCaps>({ ...FALLBACK_WORLD_HEIGHT_CAPS })
 const syncCommonWindowSeconds = ref(0)
 const isBusy = ref(false)
 const racers = ref<RacerForm[]>([])
