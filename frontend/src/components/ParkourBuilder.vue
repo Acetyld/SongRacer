@@ -60,6 +60,7 @@ type PreviewData = {
   sample_interval_seconds: number
   returned_sample_frames: number
   returned_sample_duration_seconds: number
+  total_sample_duration_seconds: number
   positions: number[][][]
   leaders: number[]
   camera_y: number[]
@@ -1617,6 +1618,7 @@ async function requestPreview() {
           (Array.isArray(body.frame_indices) ? body.frame_indices.length : 0),
       ),
       returned_sample_duration_seconds: Number(body.returned_sample_duration_seconds ?? 0),
+      total_sample_duration_seconds: Number(body.total_sample_duration_seconds ?? 0),
       positions: Array.isArray(body.positions) ? body.positions : [],
       leaders: Array.isArray(body.leaders) ? body.leaders : [],
       camera_y: Array.isArray(body.camera_y) ? body.camera_y : [],
@@ -1872,10 +1874,19 @@ function previewSampleCountText(): string {
 function previewSampleWindowText(): string {
   if (!previewData.value) return ''
   const shown = Number(previewData.value.returned_sample_duration_seconds || 0)
+  const totalFromApi = Number(previewData.value.total_sample_duration_seconds || 0)
   const totalFrames = Number(previewData.value.total_sample_frames || 0)
   const interval = Number(previewData.value.sample_interval_seconds || 0)
   if (!Number.isFinite(shown) || shown < 0) return ''
-  if (!Number.isFinite(totalFrames) || totalFrames <= 0 || !Number.isFinite(interval) || interval <= 0) {
+  if (Number.isFinite(totalFromApi) && totalFromApi >= 0) {
+    return `window ${shown.toFixed(2)}s / ${totalFromApi.toFixed(2)}s`
+  }
+  if (
+    !Number.isFinite(totalFrames) ||
+    totalFrames <= 0 ||
+    !Number.isFinite(interval) ||
+    interval <= 0
+  ) {
     return `window ${shown.toFixed(2)}s`
   }
   const total = Math.max(0, (totalFrames - 1) * interval)

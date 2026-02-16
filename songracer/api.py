@@ -630,6 +630,9 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
             0.0, (len(frame_ids) - 1) * (step / cfg.render.fps)
         ),
         "total_sample_frames": len(full_frame_ids),
+        "total_sample_duration_seconds": max(
+            0.0, (len(full_frame_ids) - 1) * (step / cfg.render.fps)
+        ),
         "truncated": truncated,
         "countdown_frames": cfg.countdown_frames,
         "winner_index": int(sim.winner_index),
