@@ -205,6 +205,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - live preview scrub row shows requested→effective sampled fps, frame-step, and requested frame-cap metadata from backend,
 - live preview scrub row also shows sampled frame count (`returned_sample_frames/total_sample_frames`),
 - live preview scrub row shows sampled coverage percentage (`returned_sample_frames / total_sample_frames`),
+- live preview scrub row shows source coverage percentage (`returned_sample_frames / total_source_frames`),
 - live preview scrub row also shows full source-frame count (`total_source_frames`),
 - live preview scrub row also shows full source duration (`source_duration_seconds`),
 - live preview scrub row shows sampled-window span (`returned_sample_duration_seconds/total_sample_duration_seconds`),

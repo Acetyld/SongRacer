@@ -1887,6 +1887,14 @@ function previewSampleCoverageText(): string {
   return `coverage ${pct.toFixed(1)}%`
 }
 
+function previewSourceCoverageText(): string {
+  if (!previewData.value) return ''
+  const ratio = Number(previewData.value.sampling_coverage_ratio ?? 0)
+  if (!Number.isFinite(ratio) || ratio < 0) return ''
+  const pct = Math.max(0, Math.min(100, ratio * 100))
+  return `source cov ${pct.toFixed(1)}%`
+}
+
 function previewSourceFramesText(): string {
   if (!previewData.value) return ''
   const sourceFrames = Number(previewData.value.total_source_frames || 0)
@@ -2402,6 +2410,7 @@ onUnmounted(() => {
           <span class="text-slate-400">{{ previewTimeText() }}</span>
           <span class="text-slate-500">{{ previewSampleCountText() }}</span>
           <span class="text-slate-500">{{ previewSampleCoverageText() }}</span>
+          <span class="text-slate-500">{{ previewSourceCoverageText() }}</span>
           <span class="text-slate-500">{{ previewSourceFramesText() }}</span>
           <span class="text-slate-500">{{ previewSampleWindowText() }}</span>
           <span class="text-slate-500">{{ previewSamplingText() }}</span>

@@ -412,6 +412,7 @@ Live preview notes:
 - builder scrub row surfaces requested→effective sampled fps plus frame-step/requested-cap metadata (`sample_fps`, `sample_step_frames`, `requested_max_frames`),
 - builder scrub row also shows sampled frame count (`returned_sample_frames/total_sample_frames`),
 - builder scrub row also shows sampled coverage percentage (`returned_sample_frames / total_sample_frames`),
+- builder scrub row also shows source coverage percentage (`returned_sample_frames / total_source_frames`),
 - builder scrub row also shows full source timeline (`total_source_frames` / `source_duration_seconds`),
 - builder scrub row also shows sampled time-window span (`returned_sample_duration_seconds/total_sample_duration_seconds`),
 - truncation warning includes shown/total sampled frames plus requested frame cap (`requested_max_frames`),
