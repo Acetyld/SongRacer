@@ -514,7 +514,7 @@ The frontend app in `frontend/` already implements:
 - risk-targeted procedural generation is available via `/templates/obstacles/generate-safe`,
 - generated stream mixes multiple obstacle families (rect/moving/rings/spinners/circles/pendulums/gates),
 - UI includes one-click random seed for quick stream iteration,
-- risk warning rows are clickable and focus linked obstacle(s) in the builder,
+- risk warning rows are clickable and focus linked obstacle(s) in the builder (with linked obstacle index hints),
 - safe generation status badge summarizes returned risk/attempts/acceptance and is invalidated after subsequent layout/visibility edits,
 - UI can display live min/max limits from `/builder/capabilities` for user guidance,
 - project save/load/update/delete against backend DB CRUD,

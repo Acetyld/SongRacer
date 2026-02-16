@@ -582,6 +582,21 @@ const selectedObstacle = computed(() =>
 const visibleObstacles = computed(() =>
   obstacles.value.filter((o) => !hiddenIds.value.includes(o.id)),
 )
+const visibleObstacleIndexById = computed(() => {
+  const out: Record<string, number> = {}
+  visibleObstacles.value.forEach((o, idx) => {
+    out[o.id] = idx + 1
+  })
+  return out
+})
+const riskWarningTargetLabels = computed(() =>
+  riskWarningTargetIds.value.map((ids) =>
+    ids
+      .map((id) => visibleObstacleIndexById.value[id])
+      .filter((n): n is number => Number.isFinite(n))
+      .sort((a, b) => a - b),
+  ),
+)
 
 function isSelected(id: string): boolean {
   return selectedIds.value.includes(id)
@@ -2597,7 +2612,10 @@ onUnmounted(() => {
             </span>
             · {{ w.message }}
             <span v-if="(riskWarningTargetIds[idx]?.length ?? 0) > 0" class="text-cyan-300">
-              (focus {{ riskWarningTargetIds[idx]?.length ?? 0 }})
+              (focus {{ riskWarningTargetIds[idx]?.length ?? 0 }}
+              <template v-if="(riskWarningTargetLabels[idx]?.length ?? 0) > 0">
+                · #{{ (riskWarningTargetLabels[idx] || []).join(', #') }}
+              </template>)
             </span>
           </button>
         </li>
