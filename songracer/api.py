@@ -624,6 +624,7 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
         "sample_fps": effective_sample_fps,
         "sample_step_frames": step,
         "sample_interval_seconds": step / cfg.render.fps,
+        "total_source_frames": int(sim.positions.shape[0]),
         "frame_indices": frame_ids,
         "returned_sample_frames": len(frame_ids),
         "returned_sample_duration_seconds": max(
