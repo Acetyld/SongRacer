@@ -573,6 +573,7 @@ The frontend app in `frontend/` already implements:
 - safe generation status badge summarizes returned risk/attempts/acceptance and is invalidated after subsequent layout/visibility edits,
 - UI displays live min/max limits from `/builder/capabilities` for preview and safe-generation controls (sample fps, frame cap, generator count, safe risk/attempts/analysis-height),
 - builder has a one-click reset action to restore preview/generation knobs to capability defaults,
+- restored persisted numeric knobs (sample fps/frame cap/generator controls) are clamped to capability ranges before being applied,
 - safe-generation requests derive `analysis_height` from the active builder world height and clamp it to `/builder/capabilities.generator.safe_analysis_height`,
 - capability ranges from backend are normalized client-side (finite values, `min <= max`, default clamped into range) before being applied to controls,
 - project save/load/update/delete against backend DB CRUD,

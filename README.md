@@ -237,6 +237,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - preview endpoint includes lightweight cache-hit metadata for rapid repeated edits,
 - preview winner metadata uses `winner_index=-1` and `winner_frame=-1` when no finisher is reached,
 - builder UI preferences (grid/snap/preview tuning) persist locally in browser storage,
+- persisted builder numeric knobs are clamped to capability ranges when restored from local storage,
 - builder UI surfaces capability limits fetched from backend contract (preview fps/frames, generator count, safe risk/attempts, safe analysis height).
 - builder includes a one-click action to reset preview/generator knobs to capability defaults.
 - safe procedural generation in builder derives `analysis_height` from current world-height and clamps it to capability bounds before request submission.

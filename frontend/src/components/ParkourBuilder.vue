@@ -269,6 +269,13 @@ function snap(v: number): number {
   return Math.round(v / grid) * grid
 }
 
+function clampRounded(value: number, min: number, max: number): number {
+  const rounded = Math.round(value)
+  const lo = Math.min(min, max)
+  const hi = Math.max(min, max)
+  return Math.max(lo, Math.min(hi, rounded))
+}
+
 function defaultObstacle(type: ObstacleType, x: number, y: number): BuilderObstacle {
   const base: BuilderObstacle = {
     id: uid(),
@@ -776,12 +783,21 @@ function loadPrefs() {
     const raw = window.localStorage.getItem(PREF_KEY)
     if (!raw) return
     const obj = JSON.parse(raw) as Record<string, unknown>
+    const caps = builderCaps.value
     if (typeof obj.autoPreview === 'boolean') autoPreview.value = obj.autoPreview
     if (typeof obj.previewSampleFps === 'number') {
-      previewSampleFps.value = Math.max(4, Math.min(60, Math.round(obj.previewSampleFps)))
+      previewSampleFps.value = clampRounded(
+        obj.previewSampleFps,
+        caps.preview.sample_fps.min,
+        caps.preview.sample_fps.max,
+      )
     }
     if (typeof obj.previewMaxFrames === 'number') {
-      previewMaxFrames.value = Math.max(40, Math.min(1200, Math.round(obj.previewMaxFrames)))
+      previewMaxFrames.value = clampRounded(
+        obj.previewMaxFrames,
+        caps.preview.max_frames.min,
+        caps.preview.max_frames.max,
+      )
     }
     if (typeof obj.snapEnabled === 'boolean') snapEnabled.value = obj.snapEnabled
     if (typeof obj.snapSize === 'number') {
@@ -792,19 +808,39 @@ function loadPrefs() {
       followPreviewCamera.value = obj.followPreviewCamera
     }
     if (typeof obj.generateCount === 'number') {
-      generateCount.value = Math.max(1, Math.min(200, Math.round(obj.generateCount)))
+      generateCount.value = clampRounded(
+        obj.generateCount,
+        caps.generator.count.min,
+        caps.generator.count.max,
+      )
     }
     if (typeof obj.generateSpacing === 'number') {
-      generateSpacing.value = Math.max(40, Math.min(4000, Math.round(obj.generateSpacing)))
+      generateSpacing.value = clampRounded(
+        obj.generateSpacing,
+        caps.generator.spacing.min,
+        caps.generator.spacing.max,
+      )
     }
     if (typeof obj.generateSeed === 'number') {
-      generateSeed.value = Math.max(0, Math.min(2_000_000_000, Math.round(obj.generateSeed)))
+      generateSeed.value = clampRounded(
+        obj.generateSeed,
+        caps.generator.seed.min,
+        caps.generator.seed.max,
+      )
     }
     if (typeof obj.generateSafeTarget === 'number') {
-      generateSafeTarget.value = Math.max(0, Math.min(100, Math.round(obj.generateSafeTarget)))
+      generateSafeTarget.value = clampRounded(
+        obj.generateSafeTarget,
+        caps.generator.safe_target_max_risk.min,
+        caps.generator.safe_target_max_risk.max,
+      )
     }
     if (typeof obj.generateSafeAttempts === 'number') {
-      generateSafeAttempts.value = Math.max(1, Math.min(64, Math.round(obj.generateSafeAttempts)))
+      generateSafeAttempts.value = clampRounded(
+        obj.generateSafeAttempts,
+        caps.generator.safe_max_attempts.min,
+        caps.generator.safe_max_attempts.max,
+      )
     }
   } catch (_err) {
     // ignore corrupt local prefs
