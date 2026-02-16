@@ -228,7 +228,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - truncation warning includes shown/total sampled frames plus requested frame-cap value,
 - truncation warning also includes shown/total sampled last-frame indices when available,
 - preview cache diagnostics/clear controls available via API and builder toolbar,
-- preview cache hits occur for semantically identical preview JSON payloads (key order ignored); changing knobs/layout recomputes simulation,
+- preview cache hits occur for semantically identical preview JSON payloads (key order ignored); changing knobs/layout (including `render.world_height`) recomputes simulation,
 - omitted preview defaults (sampling fields and `render.world_height`) and explicitly sent default values resolve to the same cache key,
 - cache-hit preview responses match fresh payloads except for `cache_hit=true`,
 - sampled-length metadata (`returned_sample_frames`) remains identical between fresh/cache-hit responses,

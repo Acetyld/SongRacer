@@ -436,6 +436,46 @@ def test_preview_cache_key_treats_omitted_world_height_as_default() -> None:
         assert second.json()["cache_hit"] is True
 
 
+def test_preview_cache_misses_when_world_height_changes() -> None:
+    base_payload = {
+        "render": {
+            "width": 320,
+            "height": 560,
+            "world_height": 6200,
+            "fps": 30,
+            "duration_seconds": 2.0,
+            "countdown_seconds": 0.0,
+        },
+        "racers": [{"name": "A", "x": 140, "y": 90, "radius": 24}],
+        "obstacles": [{"type": "rect", "x": 160, "y": 300, "width": 180, "height": 24}],
+    }
+    variant_payload = {
+        **base_payload,
+        "render": {
+            **base_payload["render"],
+            "world_height": 6800,
+        },
+    }
+
+    with TestClient(app) as client:
+        cleared = client.post("/preview/cache/clear")
+        assert cleared.status_code == 200
+
+        first = client.post("/preview/simulate", json=base_payload)
+        second = client.post("/preview/simulate", json=variant_payload)
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert first.json()["cache_hit"] is False
+        assert second.json()["cache_hit"] is False
+        assert first.json()["world"]["world_height"] == 6200
+        assert second.json()["world"]["world_height"] == 6800
+
+        cache_stats = client.get("/preview/cache")
+        assert cache_stats.status_code == 200
+        stats_body = cache_stats.json()
+        assert stats_body["size"] >= 2
+
+
 def test_preview_simulate_respects_max_frames_cap() -> None:
     payload = {
         "render": {

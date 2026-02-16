@@ -414,7 +414,7 @@ Live preview notes:
 - designed for interactive builder feedback (not final rendering),
 - sampled output is capped by `sample_fps` + `max_frames`,
 - frontend exposes sample-FPS / frame-cap controls and auto-preview toggle for responsiveness tuning,
-- cache reuse applies to semantically identical request JSON (key ordering does not matter); changed preview knobs/layout produce fresh simulations,
+- cache reuse applies to semantically identical request JSON (key ordering does not matter); changed preview knobs/layout (including `render.world_height`) produce fresh simulations,
 - omitted preview defaults (sampling fields and `render.world_height`) and explicitly provided default values map to the same cache identity,
 - cache-hit responses keep the same payload content as fresh responses, except `cache_hit=true`,
 - this includes stable sampled-length metadata (`returned_sample_frames`, `frame_indices.length`) across fresh/cache-hit responses,
