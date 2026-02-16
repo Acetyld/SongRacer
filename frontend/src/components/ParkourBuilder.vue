@@ -820,6 +820,44 @@ function exportObstaclesFile() {
   URL.revokeObjectURL(url)
 }
 
+function copyBuilderLink() {
+  try {
+    const payload = {
+      v: 1,
+      obstacles: obstacles.value.map((o) => obstacleToSerializable(o)),
+    }
+    const encoded = encodeURIComponent(JSON.stringify(payload))
+    const url = new URL(window.location.href)
+    url.searchParams.set('builder', encoded)
+    void navigator.clipboard.writeText(url.toString())
+    clipboardStatus.value = 'Builder share link copied.'
+  } catch (_err) {
+    clipboardStatus.value = 'Failed to create builder share link.'
+  }
+}
+
+function tryLoadBuilderShareFromUrl() {
+  try {
+    const url = new URL(window.location.href)
+    const raw = url.searchParams.get('builder')
+    if (!raw) return
+    const parsed = JSON.parse(decodeURIComponent(raw))
+    const source = Array.isArray(parsed?.obstacles) ? parsed.obstacles : []
+    const loaded = parseObstacleJson(JSON.stringify(source))
+    if (loaded.length > 0) {
+      obstacles.value = loaded
+      const first = loaded[0]?.id ?? null
+      selectedId.value = first
+      selectedIds.value = first ? [first] : []
+      clipboardStatus.value = `Loaded ${loaded.length} obstacle${loaded.length === 1 ? '' : 's'} from builder link.`
+    }
+    url.searchParams.delete('builder')
+    window.history.replaceState({}, '', url.toString())
+  } catch (_err) {
+    // ignore malformed share links
+  }
+}
+
 async function importObstaclesFile(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -1277,6 +1315,7 @@ function focusSelectedObstacle() {
 
 onMounted(() => {
   loadPrefs()
+  tryLoadBuilderShareFromUrl()
   void requestPreview()
   void analyzeRisk()
   window.addEventListener('keydown', onWindowKeyDown)
@@ -1347,6 +1386,12 @@ onUnmounted(() => {
         @click="exportObstaclesFile"
       >
         Export Obstacles
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700"
+        @click="copyBuilderLink"
+      >
+        Copy Builder Link
       </button>
       <label class="cursor-pointer rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700">
         Import Obstacles

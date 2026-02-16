@@ -180,6 +180,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - copy/paste obstacle groups from clipboard (toolbar and keyboard),
 - adjustable snap size and quick alignment actions (Align X / Align Y),
 - obstacle-only JSON import/export directly from builder toolbar,
+- copy a shareable builder URL embedding obstacle JSON (`Copy Builder Link`),
 - quick clear/reset action for current obstacle layout,
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - builder UI preferences (grid/snap/preview tuning) persist locally in browser storage,
