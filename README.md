@@ -178,6 +178,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - keyboard shortcuts for fast editing (delete/duplicate/select all/nudge),
 - undo/redo history controls with keyboard shortcuts,
 - copy/paste obstacle groups from clipboard (toolbar and keyboard),
+- adjustable snap size and quick alignment actions (Align X / Align Y),
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - keep raw obstacle JSON synchronized for full-control edits.
 

@@ -91,6 +91,7 @@ const lockedIds = ref<string[]>([])
 const hiddenIds = ref<string[]>([])
 const cameraY = ref(0)
 const snapEnabled = ref(true)
+const snapSize = ref(20)
 const dragMode = ref<'none' | 'move'>('none')
 const dragOffset = ref({ dx: 0, dy: 0 })
 const dragPointerStart = ref<{ x: number; y: number } | null>(null)
@@ -128,8 +129,9 @@ function uid(): string {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`
 }
 
-function snap(v: number, grid = 20): number {
+function snap(v: number): number {
   if (!snapEnabled.value) return v
+  const grid = Math.max(1, Number(snapSize.value || 1))
   return Math.round(v / grid) * grid
 }
 
@@ -757,6 +759,30 @@ function toggleLockForSelection() {
   }
 }
 
+function selectedUnlockedObstacles(): BuilderObstacle[] {
+  const ids = selectedIdSet()
+  if (ids.size === 0) return []
+  return obstacles.value.filter((o) => ids.has(o.id) && !isLocked(o.id))
+}
+
+function alignSelection(axis: 'x' | 'y') {
+  const list = selectedUnlockedObstacles()
+  if (list.length < 2) return
+  const anchor = list[0]
+  if (!anchor) return
+  if (axis === 'x') {
+    const x = anchor.x
+    for (const o of list.slice(1)) {
+      moveObstacle(o, x, o.y)
+    }
+  } else {
+    const y = anchor.y
+    for (const o of list.slice(1)) {
+      moveObstacle(o, o.x, y)
+    }
+  }
+}
+
 function applyPreset(preset: 'starter' | 'rings' | 'gates') {
   const make = (type: ObstacleType, x: number, y: number) => defaultObstacle(type, x, y)
   if (preset === 'starter') {
@@ -1238,6 +1264,20 @@ onUnmounted(() => {
       </button>
       <button
         class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="selectedIds.length < 2"
+        @click="alignSelection('x')"
+      >
+        Align X
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="selectedIds.length < 2"
+        @click="alignSelection('y')"
+      >
+        Align Y
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
         :disabled="!selectedObstacle"
         @click="moveSelectedLayer(-1)"
       >
@@ -1344,6 +1384,16 @@ onUnmounted(() => {
           <label class="flex items-center gap-1">
             <input v-model="snapEnabled" type="checkbox" />
             Snap
+          </label>
+          <label class="flex items-center gap-1">
+            Snap size
+            <input
+              v-model.number="snapSize"
+              type="number"
+              min="1"
+              max="200"
+              class="w-14 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
+            />
           </label>
           <label class="flex items-center gap-1">
             <input v-model="showGrid" type="checkbox" />
