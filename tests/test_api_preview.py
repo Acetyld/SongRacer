@@ -208,8 +208,17 @@ def test_preview_simulate_cache_hit_on_repeat_payload() -> None:
         second = client.post("/preview/simulate", json=payload)
         assert first.status_code == 200
         assert second.status_code == 200
-        assert first.json()["cache_hit"] is False
-        assert second.json()["cache_hit"] is True
+        first_body = first.json()
+        second_body = second.json()
+        assert first_body["cache_hit"] is False
+        assert second_body["cache_hit"] is True
+        assert first_body["requested_sample_fps"] == payload["sample_fps"]
+        assert second_body["requested_sample_fps"] == payload["sample_fps"]
+        assert first_body["requested_max_frames"] == payload["max_frames"]
+        assert second_body["requested_max_frames"] == payload["max_frames"]
+        normalized_first = {k: v for k, v in first_body.items() if k != "cache_hit"}
+        normalized_second = {k: v for k, v in second_body.items() if k != "cache_hit"}
+        assert normalized_first == normalized_second
         after = client.get("/preview/cache")
         assert after.status_code == 200
         assert after.json()["size"] >= 1
@@ -272,5 +281,11 @@ def test_preview_cache_key_is_order_insensitive_for_json_payload() -> None:
         second = client.post("/preview/simulate", json=reordered_payload)
         assert first.status_code == 200
         assert second.status_code == 200
-        assert first.json()["cache_hit"] is False
-        assert second.json()["cache_hit"] is True
+        first_body = first.json()
+        second_body = second.json()
+        assert first_body["cache_hit"] is False
+        assert second_body["cache_hit"] is True
+        assert first_body["requested_sample_fps"] == payload["sample_fps"]
+        assert second_body["requested_sample_fps"] == payload["sample_fps"]
+        assert first_body["requested_max_frames"] == payload["max_frames"]
+        assert second_body["requested_max_frames"] == payload["max_frames"]
