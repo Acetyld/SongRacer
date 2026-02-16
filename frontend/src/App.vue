@@ -937,6 +937,9 @@ onUnmounted(() => {
                   class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
                   @blur="worldHeight = normalizeWorldHeight(worldHeight)"
                 />
+                <span class="mt-1 block text-[11px] text-slate-500">
+                  bounds {{ worldHeightCaps.min }}-{{ worldHeightCaps.max }}, default {{ worldHeightCaps.default }}
+                </span>
               </label>
               <label class="text-sm text-slate-300">
                 Countdown (seconds)
