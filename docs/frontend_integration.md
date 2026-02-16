@@ -382,6 +382,7 @@ Live preview notes:
 - frontend exposes sample-FPS / frame-cap controls and auto-preview toggle for responsiveness tuning,
 - cache reuse applies to semantically identical request JSON (key ordering does not matter); changed preview knobs/layout produce fresh simulations,
 - builder can read and clear preview-cache via `/preview/cache` + `/preview/cache/clear`,
+- builder scrub row surfaces effective sampled fps + frame-step metadata (`sample_fps`, `sample_step_frames`),
 - use full render jobs for authoritative final video/audio output.
 
 ### `GET /preview/cache`

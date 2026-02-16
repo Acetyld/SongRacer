@@ -1841,6 +1841,15 @@ function previewTimeText(): string {
   return `${current.toFixed(2)}s / ${total.toFixed(2)}s`
 }
 
+function previewSamplingText(): string {
+  if (!previewData.value) return ''
+  const effective = Number(previewData.value.sample_fps || 0)
+  const step = Number(previewData.value.sample_step_frames || 0)
+  if (!Number.isFinite(effective) || effective <= 0) return ''
+  if (!Number.isFinite(step) || step <= 0) return `${effective.toFixed(2)} fps`
+  return `${effective.toFixed(2)} fps (step ${step}f)`
+}
+
 const previewFrameMax = computed(() => {
   const total = previewData.value?.positions.length ?? 0
   return Math.max(0, total - 1)
@@ -2303,6 +2312,7 @@ onUnmounted(() => {
           />
           <span class="text-slate-400">{{ previewStateLabel() }}</span>
           <span class="text-slate-400">{{ previewTimeText() }}</span>
+          <span class="text-slate-500">{{ previewSamplingText() }}</span>
           <span
             class="rounded border px-1.5 py-0.5 text-[10px]"
             :class="previewData.cache_hit ? 'border-emerald-500/40 text-emerald-300' : 'border-slate-600 text-slate-400'"
