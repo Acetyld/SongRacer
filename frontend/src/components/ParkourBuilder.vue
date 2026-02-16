@@ -93,6 +93,8 @@ const cameraY = ref(0)
 const snapEnabled = ref(true)
 const dragMode = ref<'none' | 'move'>('none')
 const dragOffset = ref({ dx: 0, dy: 0 })
+const dragPointerStart = ref<{ x: number; y: number } | null>(null)
+const dragStartById = ref<Record<string, { x: number; y: number }>>({})
 const previewData = ref<PreviewData | null>(null)
 const previewFrame = ref(0)
 const previewPlaying = ref(false)
@@ -580,24 +582,55 @@ function startDragObstacle(obs: BuilderObstacle, ev: PointerEvent) {
     selectObstacle(obs.id, true)
     return
   }
-  selectObstacle(obs.id, false)
+  if (!isSelected(obs.id)) {
+    selectObstacle(obs.id, false)
+  }
+  selectedId.value = obs.id
   const container = (ev.currentTarget as HTMLElement).closest('[data-builder-canvas]') as HTMLElement | null
   if (!container) return
   const pt = toCanvasXY(ev.clientX, ev.clientY, container)
-  const pos = obstaclePosition(obs)
-  dragOffset.value = { dx: pt.x - pos.x, dy: pt.y - pos.y }
+  dragPointerStart.value = { x: pt.x, y: pt.y }
+  const ids = selectedIdSet()
+  const startMap: Record<string, { x: number; y: number }> = {}
+  for (const o of obstacles.value) {
+    if (!ids.has(o.id) || isLocked(o.id)) continue
+    const p = obstaclePosition(o)
+    startMap[o.id] = { x: p.x, y: p.y }
+  }
+  if (Object.keys(startMap).length === 0) {
+    const p = obstaclePosition(obs)
+    startMap[obs.id] = { x: p.x, y: p.y }
+  }
+  dragStartById.value = startMap
+  const anchor = dragStartById.value[obs.id] ?? obstaclePosition(obs)
+  dragOffset.value = { dx: pt.x - anchor.x, dy: pt.y - anchor.y }
   dragMode.value = 'move'
 }
 
 function onCanvasPointerMove(ev: PointerEvent) {
-  if (dragMode.value !== 'move' || !selectedObstacle.value) return
+  if (dragMode.value !== 'move' || !dragPointerStart.value) return
   const container = ev.currentTarget as HTMLElement
   const pt = toCanvasXY(ev.clientX, ev.clientY, container)
-  moveObstacle(selectedObstacle.value, pt.x - dragOffset.value.dx, pt.y - dragOffset.value.dy)
+  const targetX = pt.x - dragOffset.value.dx
+  const targetY = pt.y - dragOffset.value.dy
+  const startAnchor = selectedObstacle.value
+    ? dragStartById.value[selectedObstacle.value.id]
+    : undefined
+  const anchorStartX = startAnchor?.x ?? dragPointerStart.value.x - dragOffset.value.dx
+  const anchorStartY = startAnchor?.y ?? dragPointerStart.value.y - dragOffset.value.dy
+  const dx = targetX - anchorStartX
+  const dy = targetY - anchorStartY
+  for (const o of obstacles.value) {
+    const base = dragStartById.value[o.id]
+    if (!base) continue
+    moveObstacle(o, base.x + dx, base.y + dy)
+  }
 }
 
 function stopDrag() {
   dragMode.value = 'none'
+  dragPointerStart.value = null
+  dragStartById.value = {}
 }
 
 function duplicateSelected() {
