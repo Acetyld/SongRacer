@@ -74,6 +74,7 @@ _BUILDER_CAPABILITIES = {
         "seed": {"min": 0, "max": 2_000_000_000, "default": 13},
         "safe_target_max_risk": {"min": 0, "max": 100, "default": 35},
         "safe_max_attempts": {"min": 1, "max": 64, "default": 8},
+        "safe_analysis_height": {"min": 200.0, "max": 8000.0, "default": 1920.0},
     },
 }
 _PREVIEW_SAMPLE_FPS_CAPS = _BUILDER_CAPABILITIES["preview"]["sample_fps"]
@@ -85,6 +86,9 @@ _GENERATOR_WIDTH_CAPS = _BUILDER_CAPABILITIES["generator"]["width"]
 _GENERATOR_SEED_CAPS = _BUILDER_CAPABILITIES["generator"]["seed"]
 _GENERATOR_SAFE_RISK_CAPS = _BUILDER_CAPABILITIES["generator"]["safe_target_max_risk"]
 _GENERATOR_SAFE_ATTEMPTS_CAPS = _BUILDER_CAPABILITIES["generator"]["safe_max_attempts"]
+_GENERATOR_SAFE_ANALYSIS_HEIGHT_CAPS = _BUILDER_CAPABILITIES["generator"][
+    "safe_analysis_height"
+]
 
 
 @asynccontextmanager
@@ -282,7 +286,11 @@ class TemplateGenerateSafeRequest(TemplateGenerateRequest):
         ge=_GENERATOR_SAFE_ATTEMPTS_CAPS["min"],
         le=_GENERATOR_SAFE_ATTEMPTS_CAPS["max"],
     )
-    analysis_height: float = Field(1920.0, ge=200.0, le=8000.0)
+    analysis_height: float = Field(
+        _GENERATOR_SAFE_ANALYSIS_HEIGHT_CAPS["default"],
+        ge=_GENERATOR_SAFE_ANALYSIS_HEIGHT_CAPS["min"],
+        le=_GENERATOR_SAFE_ANALYSIS_HEIGHT_CAPS["max"],
+    )
 
 
 def _build_preview_cfg(payload: PreviewSimRequest) -> RaceConfig:

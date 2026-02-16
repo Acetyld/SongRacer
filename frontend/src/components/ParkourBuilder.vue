@@ -157,6 +157,7 @@ const builderCaps = ref({
     seed: { min: 0, max: 2000000000, default: 13 },
     safe_target_max_risk: { min: 0, max: 100, default: 35 },
     safe_max_attempts: { min: 1, max: 64, default: 8 },
+    safe_analysis_height: { min: 200, max: 8000, default: 1920 },
   },
 })
 const historyStack = ref<string[]>([])
@@ -1224,6 +1225,13 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
   const maxY = existingYs.length > 0 ? Math.max(...existingYs) : 0
   const startY =
     mode === 'append' ? Math.max(900, maxY + generateSpacing.value) : Math.max(900, cameraY.value + 220)
+  const safeAnalysisHeight = Math.max(
+    builderCaps.value.generator.safe_analysis_height.min,
+    Math.min(
+      builderCaps.value.generator.safe_analysis_height.max,
+      props.worldHeight || builderCaps.value.generator.safe_analysis_height.default,
+    ),
+  )
   try {
     const resp = await fetch(`${props.apiBase}/templates/obstacles/generate-safe`, {
       method: 'POST',
@@ -1266,7 +1274,7 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
             Math.round(generateSafeAttempts.value),
           ),
         ),
-        analysis_height: 1920,
+        analysis_height: Math.round(safeAnalysisHeight),
       }),
     })
     if (!resp.ok) {
@@ -1406,6 +1414,11 @@ function applyBuilderCapabilities(body: unknown) {
         min: Number(g.safe_max_attempts?.min ?? 1),
         max: Number(g.safe_max_attempts?.max ?? 64),
         default: Number(g.safe_max_attempts?.default ?? 8),
+      },
+      safe_analysis_height: {
+        min: Number(g.safe_analysis_height?.min ?? 200),
+        max: Number(g.safe_analysis_height?.max ?? 8000),
+        default: Number(g.safe_analysis_height?.default ?? 1920),
       },
     },
   }

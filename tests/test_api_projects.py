@@ -68,6 +68,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert cap_body["generator"]["count"]["max"] >= 100
         assert cap_body["generator"]["safe_target_max_risk"]["max"] == 100
         assert cap_body["generator"]["safe_max_attempts"]["max"] >= 16
+        assert cap_body["generator"]["safe_analysis_height"]["max"] >= 1920
         gen_caps = cap_body["generator"]
         for section in ("preview", "generator"):
             for bounds in cap_body[section].values():
@@ -238,7 +239,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
                 "seed": int(gen_caps["seed"]["default"]),
                 "target_max_risk": int(gen_caps["safe_target_max_risk"]["default"]),
                 "max_attempts": int(gen_caps["safe_max_attempts"]["default"]),
-                "analysis_height": 1920.0,
+                "analysis_height": float(gen_caps["safe_analysis_height"]["default"]),
             },
         )
         assert generated_safe_default_explicit.status_code == 200
@@ -253,6 +254,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
                 "seed": int(gen_caps["seed"]["min"]),
                 "target_max_risk": int(gen_caps["safe_target_max_risk"]["min"]),
                 "max_attempts": int(gen_caps["safe_max_attempts"]["min"]),
+                "analysis_height": float(gen_caps["safe_analysis_height"]["min"]),
             },
         )
         assert generated_safe_edge_min.status_code == 200
@@ -266,6 +268,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
                 "seed": int(gen_caps["seed"]["max"]),
                 "target_max_risk": int(gen_caps["safe_target_max_risk"]["max"]),
                 "max_attempts": int(gen_caps["safe_max_attempts"]["max"]),
+                "analysis_height": float(gen_caps["safe_analysis_height"]["max"]),
             },
         )
         assert generated_safe_edge_max.status_code == 200
@@ -305,6 +308,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
                 "seed": 99,
                 "target_max_risk": int(gen_caps["safe_target_max_risk"]["default"]),
                 "max_attempts": int(gen_caps["safe_max_attempts"]["default"]),
+                "analysis_height": float(gen_caps["safe_analysis_height"]["default"]),
             },
         )
         assert generated_safe_invalid_count.status_code == 422
@@ -318,9 +322,24 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
                 "seed": 99,
                 "target_max_risk": int(gen_caps["safe_target_max_risk"]["default"]),
                 "max_attempts": int(gen_caps["safe_max_attempts"]["default"]),
+                "analysis_height": float(gen_caps["safe_analysis_height"]["default"]),
             },
         )
         assert generated_safe_invalid_width.status_code == 422
+        generated_safe_invalid_analysis_height = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": int(gen_caps["count"]["min"]),
+                "start_y": 950,
+                "spacing": 240,
+                "width": 1080,
+                "seed": 99,
+                "target_max_risk": int(gen_caps["safe_target_max_risk"]["default"]),
+                "max_attempts": int(gen_caps["safe_max_attempts"]["default"]),
+                "analysis_height": float(gen_caps["safe_analysis_height"]["max"]) + 1.0,
+            },
+        )
+        assert generated_safe_invalid_analysis_height.status_code == 422
 
         generated_safe_strict = client.post(
             "/templates/obstacles/generate-safe",

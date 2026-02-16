@@ -39,7 +39,8 @@ Response:
   "generator": {
     "count": { "min": 1, "max": 200, "default": 8 },
     "safe_target_max_risk": { "min": 0, "max": 100, "default": 35 },
-    "safe_max_attempts": { "min": 1, "max": 64, "default": 8 }
+    "safe_max_attempts": { "min": 1, "max": 64, "default": 8 },
+    "safe_analysis_height": { "min": 200, "max": 8000, "default": 1920 }
   }
 }
 ```
@@ -114,7 +115,7 @@ Response:
 ### `POST /templates/obstacles/generate-safe`
 Generates multiple candidate streams across sequential seeds and returns the best (or accepted) stream using risk analysis.
 Selection is deterministic for a fixed request: candidates are evaluated in seed order (`seed + attempt`), and the response is either the first candidate meeting `target_max_risk`, or the lowest-risk candidate across attempted seeds.
-Input bounds (`count/start_y/spacing/width/seed/target_max_risk/max_attempts`) are validated against `/builder/capabilities` generator ranges (out-of-range -> HTTP 422).
+Input bounds (`count/start_y/spacing/width/seed/target_max_risk/max_attempts/analysis_height`) are validated against `/builder/capabilities` generator ranges (out-of-range -> HTTP 422).
 All request fields are optional; omitted values default to `/builder/capabilities.generator.*.default`.
 Providing explicit default values is equivalent to omitting the fields.
 
