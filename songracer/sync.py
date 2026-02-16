@@ -20,6 +20,34 @@ class SyncAnalysis:
     durations_seconds: list[float]
 
 
+def apply_analysis_to_config_obj(
+    config_obj: dict[str, object],
+    analysis: SyncAnalysis,
+    apply_duration_cap: bool = True,
+) -> dict[str, object]:
+    racers = config_obj.get("racers", [])
+    if not isinstance(racers, list):
+        raise SyncError("Config object racers must be a list")
+    if len(racers) != len(analysis.offsets_seconds):
+        raise SyncError(
+            f"Offset count {len(analysis.offsets_seconds)} does not match racer count {len(racers)}"
+        )
+    config_obj["sync_common_window_seconds"] = round(analysis.common_window_seconds, 5)
+    for idx, racer in enumerate(racers):
+        if not isinstance(racer, dict):
+            raise SyncError("Each racer config must be an object")
+        racer["sync_offset_seconds"] = round(float(analysis.offsets_seconds[idx]), 5)
+        racer["sync_trim_start_seconds"] = round(float(analysis.trim_start_seconds[idx]), 5)
+    render = config_obj.get("render")
+    if apply_duration_cap and isinstance(render, dict):
+        current = render.get("duration_seconds")
+        if isinstance(current, (int, float)):
+            render["duration_seconds"] = min(
+                float(current), float(analysis.common_window_seconds)
+            )
+    return config_obj
+
+
 def _decode_mono_pcm(video_path: str, sample_rate: int) -> np.ndarray:
     cmd = [
         "ffmpeg",
@@ -181,21 +209,11 @@ def apply_offsets_to_config_json(
 ) -> Path:
     in_path = Path(config_path).expanduser().resolve()
     obj = json.loads(in_path.read_text())
-    racers = obj.get("racers", [])
-    if len(racers) != len(analysis.offsets_seconds):
-        raise SyncError(
-            f"Offset count {len(analysis.offsets_seconds)} does not match racer count {len(racers)}"
-        )
-    obj["sync_common_window_seconds"] = round(analysis.common_window_seconds, 5)
-    for idx, racer in enumerate(racers):
-        racer["sync_offset_seconds"] = round(float(analysis.offsets_seconds[idx]), 5)
-        racer["sync_trim_start_seconds"] = round(float(analysis.trim_start_seconds[idx]), 5)
-    if apply_duration_cap and "render" in obj and isinstance(obj["render"], dict):
-        current = obj["render"].get("duration_seconds")
-        if isinstance(current, (float, int)):
-            obj["render"]["duration_seconds"] = min(
-                float(current), float(analysis.common_window_seconds)
-            )
+    obj = apply_analysis_to_config_obj(
+        obj,
+        analysis,
+        apply_duration_cap=apply_duration_cap,
+    )
     out = (
         Path(output_path).expanduser().resolve()
         if output_path is not None

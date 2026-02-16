@@ -500,6 +500,37 @@ async function renderSavedProject(projectId: number, isPreview: boolean) {
   }
 }
 
+async function syncSavedProject(projectId: number) {
+  isBusy.value = true
+  statusMessage.value = `Syncing project #${projectId} by waveform...`
+  try {
+    const resp = await fetch(`${apiBase.value}/projects/${projectId}/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sample_rate: 16000,
+        max_shift_seconds: 8.0,
+        apply_duration_cap: true,
+      }),
+    })
+    if (!resp.ok) throw new Error(await resp.text())
+    const body = await resp.json()
+    const common = Number(body?.sync?.common_window_seconds ?? 0)
+    statusMessage.value = `Project #${projectId} synced. Common overlap ${common.toFixed(2)}s.`
+    backendOnline.value = true
+    if (activeProjectId.value === projectId) {
+      await loadProject(projectId)
+    } else {
+      await refreshProjects()
+    }
+  } catch (err) {
+    backendOnline.value = false
+    statusMessage.value = `Project sync failed: ${String(err)}`
+  } finally {
+    isBusy.value = false
+  }
+}
+
 onMounted(() => {
   refreshJobs()
   refreshProjects()
@@ -801,6 +832,13 @@ onUnmounted(() => {
                     @click="renderSavedProject(p.id, true)"
                   >
                     Preview
+                  </button>
+                  <button
+                    class="rounded bg-fuchsia-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-fuchsia-500"
+                    :disabled="isBusy"
+                    @click="syncSavedProject(p.id)"
+                  >
+                    Sync
                   </button>
                   <button
                     class="rounded bg-emerald-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-emerald-500"

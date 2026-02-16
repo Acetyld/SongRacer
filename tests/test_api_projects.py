@@ -102,6 +102,15 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
             time.sleep(0.03)
         assert final_state == "completed"
 
+        sync_resp = client.post(
+            f"/projects/{project_id}/sync",
+            json={"sample_rate": 12000, "max_shift_seconds": 2.0, "apply_duration_cap": True},
+        )
+        assert sync_resp.status_code == 200
+        sync_body = sync_resp.json()
+        assert "sync" in sync_body
+        assert "trim_start_seconds" in sync_body["sync"]
+
         deleted = client.delete(f"/projects/{project_id}")
         assert deleted.status_code == 200
         assert deleted.json()["deleted"] is True

@@ -20,7 +20,12 @@ from .db import create_project, delete_project, get_project, init_db, list_proje
 from .jobs import JobManager
 from .pipeline import render_race
 from .storage import resolve_writable_dir
-from .sync import SyncError, estimate_video_sync_offsets, extract_waveform_preview
+from .sync import (
+    SyncError,
+    apply_analysis_to_config_obj,
+    estimate_video_sync_offsets,
+    extract_waveform_preview,
+)
 
 
 job_manager = JobManager(max_workers=2)
@@ -98,6 +103,12 @@ class ProjectPayload(BaseModel):
 class ProjectRenderPayload(BaseModel):
     preview_scale: float = Field(1.0, ge=0.01, le=1.0)
     output_path: str | None = None
+
+
+class ProjectSyncPayload(BaseModel):
+    sample_rate: int = Field(16000, ge=4000, le=96000)
+    max_shift_seconds: float = Field(8.0, ge=0.0, le=30.0)
+    apply_duration_cap: bool = True
 
 
 @app.get("/health")
@@ -310,6 +321,46 @@ def projects_render(project_id: int, payload: ProjectRenderPayload) -> JobSubmit
     except ConfigError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return JobSubmitResponse(job_id=job.job_id, state=job.state)
+
+
+@app.post("/projects/{project_id}/sync")
+def projects_sync(project_id: int, payload: ProjectSyncPayload) -> dict[str, Any]:
+    try:
+        record = get_project(project_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Project not found") from exc
+    config = record.config
+    racers = config.get("racers")
+    if not isinstance(racers, list) or not racers:
+        raise HTTPException(status_code=400, detail="Project has no racers")
+    try:
+        video_paths = [str(r["video_path"]) for r in racers]
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail="Invalid racer video_path fields") from exc
+    try:
+        analysis = estimate_video_sync_offsets(
+            video_paths=video_paths,
+            sample_rate=payload.sample_rate,
+            max_shift_seconds=payload.max_shift_seconds,
+        )
+        updated_config = apply_analysis_to_config_obj(
+            config_obj=config,
+            analysis=analysis,
+            apply_duration_cap=payload.apply_duration_cap,
+        )
+        record = update_project(project_id, record.name, updated_config)
+    except SyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "id": record.id,
+        "name": record.name,
+        "sync": {
+            "offsets_seconds": analysis.offsets_seconds,
+            "trim_start_seconds": analysis.trim_start_seconds,
+            "common_window_seconds": analysis.common_window_seconds,
+        },
+        "updated_at": record.updated_at,
+    }
 
 
 def run_dev_server() -> None:

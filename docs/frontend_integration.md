@@ -168,6 +168,7 @@ Response:
 - `PUT /projects/{project_id}`
 - `DELETE /projects/{project_id}`
 - `POST /projects/{project_id}/render`
+- `POST /projects/{project_id}/sync`
 
 Backed by SQLite (`songracer.db`) for persistent frontend project storage.
 Path can be overridden with `SONGRACER_DB_PATH`.
