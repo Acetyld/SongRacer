@@ -61,6 +61,7 @@ const projects = ref<ProjectRow[]>([])
 const projectNameInput = ref('My SongRacer Project')
 const activeProjectId = ref<number | null>(null)
 const systemInfo = ref<SystemInfo>({})
+const projectRiskById = ref<Record<number, { riskScore: number; warningCount: number }>>({})
 const riskScore = ref<number | null>(null)
 const riskWarnings = ref<Array<{ level: string; code: string; message: string }>>([])
 const obstacleJson = ref(
@@ -415,6 +416,15 @@ async function refreshProjects() {
     }
     const body = await resp.json()
     projects.value = body.projects || []
+    const existing = new Set(projects.value.map((p) => Number(p.id)))
+    const nextRisk: Record<number, { riskScore: number; warningCount: number }> = {}
+    for (const [k, v] of Object.entries(projectRiskById.value)) {
+      const id = Number(k)
+      if (existing.has(id)) {
+        nextRisk[id] = v
+      }
+    }
+    projectRiskById.value = nextRisk
     backendOnline.value = true
   } catch (_err) {
     backendOnline.value = false
@@ -513,12 +523,33 @@ async function removeProject(projectId: number) {
     if (activeProjectId.value === projectId) {
       activeProjectId.value = null
     }
+    delete projectRiskById.value[projectId]
     await refreshProjects()
     statusMessage.value = `Deleted project #${projectId}.`
     backendOnline.value = true
   } catch (err) {
     backendOnline.value = false
     statusMessage.value = `Delete project failed: ${String(err)}`
+  }
+}
+
+async function analyzeSavedProject(projectId: number) {
+  isBusy.value = true
+  statusMessage.value = `Analyzing project #${projectId} obstacle safety...`
+  try {
+    const resp = await fetch(`${apiBase.value}/projects/${projectId}/analyze`)
+    if (!resp.ok) throw new Error(await resp.text())
+    const body = await resp.json()
+    const score = Number(body.risk_score ?? 0)
+    const count = Number(body.warning_count ?? 0)
+    projectRiskById.value[projectId] = { riskScore: score, warningCount: count }
+    statusMessage.value = `Project #${projectId} risk ${score} (${count} warnings).`
+    backendOnline.value = true
+  } catch (err) {
+    backendOnline.value = false
+    statusMessage.value = `Project analysis failed: ${String(err)}`
+  } finally {
+    isBusy.value = false
   }
 }
 
@@ -952,6 +983,13 @@ onUnmounted(() => {
                   </span>
                 </p>
                 <p class="text-[10px] text-slate-400">#{{ p.id }} · {{ p.updated_at }}</p>
+                <p
+                  v-if="projectRiskById[p.id]"
+                  class="text-[10px]"
+                  :class="(projectRiskById[p.id]?.riskScore ?? 0) > 55 ? 'text-rose-300' : (projectRiskById[p.id]?.riskScore ?? 0) > 28 ? 'text-amber-300' : 'text-emerald-300'"
+                >
+                  Risk {{ projectRiskById[p.id]?.riskScore ?? 0 }} · {{ projectRiskById[p.id]?.warningCount ?? 0 }} warnings
+                </p>
                 <div class="mt-2 flex gap-2">
                   <button
                     class="rounded bg-indigo-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-indigo-500"
@@ -972,6 +1010,13 @@ onUnmounted(() => {
                     @click="renderSavedProject(p.id, true)"
                   >
                     Preview
+                  </button>
+                  <button
+                    class="rounded bg-amber-600 px-2 py-1 text-[11px] font-medium text-slate-950 hover:bg-amber-500"
+                    :disabled="isBusy"
+                    @click="analyzeSavedProject(p.id)"
+                  >
+                    Analyze
                   </button>
                   <button
                     class="rounded bg-fuchsia-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-fuchsia-500"

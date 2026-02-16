@@ -109,6 +109,13 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert updated.json()["name"] == "Updated Project"
         assert updated.json()["config"]["render"]["duration_seconds"] == 2.2
 
+        project_analysis = client.get(f"/projects/{project_id}/analyze")
+        assert project_analysis.status_code == 200
+        project_analysis_body = project_analysis.json()
+        assert project_analysis_body["id"] == project_id
+        assert "risk_score" in project_analysis_body
+        assert "warning_count" in project_analysis_body
+
         wave = client.post(
             "/waveform",
             json={"video_path": str(video), "sample_rate": 8000, "points": 120},

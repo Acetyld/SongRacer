@@ -149,6 +149,8 @@ Endpoints:
 - `GET /jobs/{job_id}/artifact`
 - `GET /projects` / `POST /projects` / `GET|PUT|DELETE /projects/{id}` (SQLite project CRUD)
 - `POST /projects/{id}/render` to submit async render directly from saved DB project
+- `POST /projects/{id}/sync` to re-run waveform sync and persist trims/common window
+- `GET /projects/{id}/analyze` to score obstacle safety of saved project config
 
 Integration contract details: `docs/frontend_integration.md`
 

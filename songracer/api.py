@@ -458,6 +458,25 @@ def projects_sync(project_id: int, payload: ProjectSyncPayload) -> dict[str, Any
     }
 
 
+@app.get("/projects/{project_id}/analyze")
+def projects_analyze(project_id: int) -> dict[str, Any]:
+    try:
+        record = get_project(project_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Project not found") from exc
+    if not isinstance(record.config, dict):
+        raise HTTPException(status_code=400, detail="Project config is not an object")
+    risk = analyze_config_risk(record.config)
+    return {
+        "id": record.id,
+        "name": record.name,
+        "risk_score": risk["risk_score"],
+        "warning_count": risk["warning_count"],
+        "warnings": risk["warnings"],
+        "updated_at": record.updated_at,
+    }
+
+
 def run_dev_server() -> None:
     import uvicorn
 
