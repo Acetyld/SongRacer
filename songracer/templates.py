@@ -213,6 +213,7 @@ def generate_obstacle_stream(
                 "circle",
                 "ring_gap",
                 "spinner",
+                "pendulum",
                 "one_way_gate",
             ]
         )
@@ -277,6 +278,22 @@ def generate_obstacle_stream(
                     "length": round(rng.uniform(width * 0.2, width * 0.34), 1),
                     "thickness": round(rng.uniform(18, 28), 1),
                     "spin_speed_deg": round(rng.uniform(80, 190), 1),
+                    "fill_color": "#182037",
+                }
+            )
+        elif kind == "pendulum":
+            out.append(
+                {
+                    "type": "pendulum",
+                    "x": round(x, 1),
+                    "y": round(y, 1),
+                    "pivot_x": round(x, 1),
+                    "pivot_y": round(y, 1),
+                    "length": round(rng.uniform(180, 320), 1),
+                    "thickness": round(rng.uniform(14, 22), 1),
+                    "angle_deg": round(rng.uniform(-26, 26), 1),
+                    "amplitude": round(rng.uniform(35, 65), 1),
+                    "frequency_hz": round(rng.uniform(0.2, 0.6), 3),
                     "fill_color": "#182037",
                 }
             )

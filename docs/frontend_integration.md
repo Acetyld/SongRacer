@@ -447,6 +447,7 @@ The frontend app in `frontend/` already implements:
 - palette labels/types can be sourced from `/templates/obstacle-types`,
 - preset buttons resolve from `/templates/obstacles` and gracefully fallback to local defaults,
 - procedural stream generation is available via `/templates/obstacles/generate` (append/replace in UI),
+- generated stream mixes multiple obstacle families (rect/moving/rings/spinners/circles/pendulums/gates),
 - UI includes one-click random seed for quick stream iteration,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
