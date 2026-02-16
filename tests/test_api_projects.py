@@ -52,6 +52,21 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
     }
 
     with TestClient(app) as client:
+        analysis = client.post(
+            "/analyze/config",
+            json={
+                "config": {
+                    "render": {"width": 180, "height": 320},
+                    "obstacles": [
+                        {"type": "rect", "x": 90, "y": 120, "width": 170},
+                        {"type": "rect", "x": 90, "y": 140, "width": 160},
+                    ],
+                }
+            },
+        )
+        assert analysis.status_code == 200
+        assert analysis.json()["warning_count"] > 0
+
         info = client.get("/system/info")
         assert info.status_code == 200
         assert "db_path" in info.json()

@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from .analyze import analyze_config_risk
 from .cli import _scaled_config
 from .config import ConfigError, load_config, validate_config
 from .db import (
@@ -132,6 +133,10 @@ class ProjectSyncPayload(BaseModel):
     apply_duration_cap: bool = True
 
 
+class AnalyzeConfigPayload(BaseModel):
+    config: dict[str, Any]
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -220,6 +225,11 @@ def validate(payload: ValidateRequest) -> dict[str, Any]:
     except ConfigError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"valid": True, "racers": len(cfg.racers), "obstacles": len(cfg.obstacles)}
+
+
+@app.post("/analyze/config")
+def analyze_config(payload: AnalyzeConfigPayload) -> dict[str, Any]:
+    return analyze_config_risk(payload.config)
 
 
 @app.post("/render")

@@ -184,6 +184,33 @@ Response:
 }
 ```
 
+### `POST /analyze/config`
+Analyze obstacle layout risk before render. Helpful to catch trap-prone courses.
+
+Request:
+
+```json
+{
+  "config": { "... full songracer config ..." }
+}
+```
+
+Response:
+
+```json
+{
+  "risk_score": 24,
+  "warning_count": 2,
+  "warnings": [
+    {
+      "level": "high",
+      "code": "rows_too_close",
+      "message": "Obstacle rows around y=980 and y=1060 are < 144px apart."
+    }
+  ]
+}
+```
+
 ### Project database CRUD
 
 - `GET /projects`
@@ -233,10 +260,11 @@ Response:
 
 1. Upload user videos to a server-side asset folder.
 2. Build JSON config referencing those server-side paths.
-3. Either:
+3. Optionally call `/analyze/config` and adjust obstacle JSON if warnings are high-risk.
+4. Either:
    - write config file and call `/validate` + `/jobs`, or
    - submit inline config using `/jobs/from-config`.
-4. Poll `/jobs/{job_id}` until `completed` or `failed`.
+5. Poll `/jobs/{job_id}` until `completed` or `failed`.
 5. Download `/jobs/{job_id}/artifact` when complete.
 
 ## Frontend stack used

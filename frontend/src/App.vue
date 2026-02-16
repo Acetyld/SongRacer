@@ -61,6 +61,8 @@ const projects = ref<ProjectRow[]>([])
 const projectNameInput = ref('My SongRacer Project')
 const activeProjectId = ref<number | null>(null)
 const systemInfo = ref<SystemInfo>({})
+const riskScore = ref<number | null>(null)
+const riskWarnings = ref<Array<{ level: string; code: string; message: string }>>([])
 const obstacleJson = ref(
   JSON.stringify(
     [
@@ -348,6 +350,25 @@ async function autoSyncAudio() {
     statusMessage.value = `Auto sync failed: ${String(err)}`
   } finally {
     isBusy.value = false
+  }
+}
+
+async function analyzeCourseRisk() {
+  try {
+    const resp = await fetch(`${apiBase.value}/analyze/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config: buildInlineConfig() }),
+    })
+    if (!resp.ok) throw new Error(await resp.text())
+    const body = await resp.json()
+    riskScore.value = Number(body.risk_score ?? 0)
+    riskWarnings.value = Array.isArray(body.warnings) ? body.warnings : []
+    statusMessage.value = `Course analysis done. Risk score ${riskScore.value}.`
+    backendOnline.value = true
+  } catch (err) {
+    backendOnline.value = false
+    statusMessage.value = `Course analysis failed: ${String(err)}`
   }
 }
 
@@ -829,6 +850,13 @@ onUnmounted(() => {
                 {{ loadingWaveforms ? 'Loading waveforms...' : 'Load Waveform Preview' }}
               </button>
               <button
+                class="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-400 disabled:opacity-50"
+                :disabled="isBusy"
+                @click="analyzeCourseRisk"
+              >
+                Analyze Course Safety
+              </button>
+              <button
                 class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50"
                 :disabled="!canRender"
                 @click="createJob(true)"
@@ -850,6 +878,23 @@ onUnmounted(() => {
                 rows="10"
                 class="w-full rounded-md border border-slate-600 bg-slate-950 px-2 py-2 text-xs text-slate-100"
               />
+            </div>
+            <div class="mt-3 rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <p class="text-sm text-slate-200">
+                Risk score:
+                <span class="font-semibold" :class="(riskScore ?? 0) > 55 ? 'text-rose-300' : (riskScore ?? 0) > 28 ? 'text-amber-300' : 'text-emerald-300'">
+                  {{ riskScore ?? 'N/A' }}
+                </span>
+              </p>
+              <ul class="mt-2 max-h-28 space-y-1 overflow-auto text-[11px] text-slate-400">
+                <li v-if="riskWarnings.length === 0">No warnings yet.</li>
+                <li v-for="(w, idx) in riskWarnings" :key="`${w.code}_${idx}`">
+                  <span class="uppercase" :class="w.level === 'high' ? 'text-rose-300' : w.level === 'medium' ? 'text-amber-300' : 'text-sky-300'">
+                    {{ w.level }}
+                  </span>
+                  · {{ w.message }}
+                </li>
+              </ul>
             </div>
             <p class="mt-3 text-sm text-slate-300">{{ statusMessage }}</p>
           </div>
