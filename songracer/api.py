@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from collections import OrderedDict
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -305,7 +306,8 @@ def _build_preview_cfg(payload: PreviewSimRequest) -> RaceConfig:
 
 def _preview_cache_key(payload: PreviewSimRequest) -> str:
     body = payload.model_dump(mode="json")
-    return json.dumps(body, sort_keys=True, separators=(",", ":"))
+    raw = json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _preview_cache_get(key: str) -> dict[str, Any] | None:
