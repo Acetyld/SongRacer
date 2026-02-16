@@ -43,6 +43,9 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert len(body["states"]) == len(body["frame_indices"])
         assert len(body["obstacle_visuals"]) == len(body["frame_indices"])
         assert len(body["positions"][0]) == 2
+        assert body["frame_indices"][0] == 0
+        assert body["frame_indices"] == sorted(body["frame_indices"])
+        assert len(body["frame_indices"]) == len(set(body["frame_indices"]))
         assert isinstance(body["winner_index"], int)
         assert isinstance(body["winner_frame"], int)
         assert (body["winner_index"] >= 0) == (body["winner_frame"] >= 0)
@@ -50,6 +53,10 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert body["cache_hit"] is False
         expected_step = max(1, int(math.ceil(payload["render"]["fps"] / payload["sample_fps"])))
         assert body["sample_step_frames"] == expected_step
+        assert all(
+            (b - a) == expected_step
+            for a, b in zip(body["frame_indices"], body["frame_indices"][1:])
+        )
         assert abs(body["sample_fps"] - (payload["render"]["fps"] / expected_step)) < 1e-9
         assert abs(body["sample_interval_seconds"] - (expected_step / payload["render"]["fps"])) < 1e-9
         assert body["sample_fps"] <= payload["sample_fps"]
@@ -145,10 +152,12 @@ def test_preview_simulate_respects_max_frames_cap() -> None:
         assert resp.status_code == 200
         body = resp.json()
         assert len(body["frame_indices"]) <= 40
+        assert len(body["frame_indices"]) == 40
         assert len(body["positions"]) == len(body["frame_indices"])
         assert body["truncated"] is True
         assert body["total_sample_frames"] > len(body["frame_indices"])
-        assert body["sample_step_frames"] >= 1
+        assert body["sample_step_frames"] == 2
+        assert body["frame_indices"][-1] == 78
 
 
 def test_preview_simulate_effective_fps_never_exceeds_request() -> None:
