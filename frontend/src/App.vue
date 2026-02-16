@@ -53,6 +53,8 @@ const FALLBACK_WORLD_HEIGHT_CAPS: RangeCaps = {
   max: 20000,
   default: 6200,
 }
+const SCALE_MIN = 0.01
+const SCALE_MAX = 1.0
 
 const apiBase = ref('http://localhost:8080')
 const title = ref('SongRacer Job')
@@ -190,6 +192,11 @@ function normalizeDurationSeconds(value: number, fallback = 24): number {
 function normalizeNonNegativeSeconds(value: number, fallback = 0): number {
   const base = Number.isFinite(value) ? value : fallback
   return Math.max(0, Number(base))
+}
+
+function normalizeScale(value: number, fallback = 1.0): number {
+  const base = Number.isFinite(value) ? value : fallback
+  return Math.max(SCALE_MIN, Math.min(SCALE_MAX, Number(base)))
 }
 
 function resetWorldHeightToDefault() {
@@ -351,7 +358,10 @@ async function createJob(isPreview: boolean) {
   try {
     const payload: Record<string, unknown> = {
       config: buildInlineConfig(),
-      preview_scale: isPreview ? previewScale.value : finalScale.value,
+      preview_scale: normalizeScale(
+        isPreview ? previewScale.value : finalScale.value,
+        isPreview ? 0.32 : 1.0,
+      ),
     }
     if (outputPathInput.value.trim()) {
       payload.output_path = outputPathInput.value.trim()
@@ -762,7 +772,10 @@ async function renderSavedProject(projectId: number, isPreview: boolean) {
     : `Submitting final render for project #${projectId}...`
   try {
     const payload: Record<string, unknown> = {
-      preview_scale: isPreview ? previewScale.value : finalScale.value,
+      preview_scale: normalizeScale(
+        isPreview ? previewScale.value : finalScale.value,
+        isPreview ? 0.32 : 1.0,
+      ),
     }
     if (outputPathInput.value.trim()) {
       payload.output_path = outputPathInput.value.trim()
@@ -1058,11 +1071,27 @@ onUnmounted(() => {
               </label>
               <label class="text-sm text-slate-300">
                 Preview Scale
-                <input v-model.number="previewScale" type="number" min="0.05" max="1" step="0.01" class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100" />
+                <input
+                  v-model.number="previewScale"
+                  type="number"
+                  :min="SCALE_MIN"
+                  :max="SCALE_MAX"
+                  step="0.01"
+                  class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
+                  @blur="previewScale = normalizeScale(previewScale, 0.32)"
+                />
               </label>
               <label class="text-sm text-slate-300">
                 Final Scale
-                <input v-model.number="finalScale" type="number" min="0.05" max="1" step="0.01" class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100" />
+                <input
+                  v-model.number="finalScale"
+                  type="number"
+                  :min="SCALE_MIN"
+                  :max="SCALE_MAX"
+                  step="0.01"
+                  class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
+                  @blur="finalScale = normalizeScale(finalScale, 1.0)"
+                />
               </label>
               <label class="text-sm text-slate-300">
                 Background Color

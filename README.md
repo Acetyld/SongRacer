@@ -262,6 +262,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - capability-derived world-height bounds/default are normalized to integer values before UI application.
 - main form starts from the capability fallback world-height default and then updates dynamically from backend capabilities.
 - duration/countdown/winner-hold fields are normalized on blur and before config submission (positive/non-negative safety).
+- preview/final scale fields are normalized to backend bounds (`0.01..1.0`) on blur and before submission.
 - capability refresh responses are nonce-guarded so stale API-base responses cannot overwrite newer bounds.
 - App jobs/projects/system-info refresh responses are also nonce-guarded to avoid stale API-base overwrite races.
 - projects/system-info refresh failures do not force offline banner; jobs polling remains the primary liveness signal.
