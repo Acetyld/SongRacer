@@ -518,7 +518,14 @@ async function refreshProjects() {
     }
     const body = await resp.json()
     if (req !== projectsRequestNonce) return
-    projects.value = body.projects || []
+    const nextProjects: ProjectRow[] = Array.isArray(body.projects) ? body.projects : []
+    projects.value = nextProjects
+    if (
+      activeProjectId.value !== null &&
+      !nextProjects.some((p) => Number(p.id) === activeProjectId.value)
+    ) {
+      activeProjectId.value = null
+    }
     backendOnline.value = true
   } catch (_err) {
     // keep current online status; jobs polling is the primary liveness signal
