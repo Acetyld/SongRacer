@@ -402,6 +402,40 @@ def test_preview_cache_key_treats_omitted_sampling_fields_as_defaults() -> None:
         assert second.json()["cache_hit"] is True
 
 
+def test_preview_cache_key_treats_omitted_world_height_as_default() -> None:
+    payload_omitted_world_height = {
+        "render": {
+            "width": 320,
+            "height": 560,
+            "fps": 30,
+            "duration_seconds": 2.0,
+            "countdown_seconds": 0.0,
+        },
+        "racers": [{"name": "A", "x": 140, "y": 90, "radius": 24}],
+        "obstacles": [{"type": "rect", "x": 160, "y": 300, "width": 180, "height": 24}],
+    }
+    with TestClient(app) as client:
+        capabilities = client.get("/builder/capabilities")
+        assert capabilities.status_code == 200
+        default_world_height = int(capabilities.json()["preview"]["world_height"]["default"])
+        payload_explicit_world_height = {
+            **payload_omitted_world_height,
+            "render": {
+                **payload_omitted_world_height["render"],
+                "world_height": default_world_height,
+            },
+        }
+
+        cleared = client.post("/preview/cache/clear")
+        assert cleared.status_code == 200
+        first = client.post("/preview/simulate", json=payload_omitted_world_height)
+        second = client.post("/preview/simulate", json=payload_explicit_world_height)
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert first.json()["cache_hit"] is False
+        assert second.json()["cache_hit"] is True
+
+
 def test_preview_simulate_respects_max_frames_cap() -> None:
     payload = {
         "render": {
