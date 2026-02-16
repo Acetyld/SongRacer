@@ -55,6 +55,10 @@ const FALLBACK_WORLD_HEIGHT_CAPS: RangeCaps = {
 }
 const SCALE_MIN = 0.01
 const SCALE_MAX = 1.0
+const SYNC_TRIM_MIN_SECONDS = 0
+const SYNC_TRIM_MAX_SECONDS = 30
+const SYNC_OFFSET_MIN_SECONDS = -30
+const SYNC_OFFSET_MAX_SECONDS = 30
 
 const apiBase = ref('http://localhost:8080')
 const title = ref('SongRacer Job')
@@ -197,6 +201,21 @@ function normalizeNonNegativeSeconds(value: number, fallback = 0): number {
 function normalizeScale(value: number, fallback = 1.0): number {
   const base = Number.isFinite(value) ? value : fallback
   return Math.max(SCALE_MIN, Math.min(SCALE_MAX, Number(base)))
+}
+
+function normalizeUnitInterval(value: number, fallback = 0.5): number {
+  const base = Number.isFinite(value) ? value : fallback
+  return Math.max(0, Math.min(1, Number(base)))
+}
+
+function normalizeSyncTrimSeconds(value: number, fallback = 0): number {
+  const base = Number.isFinite(value) ? value : fallback
+  return Math.max(SYNC_TRIM_MIN_SECONDS, Math.min(SYNC_TRIM_MAX_SECONDS, Number(base)))
+}
+
+function normalizeSyncOffsetSeconds(value: number, fallback = 0): number {
+  const base = Number.isFinite(value) ? value : fallback
+  return Math.max(SYNC_OFFSET_MIN_SECONDS, Math.min(SYNC_OFFSET_MAX_SECONDS, Number(base)))
 }
 
 function resetWorldHeightToDefault() {
@@ -342,10 +361,10 @@ function buildInlineConfig() {
       x: 220 + idx * 150,
       y: 420 + (idx % 2) * 40,
       radius: 96,
-      crop_center_x: r.cropCenterX,
-      crop_center_y: r.cropCenterY,
-      sync_offset_seconds: r.syncOffsetSeconds,
-      sync_trim_start_seconds: r.syncTrimStartSeconds,
+      crop_center_x: normalizeUnitInterval(r.cropCenterX, 0.5),
+      crop_center_y: normalizeUnitInterval(r.cropCenterY, 0.5),
+      sync_offset_seconds: normalizeSyncOffsetSeconds(r.syncOffsetSeconds, 0),
+      sync_trim_start_seconds: normalizeSyncTrimSeconds(r.syncTrimStartSeconds, 0),
     })),
     obstacles,
   }
@@ -441,8 +460,8 @@ async function autoSyncAudio() {
     const waveforms: Array<{ samples?: number[]; duration_seconds?: number }> =
       payload.waveforms || []
     racers.value.forEach((racer, idx) => {
-      racer.syncOffsetSeconds = Number(offsets[idx] ?? 0)
-      racer.syncTrimStartSeconds = Number(trims[idx] ?? 0)
+      racer.syncOffsetSeconds = normalizeSyncOffsetSeconds(Number(offsets[idx] ?? 0), 0)
+      racer.syncTrimStartSeconds = normalizeSyncTrimSeconds(Number(trims[idx] ?? 0), 0)
       const wf = waveforms[idx]
       if (wf) {
         racer.waveformSamples = wf.samples || []
@@ -651,10 +670,10 @@ function applyConfigToForm(cfg: Record<string, any>) {
     id: `${Date.now()}_${idx}_${Math.random().toString(16).slice(2)}`,
     name: String(r.name ?? `Singer${idx + 1}`),
     uploadedPath: String(r.video_path ?? ''),
-    cropCenterX: Number(r.crop_center_x ?? 0.5),
-    cropCenterY: Number(r.crop_center_y ?? 0.5),
-    syncTrimStartSeconds: Number(r.sync_trim_start_seconds ?? 0),
-    syncOffsetSeconds: Number(r.sync_offset_seconds ?? 0),
+    cropCenterX: normalizeUnitInterval(Number(r.crop_center_x ?? 0.5), 0.5),
+    cropCenterY: normalizeUnitInterval(Number(r.crop_center_y ?? 0.5), 0.5),
+    syncTrimStartSeconds: normalizeSyncTrimSeconds(Number(r.sync_trim_start_seconds ?? 0), 0),
+    syncOffsetSeconds: normalizeSyncOffsetSeconds(Number(r.sync_offset_seconds ?? 0), 0),
   }))
 }
 
@@ -937,6 +956,7 @@ onUnmounted(() => {
                     type="number"
                     step="0.01"
                     class="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                    @blur="racer.syncTrimStartSeconds = normalizeSyncTrimSeconds(racer.syncTrimStartSeconds, 0)"
                   />
                 </label>
                 <p class="mt-1 text-[10px] text-slate-500">

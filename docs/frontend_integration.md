@@ -598,6 +598,7 @@ The frontend app in `frontend/` already implements:
 - App initializes world-height from capability fallback default and then refreshes from backend capability payload,
 - duration/countdown/winner-hold controls are normalized on blur and again before inline config submission,
 - preview/final scale controls are normalized on blur and again before submission (`0.01..1.0` backend bounds),
+- racer crop/sync fields are clamped before load/sync/submit (`crop [0,1]`, `trim [0,30]`, `offset [-30,30]`),
 - capability refresh is nonce-guarded so out-of-order API-base responses do not overwrite newer bounds,
 - App jobs/projects/system-info refreshes are likewise nonce-guarded to prevent stale API-base responses from overriding current data,
 - projects/system-info refresh failures do not independently set offline state; jobs refresh remains the primary liveness signal,
