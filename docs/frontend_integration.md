@@ -138,6 +138,38 @@ Request:
 }
 ```
 
+### `POST /waveform`
+Return downsampled waveform preview points for one video.
+
+Request:
+
+```json
+{
+  "video_path": "/workspace/uploads/a.mp4",
+  "sample_rate": 8000,
+  "points": 320
+}
+```
+
+Response:
+
+```json
+{
+  "samples": [0.02, 0.05, 0.18, "..."],
+  "duration_seconds": 31.2
+}
+```
+
+### Project database CRUD
+
+- `GET /projects`
+- `POST /projects`
+- `GET /projects/{project_id}`
+- `PUT /projects/{project_id}`
+- `DELETE /projects/{project_id}`
+
+Backed by SQLite (`songracer.db`) for persistent frontend project storage.
+
 Response:
 
 ```json
@@ -190,6 +222,8 @@ The frontend app in `frontend/` already implements:
 - video upload flow,
 - per-racer crop center selection,
 - per-racer sync trims (+ one-click auto-sync via `/sync/audio`),
+- per-racer waveform preview with trim marker (`/waveform`),
+- project save/load/update/delete against backend DB CRUD,
 - preview and final job submission,
 - live job list polling,
 - artifact preview panel.

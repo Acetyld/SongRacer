@@ -126,6 +126,7 @@ Endpoints:
 - `GET /health`
 - `POST /uploads` (multipart video upload)
 - `POST /sync/audio` with `{ "video_paths": [...], "sample_rate": 16000, "max_shift_seconds": 8 }`
+- `POST /waveform` with `{ "video_path": "...", "sample_rate": 8000, "points": 320 }`
 - `POST /validate` with `{ "config_path": "..." }`
 - `POST /render` with
   `{ "config_path": "...", "output_path": "...", "preview_scale": 1.0 }`
@@ -135,6 +136,7 @@ Endpoints:
 - `GET /jobs`
 - `GET /jobs/{job_id}`
 - `GET /jobs/{job_id}/artifact`
+- `GET /projects` / `POST /projects` / `GET|PUT|DELETE /projects/{id}` (SQLite project CRUD)
 
 Integration contract details: `docs/frontend_integration.md`
 

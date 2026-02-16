@@ -16,9 +16,10 @@ from pydantic import BaseModel, Field
 
 from .cli import _scaled_config
 from .config import ConfigError, load_config, validate_config
+from .db import create_project, delete_project, get_project, init_db, list_projects, update_project
 from .jobs import JobManager
 from .pipeline import render_race
-from .sync import SyncError, estimate_video_sync_offsets
+from .sync import SyncError, estimate_video_sync_offsets, extract_waveform_preview
 
 
 job_manager = JobManager(max_workers=2)
@@ -27,6 +28,7 @@ job_manager = JobManager(max_workers=2)
 @asynccontextmanager
 async def _lifespan(_: FastAPI):
     try:
+        init_db()
         yield
     finally:
         job_manager.shutdown()
@@ -76,6 +78,17 @@ class AudioSyncRequest(BaseModel):
     max_shift_seconds: float = Field(8.0, ge=0.0, le=30.0)
 
 
+class WaveformRequest(BaseModel):
+    video_path: str
+    sample_rate: int = Field(8000, ge=4000, le=96000)
+    points: int = Field(320, ge=16, le=2000)
+
+
+class ProjectPayload(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    config: dict[str, Any]
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -106,6 +119,16 @@ def sync_audio(payload: AudioSyncRequest) -> dict[str, Any]:
         "trim_start_seconds": analysis.trim_start_seconds,
         "common_window_seconds": analysis.common_window_seconds,
     }
+
+
+@app.post("/waveform")
+def waveform(payload: WaveformRequest) -> dict[str, Any]:
+    try:
+        return extract_waveform_preview(
+            payload.video_path, sample_rate=payload.sample_rate, points=payload.points
+        )
+    except SyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/validate")
@@ -195,6 +218,62 @@ def get_job_artifact(job_id: str) -> FileResponse:
         raise HTTPException(status_code=500, detail="Job completed without stats")
     artifact_path = job.stats.output_path
     return FileResponse(artifact_path, media_type="video/mp4", filename="songracer.mp4")
+
+
+@app.get("/projects")
+def projects_list() -> dict[str, list[dict[str, Any]]]:
+    return {"projects": list_projects()}
+
+
+@app.post("/projects")
+def projects_create(payload: ProjectPayload) -> dict[str, Any]:
+    record = create_project(payload.name, payload.config)
+    return {
+        "id": record.id,
+        "name": record.name,
+        "config": record.config,
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+    }
+
+
+@app.get("/projects/{project_id}")
+def projects_get(project_id: int) -> dict[str, Any]:
+    try:
+        record = get_project(project_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Project not found") from exc
+    return {
+        "id": record.id,
+        "name": record.name,
+        "config": record.config,
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+    }
+
+
+@app.put("/projects/{project_id}")
+def projects_update(project_id: int, payload: ProjectPayload) -> dict[str, Any]:
+    try:
+        record = update_project(project_id, payload.name, payload.config)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Project not found") from exc
+    return {
+        "id": record.id,
+        "name": record.name,
+        "config": record.config,
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+    }
+
+
+@app.delete("/projects/{project_id}")
+def projects_delete(project_id: int) -> dict[str, bool]:
+    try:
+        delete_project(project_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Project not found") from exc
+    return {"deleted": True}
 
 
 def run_dev_server() -> None:

@@ -70,6 +70,33 @@ def _duration_seconds(video_path: str) -> float:
         raise SyncError(f"Invalid duration value for {video_path}") from exc
 
 
+def extract_waveform_preview(
+    video_path: str,
+    sample_rate: int = 8000,
+    points: int = 320,
+) -> dict[str, object]:
+    if not Path(video_path).exists():
+        raise SyncError(f"Video path not found: {video_path}")
+    signal = _decode_mono_pcm(video_path, sample_rate=sample_rate)
+    duration = _duration_seconds(video_path)
+    if signal.size == 0 or points <= 0:
+        return {"samples": [0.0 for _ in range(max(0, points))], "duration_seconds": duration}
+    env = np.abs(signal - np.mean(signal))
+    chunk = max(1, env.size // points)
+    out: list[float] = []
+    for idx in range(points):
+        start = idx * chunk
+        end = min(env.size, (idx + 1) * chunk)
+        if start >= env.size:
+            out.append(0.0)
+        else:
+            out.append(float(np.mean(env[start:end])))
+    vmax = max(out) if out else 0.0
+    if vmax > 1e-9:
+        out = [float(v / vmax) for v in out]
+    return {"samples": out, "duration_seconds": duration}
+
+
 def _prepare_envelope(signal: np.ndarray, sample_rate: int) -> tuple[np.ndarray, int]:
     if signal.size == 0:
         return np.zeros((0,), dtype=np.float32), 200
