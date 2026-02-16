@@ -52,7 +52,7 @@ Combined builder bootstrap payload to reduce round-trips. Includes:
 - `bootstrap_version` (deterministic content hash for cache/debug visibility; stable for unchanged payload)
 
 ### `GET /templates/obstacle-types`
-Returns obstacle type catalog for builder palette rendering.
+Returns obstacle type catalog for builder palette rendering (stable order for deterministic UI palette layout).
 
 Response:
 

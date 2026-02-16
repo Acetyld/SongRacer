@@ -73,3 +73,19 @@ def test_obstacle_type_catalog_has_known_labels() -> None:
     catalog = obstacle_type_catalog()
     assert any(item["type"] == "rect" for item in catalog)
     assert any(item["label"] == "Ring Gap" for item in catalog)
+
+
+def test_obstacle_type_catalog_is_unique_and_stable_order() -> None:
+    catalog = obstacle_type_catalog()
+    types = [item["type"] for item in catalog]
+    assert len(types) == len(set(types))
+    assert types == [
+        "rect",
+        "moving_rect",
+        "circle",
+        "ring_gap",
+        "spinner",
+        "pendulum",
+        "one_way_gate",
+    ]
+    assert all(str(item["label"]).strip() for item in catalog)
