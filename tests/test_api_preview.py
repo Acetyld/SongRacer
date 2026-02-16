@@ -135,3 +135,41 @@ def test_preview_simulate_cache_hit_on_repeat_payload() -> None:
         cache_after_variant = client.get("/preview/cache")
         assert cache_after_variant.status_code == 200
         assert cache_after_variant.json()["size"] >= 2
+
+
+def test_preview_cache_key_is_order_insensitive_for_json_payload() -> None:
+    payload = {
+        "seed": 21,
+        "render": {
+            "width": 300,
+            "height": 540,
+            "world_height": 1400,
+            "duration_seconds": 2.0,
+        },
+        "racers": [{"name": "A", "x": 140, "y": 90, "radius": 24}],
+        "obstacles": [{"type": "rect", "x": 150, "y": 240, "width": 160, "height": 22}],
+        "sample_fps": 10,
+        "max_frames": 120,
+    }
+    reordered_payload = {
+        "max_frames": 120,
+        "sample_fps": 10,
+        "obstacles": [{"height": 22, "width": 160, "y": 240, "x": 150, "type": "rect"}],
+        "racers": [{"radius": 24, "y": 90, "x": 140, "name": "A"}],
+        "render": {
+            "duration_seconds": 2.0,
+            "world_height": 1400,
+            "height": 540,
+            "width": 300,
+        },
+        "seed": 21,
+    }
+    with TestClient(app) as client:
+        cleared = client.post("/preview/cache/clear")
+        assert cleared.status_code == 200
+        first = client.post("/preview/simulate", json=payload)
+        second = client.post("/preview/simulate", json=reordered_payload)
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert first.json()["cache_hit"] is False
+        assert second.json()["cache_hit"] is True
