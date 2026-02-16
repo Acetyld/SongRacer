@@ -182,6 +182,16 @@ function normalizeWorldHeight(value: number, fallback = worldHeightCaps.value.de
   return Math.max(worldHeightCaps.value.min, Math.min(worldHeightCaps.value.max, rounded))
 }
 
+function normalizeDurationSeconds(value: number, fallback = 24): number {
+  const base = Number.isFinite(value) ? value : fallback
+  return Math.max(1, Number(base))
+}
+
+function normalizeNonNegativeSeconds(value: number, fallback = 0): number {
+  const base = Number.isFinite(value) ? value : fallback
+  return Math.max(0, Number(base))
+}
+
 function resetWorldHeightToDefault() {
   worldHeight.value = normalizeWorldHeight(worldHeightCaps.value.default)
 }
@@ -298,19 +308,19 @@ function buildInlineConfig() {
   }
   return {
     seed: 13,
-    sync_common_window_seconds: syncCommonWindowSeconds.value,
+    sync_common_window_seconds: normalizeNonNegativeSeconds(syncCommonWindowSeconds.value, 0),
     render: {
       width: 1080,
       height: 1920,
       world_height: normalizeWorldHeight(worldHeight.value),
       fps: 30,
-      duration_seconds: duration.value,
-      countdown_seconds: countdown.value,
+      duration_seconds: normalizeDurationSeconds(duration.value, 24),
+      countdown_seconds: normalizeNonNegativeSeconds(countdown.value, 3),
       goal_margin: 150,
       camera_follow: true,
       camera_lead_ratio: 0.35,
       auto_end_on_winner: true,
-      winner_hold_seconds: winnerHold.value,
+      winner_hold_seconds: normalizeNonNegativeSeconds(winnerHold.value, 3),
       obstacle_stream_spacing: 980,
       obstacle_stream_jitter_x: 135,
       obstacle_stream_repeats: 5,
@@ -607,12 +617,24 @@ async function saveProject() {
 function applyConfigToForm(cfg: Record<string, any>) {
   const render = cfg.render || {}
   const bg = cfg.background || {}
-  duration.value = Number(render.duration_seconds ?? duration.value)
-  countdown.value = Number(render.countdown_seconds ?? countdown.value)
-  winnerHold.value = Number(render.winner_hold_seconds ?? winnerHold.value)
+  duration.value = normalizeDurationSeconds(
+    Number(render.duration_seconds ?? duration.value),
+    duration.value,
+  )
+  countdown.value = normalizeNonNegativeSeconds(
+    Number(render.countdown_seconds ?? countdown.value),
+    countdown.value,
+  )
+  winnerHold.value = normalizeNonNegativeSeconds(
+    Number(render.winner_hold_seconds ?? winnerHold.value),
+    winnerHold.value,
+  )
   worldHeight.value = normalizeWorldHeight(Number(render.world_height ?? worldHeight.value))
   backgroundColor.value = String(bg.solid_color ?? backgroundColor.value)
-  syncCommonWindowSeconds.value = Number(cfg.sync_common_window_seconds ?? 0)
+  syncCommonWindowSeconds.value = normalizeNonNegativeSeconds(
+    Number(cfg.sync_common_window_seconds ?? 0),
+    0,
+  )
   obstacleJson.value = JSON.stringify(cfg.obstacles || [], null, 2)
   const loadedRacers = Array.isArray(cfg.racers) ? cfg.racers : []
   racers.value = loadedRacers.map((r: any, idx: number) => ({
@@ -983,7 +1005,13 @@ onUnmounted(() => {
               </label>
               <label class="text-sm text-slate-300">
                 Duration (cap seconds)
-                <input v-model.number="duration" type="number" min="1" class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100" />
+                <input
+                  v-model.number="duration"
+                  type="number"
+                  min="1"
+                  class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
+                  @blur="duration = normalizeDurationSeconds(duration, 24)"
+                />
               </label>
               <label class="text-sm text-slate-300">
                 World Height
@@ -1010,11 +1038,23 @@ onUnmounted(() => {
               </label>
               <label class="text-sm text-slate-300">
                 Countdown (seconds)
-                <input v-model.number="countdown" type="number" min="0" class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100" />
+                <input
+                  v-model.number="countdown"
+                  type="number"
+                  min="0"
+                  class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
+                  @blur="countdown = normalizeNonNegativeSeconds(countdown, 3)"
+                />
               </label>
               <label class="text-sm text-slate-300">
                 Winner Hold (seconds)
-                <input v-model.number="winnerHold" type="number" min="0" class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100" />
+                <input
+                  v-model.number="winnerHold"
+                  type="number"
+                  min="0"
+                  class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
+                  @blur="winnerHold = normalizeNonNegativeSeconds(winnerHold, 3)"
+                />
               </label>
               <label class="text-sm text-slate-300">
                 Preview Scale
