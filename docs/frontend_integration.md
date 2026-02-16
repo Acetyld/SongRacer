@@ -141,6 +141,27 @@ Request:
 }
 ```
 
+### `POST /sync/preview`
+Returns sync analysis plus waveform previews for all provided videos.
+
+Request:
+
+```json
+{
+  "video_paths": ["/workspace/uploads/a.mp4", "/workspace/uploads/b.mp4"],
+  "sample_rate": 16000,
+  "max_shift_seconds": 8.0,
+  "waveform_sample_rate": 8000,
+  "waveform_points": 220
+}
+```
+
+Response includes:
+- `offsets_seconds`
+- `trim_start_seconds`
+- `common_window_seconds`
+- `waveforms[]` (samples + duration per video)
+
 ### `POST /waveform`
 Return downsampled waveform preview points for one video.
 

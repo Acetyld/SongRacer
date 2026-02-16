@@ -308,13 +308,15 @@ async function autoSyncAudio() {
   statusMessage.value = 'Analyzing waveform alignment...'
   try {
     const videoPaths = racers.value.map((r) => r.uploadedPath as string)
-    const resp = await fetch(`${apiBase.value}/sync/audio`, {
+    const resp = await fetch(`${apiBase.value}/sync/preview`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         video_paths: videoPaths,
         sample_rate: 16000,
         max_shift_seconds: 8.0,
+        waveform_sample_rate: 8000,
+        waveform_points: 220,
       }),
     })
     if (!resp.ok) {
@@ -324,9 +326,16 @@ async function autoSyncAudio() {
     const offsets: number[] = payload.offsets_seconds || []
     const trims: number[] = payload.trim_start_seconds || []
     const commonWindow = Number(payload.common_window_seconds || 0)
+    const waveforms: Array<{ samples?: number[]; duration_seconds?: number }> =
+      payload.waveforms || []
     racers.value.forEach((racer, idx) => {
       racer.syncOffsetSeconds = Number(offsets[idx] ?? 0)
       racer.syncTrimStartSeconds = Number(trims[idx] ?? 0)
+      const wf = waveforms[idx]
+      if (wf) {
+        racer.waveformSamples = wf.samples || []
+        racer.waveformDurationSeconds = Number(wf.duration_seconds || 0)
+      }
     })
     syncCommonWindowSeconds.value = commonWindow
     if (commonWindow > 0) {
@@ -334,7 +343,6 @@ async function autoSyncAudio() {
     }
     backendOnline.value = true
     statusMessage.value = `Auto sync applied. Common overlap ${commonWindow.toFixed(2)}s.`
-    await loadWaveforms()
   } catch (err) {
     backendOnline.value = false
     statusMessage.value = `Auto sync failed: ${String(err)}`

@@ -127,6 +127,7 @@ Endpoints:
 - `GET /system/info` (resolved writable storage + DB paths)
 - `POST /uploads` (multipart video upload)
 - `POST /sync/audio` with `{ "video_paths": [...], "sample_rate": 16000, "max_shift_seconds": 8 }`
+- `POST /sync/preview` (sync analysis + waveform arrays in one call)
 - `POST /waveform` with `{ "video_path": "...", "sample_rate": 8000, "points": 320 }`
 - `POST /validate` with `{ "config_path": "..." }`
 - `POST /render` with
@@ -186,5 +187,7 @@ npm run build
   - verify `background.image_path` points to a real file; paths in config can be relative to the config file.
 - **Input videos are very long/high-res and slow down render**:
   - use `--preview-scale 0.5` while iterating.
+- **Preview render failed with x264 dimension error**:
+  - latest CLI auto-rounds scaled dimensions to even numbers; update to latest code.
 - **Audio crackles on rapid leader changes**:
   - increase `audio.switch_crossfade_ms` slightly (e.g. 12 -> 20).

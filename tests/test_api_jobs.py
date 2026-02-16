@@ -228,3 +228,27 @@ def test_audio_sync_endpoint_estimates_delay(tmp_path: Path) -> None:
         assert len(offsets) == 2
         assert abs(offsets[0]) < 0.05
         assert 0.25 <= abs(float(offsets[1])) <= 0.8
+
+
+def test_sync_preview_returns_waveforms(tmp_path: Path) -> None:
+    v1 = tmp_path / "sp1.mp4"
+    v2 = tmp_path / "sp2.mp4"
+    _make_noise_video(v1, delay_ms=0)
+    _make_noise_video(v2, delay_ms=250)
+    with TestClient(app) as client:
+        resp = client.post(
+            "/sync/preview",
+            json={
+                "video_paths": [str(v1), str(v2)],
+                "sample_rate": 12000,
+                "max_shift_seconds": 2.0,
+                "waveform_sample_rate": 8000,
+                "waveform_points": 64,
+            },
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body["offsets_seconds"]) == 2
+        assert len(body["trim_start_seconds"]) == 2
+        assert len(body["waveforms"]) == 2
+        assert len(body["waveforms"][0]["samples"]) == 64

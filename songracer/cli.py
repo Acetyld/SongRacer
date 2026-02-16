@@ -10,12 +10,19 @@ from .pipeline import render_race
 from .sync import apply_offsets_to_config_json, estimate_video_sync_offsets
 
 
+def _ensure_even(value: int, minimum: int) -> int:
+    v = max(minimum, int(value))
+    if v % 2 != 0:
+        v += 1
+    return v
+
+
 def _scaled_config(cfg: RaceConfig, scale: float) -> RaceConfig:
     if scale >= 0.999:
         return cfg
     out = copy.deepcopy(cfg)
-    out.render.width = max(16, int(round(cfg.render.width * scale)))
-    out.render.height = max(16, int(round(cfg.render.height * scale)))
+    out.render.width = _ensure_even(int(round(cfg.render.width * scale)), 16)
+    out.render.height = _ensure_even(int(round(cfg.render.height * scale)), 16)
     out.render.world_height = max(out.render.height, int(round(cfg.render.world_height * scale)))
     out.render.goal_margin = max(1.0, cfg.render.goal_margin * scale)
     out.render.obstacle_stream_spacing = cfg.render.obstacle_stream_spacing * scale

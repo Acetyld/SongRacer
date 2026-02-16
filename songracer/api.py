@@ -97,6 +97,14 @@ class AudioSyncRequest(BaseModel):
     max_shift_seconds: float = Field(8.0, ge=0.0, le=30.0)
 
 
+class SyncPreviewRequest(BaseModel):
+    video_paths: list[str]
+    sample_rate: int = Field(16000, ge=4000, le=96000)
+    max_shift_seconds: float = Field(8.0, ge=0.0, le=30.0)
+    waveform_sample_rate: int = Field(8000, ge=4000, le=96000)
+    waveform_points: int = Field(220, ge=16, le=2000)
+
+
 class WaveformRequest(BaseModel):
     video_path: str
     sample_rate: int = Field(8000, ge=4000, le=96000)
@@ -165,6 +173,32 @@ def sync_audio(payload: AudioSyncRequest) -> dict[str, Any]:
         "offsets_seconds": analysis.offsets_seconds,
         "trim_start_seconds": analysis.trim_start_seconds,
         "common_window_seconds": analysis.common_window_seconds,
+    }
+
+
+@app.post("/sync/preview")
+def sync_preview(payload: SyncPreviewRequest) -> dict[str, Any]:
+    try:
+        analysis = estimate_video_sync_offsets(
+            payload.video_paths,
+            sample_rate=payload.sample_rate,
+            max_shift_seconds=payload.max_shift_seconds,
+        )
+        waveforms = [
+            extract_waveform_preview(
+                video_path=path,
+                sample_rate=payload.waveform_sample_rate,
+                points=payload.waveform_points,
+            )
+            for path in payload.video_paths
+        ]
+    except SyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {
+        "offsets_seconds": analysis.offsets_seconds,
+        "trim_start_seconds": analysis.trim_start_seconds,
+        "common_window_seconds": analysis.common_window_seconds,
+        "waveforms": waveforms,
     }
 
 

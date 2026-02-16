@@ -20,7 +20,7 @@ python3 -m uvicorn songracer.api:app --host 0.0.0.0 --port 8080 --reload
 ## Features
 
 - Upload singer videos (`/uploads`)
-- Auto-sync singers by audio waveform (`/sync/audio`)
+- Auto-sync singers by audio waveform with bundled waveform preview (`/sync/preview`)
 - Waveform preview for each singer (`/waveform`)
 - Set per-singer face center by clicking preview (crop center sent to backend)
 - Save/load/update/delete projects using backend database CRUD (`/projects`)
