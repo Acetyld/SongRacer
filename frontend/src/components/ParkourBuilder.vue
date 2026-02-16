@@ -97,6 +97,9 @@ const previewData = ref<PreviewData | null>(null)
 const previewFrame = ref(0)
 const previewPlaying = ref(false)
 const previewLoading = ref(false)
+const autoPreview = ref(true)
+const previewSampleFps = ref(15)
+const previewMaxFrames = ref(360)
 const previewError = ref('')
 const followPreviewCamera = ref(true)
 const showGrid = ref(true)
@@ -108,6 +111,7 @@ let suppressEmit = false
 let previewDebounce: number | null = null
 let playbackHandle: number | null = null
 let riskDebounce: number | null = null
+let previewRequestNonce = 0
 
 function obstacleLabel(t: ObstacleType): string {
   return t.replace(/_/g, ' ')
@@ -279,6 +283,16 @@ watch(
   },
   { deep: true },
 )
+
+watch([previewSampleFps, previewMaxFrames], () => {
+  schedulePreview()
+})
+
+watch(autoPreview, (enabled) => {
+  if (enabled) {
+    schedulePreview()
+  }
+})
 
 const selectedObstacle = computed(() =>
   obstacles.value.find((o) => o.id === selectedId.value) ?? null,
@@ -614,6 +628,7 @@ function previewRacersPayload(): PreviewRacer[] {
 }
 
 async function requestPreview() {
+  const req = ++previewRequestNonce
   previewLoading.value = true
   previewError.value = ''
   try {
@@ -640,14 +655,17 @@ async function requestPreview() {
         },
         racers: previewRacersPayload(),
         obstacles: visibleObstacles.value.map((o) => obstacleToSerializable(o)),
-        sample_fps: 15,
-        max_frames: 360,
+        sample_fps: Math.max(4, Math.min(60, Math.round(previewSampleFps.value))),
+        max_frames: Math.max(40, Math.min(1200, Math.round(previewMaxFrames.value))),
       }),
     })
     if (!resp.ok) {
       throw new Error(await resp.text())
     }
     const body = await resp.json()
+    if (req !== previewRequestNonce) {
+      return
+    }
     previewData.value = {
       sample_fps: Number(body.sample_fps ?? 15),
       positions: Array.isArray(body.positions) ? body.positions : [],
@@ -663,9 +681,14 @@ async function requestPreview() {
       cameraY.value = Math.max(0, Math.min(cameraMax.value, Number(previewData.value.camera_y[0] ?? 0)))
     }
   } catch (err) {
+    if (req !== previewRequestNonce) {
+      return
+    }
     previewError.value = String(err)
   } finally {
-    previewLoading.value = false
+    if (req === previewRequestNonce) {
+      previewLoading.value = false
+    }
   }
 }
 
@@ -705,6 +728,7 @@ async function analyzeRisk() {
 }
 
 function schedulePreview() {
+  if (!autoPreview.value) return
   if (previewDebounce) {
     window.clearTimeout(previewDebounce)
     previewDebounce = null
@@ -1041,6 +1065,30 @@ onUnmounted(() => {
     <div class="grid gap-3 lg:grid-cols-[2.1fr_1fr]">
       <div class="space-y-2">
         <div class="flex flex-wrap items-center gap-3 text-xs text-slate-300">
+          <label class="flex items-center gap-1">
+            <input v-model="autoPreview" type="checkbox" />
+            Auto Preview
+          </label>
+          <label class="flex items-center gap-1">
+            Sample FPS
+            <input
+              v-model.number="previewSampleFps"
+              type="number"
+              min="4"
+              max="60"
+              class="w-14 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
+            />
+          </label>
+          <label class="flex items-center gap-1">
+            Max frames
+            <input
+              v-model.number="previewMaxFrames"
+              type="number"
+              min="40"
+              max="1200"
+              class="w-16 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
+            />
+          </label>
           <label class="flex items-center gap-1">
             Camera Y
             <input

@@ -175,6 +175,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - lock/hide obstacles and reorder layers while editing,
 - shift-click multi-select + bulk delete,
 - keyboard shortcuts for fast editing (delete/duplicate/select all/nudge),
+- tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - keep raw obstacle JSON synchronized for full-control edits.
 
 Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.

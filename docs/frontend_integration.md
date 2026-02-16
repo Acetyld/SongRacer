@@ -253,6 +253,7 @@ Response includes sampled arrays for:
 Live preview notes:
 - designed for interactive builder feedback (not final rendering),
 - sampled output is capped by `sample_fps` + `max_frames`,
+- frontend exposes sample-FPS / frame-cap controls and auto-preview toggle for responsiveness tuning,
 - use full render jobs for authoritative final video/audio output.
 
 Response:
