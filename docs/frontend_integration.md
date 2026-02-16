@@ -395,6 +395,8 @@ Clears preview-cache entries and returns counts:
 }
 ```
 
+If called again immediately, `cleared` should be `0` with `size` still `0` (idempotent clear behavior).
+
 ### Realtime Parkour Builder workflow
 
 1. Drag obstacle types from palette onto the builder canvas.
