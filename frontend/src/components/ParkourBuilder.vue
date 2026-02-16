@@ -273,10 +273,12 @@ function snap(v: number): number {
   return Math.round(v / grid) * grid
 }
 
-function clampRounded(value: number, min: number, max: number): number {
-  const rounded = Math.round(value)
+function clampRounded(value: number, min: number, max: number, fallback?: number): number {
   const lo = Math.min(min, max)
   const hi = Math.max(min, max)
+  const fallbackValue = Number.isFinite(fallback) ? Number(fallback) : lo
+  const base = Number.isFinite(value) ? value : fallbackValue
+  const rounded = Math.round(base)
   return Math.max(lo, Math.min(hi, rounded))
 }
 
@@ -2047,6 +2049,7 @@ function formatCapNumber(value: number): string {
 function builderLimitsText(): string {
   const caps = builderCaps.value
   const effectiveSafeHeight = safeAnalysisHeightForRequest()
+  const effectivePreviewWorldHeight = previewWorldHeightForRequest()
   return [
     `limits: preview fps ${formatCapNumber(caps.preview.sample_fps.min)}-${formatCapNumber(caps.preview.sample_fps.max)}`,
     `frames ${formatCapNumber(caps.preview.max_frames.min)}-${formatCapNumber(caps.preview.max_frames.max)}`,
@@ -2054,7 +2057,8 @@ function builderLimitsText(): string {
     `safe risk ${formatCapNumber(caps.generator.safe_target_max_risk.min)}-${formatCapNumber(caps.generator.safe_target_max_risk.max)}`,
     `safe tries ${formatCapNumber(caps.generator.safe_max_attempts.min)}-${formatCapNumber(caps.generator.safe_max_attempts.max)}`,
     `safe height ${formatCapNumber(caps.generator.safe_analysis_height.min)}-${formatCapNumber(caps.generator.safe_analysis_height.max)}`,
-    `using ${formatCapNumber(effectiveSafeHeight)}`,
+    `safe using ${formatCapNumber(effectiveSafeHeight)}`,
+    `preview world ${formatCapNumber(effectivePreviewWorldHeight)}`,
   ].join(', ')
 }
 
@@ -2068,7 +2072,12 @@ function safeAnalysisHeightForRequest(): number {
 }
 
 function previewWorldHeightForRequest(): number {
-  return clampRounded(props.worldHeight, previewWorldHeightMin, previewWorldHeightMax)
+  return clampRounded(
+    Number(props.worldHeight),
+    previewWorldHeightMin,
+    previewWorldHeightMax,
+    courseViewportHeight,
+  )
 }
 
 const previewFrameMax = computed(() => {

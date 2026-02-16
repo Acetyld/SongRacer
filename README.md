@@ -239,7 +239,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - builder UI preferences (grid/snap/preview tuning) persist locally in browser storage,
 - persisted builder numeric knobs are clamped to capability ranges when restored from local storage,
 - builder UI surfaces capability limits fetched from backend contract (preview fps/frames, generator count, safe risk/attempts, safe analysis height).
-- capability summary also shows effective safe analysis height currently used for safe-generation requests.
+- capability summary also shows effective safe analysis height and effective clamped preview world height used for backend requests.
 - builder includes a one-click action to reset preview/generator knobs to capability defaults.
 - safe procedural generation in builder derives `analysis_height` from current world-height and clamps it to capability bounds before request submission.
 - safe-generation status badge includes resolved analysis height used by backend scoring.

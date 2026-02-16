@@ -574,7 +574,7 @@ The frontend app in `frontend/` already implements:
 - safe generation status badge also surfaces the resolved analysis height used by backend scoring,
 - safe generation status is invalidated when obstacle visibility/layout or safe risk/attempt/analysis-height context changes,
 - UI displays live min/max limits from `/builder/capabilities` for preview and safe-generation controls (sample fps, frame cap, generator count, safe risk/attempts/analysis-height),
-- capability summary also shows the effective clamped safe analysis height currently used for requests,
+- capability summary also shows effective clamped safe analysis height and effective clamped preview world height currently used for requests,
 - builder has a one-click reset action to restore preview/generation knobs to capability defaults,
 - restored persisted numeric knobs (sample fps/frame cap/generator controls) are clamped to capability ranges before being applied,
 - safe-generation requests derive `analysis_height` from the active builder world height and clamp it to `/builder/capabilities.generator.safe_analysis_height`,
