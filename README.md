@@ -185,6 +185,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - quick clear/reset action for current obstacle layout,
 - focus helpers (`Focus Selected`, `Fit Camera`) for large courses,
 - malformed numeric obstacle fields are sanitized to safe defaults in builder import/parsing flow,
+- preset courses are loaded from backend template catalog with local fallback when offline,
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - builder UI preferences (grid/snap/preview tuning) persist locally in browser storage,
 - keep raw obstacle JSON synchronized for full-control edits.

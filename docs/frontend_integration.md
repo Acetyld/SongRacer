@@ -381,6 +381,7 @@ The frontend app in `frontend/` already implements:
 - one-click clear/reset action for obstacle layout,
 - camera focus helpers for selected obstacle and full-content fit,
 - local browser persistence for builder tuning preferences (grid/snap/preview knobs),
+- preset buttons resolve from `/templates/obstacles` and gracefully fallback to local defaults,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,

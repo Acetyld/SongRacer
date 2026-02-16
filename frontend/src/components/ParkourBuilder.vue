@@ -123,6 +123,7 @@ const riskWarnings = ref<
 const riskyObstacleIds = ref<Set<string>>(new Set())
 const clipboardStatus = ref('')
 const templateCatalog = ref<Record<string, Array<Record<string, unknown>>>>({})
+const templateSource = ref<'fallback' | 'api'>('fallback')
 const historyStack = ref<string[]>([])
 const historyIndex = ref(-1)
 const applyingHistory = ref(false)
@@ -1047,9 +1048,11 @@ async function loadPresetTemplates() {
     }
     if (Object.keys(next).length > 0) {
       templateCatalog.value = next
+      templateSource.value = 'api'
     }
   } catch (_err) {
     // ignore template fetch failures and keep local fallback templates
+    templateSource.value = 'fallback'
   }
 }
 
@@ -1557,6 +1560,12 @@ onUnmounted(() => {
       >
         Preset: Gates
       </button>
+      <span
+        class="rounded border px-2 py-1 text-[10px]"
+        :class="templateSource === 'api' ? 'border-emerald-500/50 text-emerald-300' : 'border-slate-600 text-slate-400'"
+      >
+        Presets: {{ templateSource === 'api' ? 'API catalog' : 'local fallback' }}
+      </span>
       <button
         class="rounded border border-rose-600/50 bg-rose-900/30 px-2 py-1 text-[11px] text-rose-200 hover:bg-rose-800/40 disabled:opacity-40"
         :disabled="obstacles.length === 0"
