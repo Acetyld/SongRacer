@@ -39,6 +39,7 @@ const winnerHold = ref(3)
 const backgroundColor = ref('#6EC6FF')
 const previewScale = ref(0.32)
 const finalScale = ref(1.0)
+const outputPathInput = ref('')
 const worldHeight = ref(7600)
 const syncCommonWindowSeconds = ref(0)
 const isBusy = ref(false)
@@ -199,9 +200,12 @@ async function createJob(isPreview: boolean) {
   isBusy.value = true
   statusMessage.value = isPreview ? 'Submitting preview job...' : 'Submitting final job...'
   try {
-    const payload = {
+    const payload: Record<string, unknown> = {
       config: buildInlineConfig(),
       preview_scale: isPreview ? previewScale.value : finalScale.value,
+    }
+    if (outputPathInput.value.trim()) {
+      payload.output_path = outputPathInput.value.trim()
     }
     const resp = await fetch(`${apiBase.value}/jobs/from-config`, {
       method: 'POST',
@@ -554,6 +558,14 @@ onUnmounted(() => {
               <label class="text-sm text-slate-300">
                 Job Title
                 <input v-model="title" class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100" />
+              </label>
+              <label class="text-sm text-slate-300">
+                Output path (optional)
+                <input
+                  v-model="outputPathInput"
+                  placeholder="backend default if empty"
+                  class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
+                />
               </label>
               <label class="text-sm text-slate-300">
                 Duration (cap seconds)

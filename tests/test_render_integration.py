@@ -94,3 +94,28 @@ def test_render_short_mp4(tmp_path: Path) -> None:
     )
     duration = float(probe.stdout.strip())
     assert 2.7 <= duration <= 3.3
+
+
+def test_render_honors_sync_common_window_cap(tmp_path: Path) -> None:
+    v1 = tmp_path / "c1.mp4"
+    _make_video(v1, freq=300, duration=5.0)
+    cfg = RaceConfig(
+        sync_common_window_seconds=1.25,
+        render=RenderConfig(width=240, height=426, fps=20, duration_seconds=6.0, countdown_seconds=0.5),
+        background=BackgroundConfig(mode="solid", solid_color="#89CEFF"),
+        racers=[
+            RacerConfig(
+                name="Only",
+                video_path=str(v1),
+                x=120,
+                y=100,
+                radius=36,
+                sync_trim_start_seconds=0.4,
+            )
+        ],
+        obstacles=[],
+    )
+    output = tmp_path / "sync_cap.mp4"
+    stats = render_race(cfg, output)
+    expected_frames = int(round((0.5 + 1.25) * 20))
+    assert stats.total_frames == expected_frames

@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import shutil
 from typing import Any
@@ -43,11 +44,14 @@ app.add_middleware(
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-UPLOAD_DIR = PROJECT_ROOT / "uploads"
+STORAGE_ROOT = Path(
+    os.environ.get("SONGRACER_STORAGE_DIR", str(PROJECT_ROOT))
+).expanduser().resolve()
+UPLOAD_DIR = STORAGE_ROOT / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-JOB_CONFIG_DIR = PROJECT_ROOT / "job_configs"
+JOB_CONFIG_DIR = STORAGE_ROOT / "job_configs"
 JOB_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-OUTPUT_DIR = PROJECT_ROOT / "outputs"
+OUTPUT_DIR = STORAGE_ROOT / "outputs"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
