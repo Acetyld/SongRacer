@@ -75,7 +75,12 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
             },
         )
         assert analysis.status_code == 200
-        assert analysis.json()["warning_count"] > 0
+        analysis_body = analysis.json()
+        assert analysis_body["warning_count"] > 0
+        assert any(
+            ("obstacle_index" in w) or ("obstacle_indices" in w)
+            for w in analysis_body.get("warnings", [])
+        )
 
         info = client.get("/system/info")
         assert info.status_code == 200
