@@ -1414,7 +1414,24 @@ watch(
   () => props.worldHeight,
   () => {
     cameraY.value = Math.max(0, Math.min(cameraY.value, cameraMax.value))
+    schedulePreview()
+    scheduleRiskAnalyze()
   },
+)
+
+watch(
+  [() => props.duration, () => props.countdown, () => props.winnerHold],
+  () => {
+    schedulePreview()
+  },
+)
+
+watch(
+  () => props.racers,
+  () => {
+    schedulePreview()
+  },
+  { deep: true },
 )
 
 function previewRacersPayload(): PreviewRacer[] {
@@ -1710,13 +1727,14 @@ async function requestPreview() {
 }
 
 async function analyzeRisk() {
+  const analysisHeight = safeAnalysisHeightForRequest()
   try {
     const resp = await fetch(`${props.apiBase}/analyze/config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         config: {
-          render: { width: 1080, height: 1920 },
+          render: { width: 1080, height: analysisHeight },
           obstacles: visibleObstacles.value.map((o) => obstacleToSerializable(o)),
         },
       }),

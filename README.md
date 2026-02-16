@@ -245,6 +245,8 @@ The Render Controls panel also includes a **Parkour Builder**:
 - safe-generation status badge includes resolved analysis height used by backend scoring.
 - safe-generation status is auto-invalidated when layout visibility, safe risk/attempt knobs, or analysis-height context changes.
 - frontend normalizes malformed capability ranges defensively before applying control limits.
+- builder live preview auto-refreshes when race timing (duration/countdown/winner hold), racers, or world-height settings change.
+- builder risk analysis uses the same effective clamped analysis-height context as safe-generation scoring.
 - keep raw obstacle JSON synchronized for full-control edits.
 
 Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.
