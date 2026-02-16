@@ -351,6 +351,20 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
             },
         )
         assert generated_safe_invalid_analysis_height.status_code == 422
+        generated_safe_invalid_analysis_height_low = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": int(gen_caps["count"]["min"]),
+                "start_y": 950,
+                "spacing": 240,
+                "width": 1080,
+                "seed": 99,
+                "target_max_risk": int(gen_caps["safe_target_max_risk"]["default"]),
+                "max_attempts": int(gen_caps["safe_max_attempts"]["default"]),
+                "analysis_height": float(gen_caps["safe_analysis_height"]["min"]) - 1.0,
+            },
+        )
+        assert generated_safe_invalid_analysis_height_low.status_code == 422
 
         generated_safe_strict = client.post(
             "/templates/obstacles/generate-safe",
