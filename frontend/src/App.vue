@@ -805,6 +805,7 @@ onMounted(() => {
 watch(
   () => apiBase.value,
   () => {
+    statusMessage.value = ''
     previewArtifactUrl.value = null
     jobs.value = []
     projects.value = []

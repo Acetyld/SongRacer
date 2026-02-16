@@ -255,6 +255,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - changing API base in main render form refreshes jobs/projects/system info and capability bounds against the selected backend.
 - changing API base clears active artifact preview URL to avoid stale links to previous backend.
 - changing API base also clears stale panel data (jobs/projects/system info, active project selection, and local risk panel) before refetch.
+- changing API base clears stale status message text before refetch to avoid misleading previous-backend notices.
 - if refreshed project list no longer contains the active project id, App clears active project selection and resets project-name field.
 - world-height control in main form shows capability-derived bounds/default hint for quick operator feedback.
 - world-height control includes a one-click "Default" action to restore capability-advertised default.

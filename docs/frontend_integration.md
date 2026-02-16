@@ -590,6 +590,7 @@ The frontend app in `frontend/` already implements:
 - changing API base in App triggers refresh of jobs/projects/system-info plus builder capability bounds from the selected backend,
 - changing API base also clears any currently open artifact preview URL to avoid stale cross-backend artifact links,
 - changing API base proactively clears stale jobs/projects/system panel data plus active project/risk UI state before refetch,
+- changing API base clears stale status-message text before refetch to avoid previous-backend messaging confusion,
 - if refreshed projects no longer include current active id, App clears active project selection and resets project-name field,
 - world-height input displays capability-derived min/max/default hint values in the main render form,
 - world-height input has a one-click reset-to-default action sourced from capability default,
