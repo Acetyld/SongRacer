@@ -304,6 +304,12 @@ function clampCamera(y: number): number {
   return Math.max(0, Math.min(cameraMax.value, y))
 }
 
+function selectedIdSet(): Set<string> {
+  if (selectedIds.value.length > 0) return new Set(selectedIds.value)
+  if (selectedId.value) return new Set([selectedId.value])
+  return new Set()
+}
+
 function focusOnObstacle(obs: BuilderObstacle | null, offset = 220) {
   if (!obs) return
   const pos = obstaclePosition(obs)
@@ -330,6 +336,73 @@ function clickObstacleHandle(obs: BuilderObstacle, ev: MouseEvent) {
 
 function clickLayerRow(id: string, ev: MouseEvent) {
   selectObstacle(id, ev.shiftKey)
+}
+
+function nudgeSelection(dx: number, dy: number) {
+  const ids = selectedIdSet()
+  if (ids.size === 0) return
+  for (const obs of obstacles.value) {
+    if (!ids.has(obs.id) || isLocked(obs.id)) continue
+    moveObstacle(obs, obs.x + dx, obs.y + dy)
+  }
+}
+
+function shouldIgnoreKeyboardShortcuts(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null
+  if (!el) return false
+  const tag = (el.tagName || '').toLowerCase()
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
+  if (el.isContentEditable) return true
+  return false
+}
+
+function onWindowKeyDown(ev: KeyboardEvent) {
+  if (shouldIgnoreKeyboardShortcuts(ev.target)) return
+  const step = ev.shiftKey ? 20 : 5
+  if (ev.key === 'Delete' || ev.key === 'Backspace') {
+    const ids = selectedIdSet()
+    if (ids.size > 0) {
+      ev.preventDefault()
+      deleteSelected()
+    }
+    return
+  }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'd') {
+    if (selectedObstacle.value && selectedIds.value.length <= 1) {
+      ev.preventDefault()
+      duplicateSelected()
+    }
+    return
+  }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'a') {
+    ev.preventDefault()
+    selectAll()
+    return
+  }
+  if (ev.key === 'Escape') {
+    ev.preventDefault()
+    clearSelection()
+    return
+  }
+  if (ev.key === 'ArrowLeft') {
+    ev.preventDefault()
+    nudgeSelection(-step, 0)
+    return
+  }
+  if (ev.key === 'ArrowRight') {
+    ev.preventDefault()
+    nudgeSelection(step, 0)
+    return
+  }
+  if (ev.key === 'ArrowUp') {
+    ev.preventDefault()
+    nudgeSelection(0, -step)
+    return
+  }
+  if (ev.key === 'ArrowDown') {
+    ev.preventDefault()
+    nudgeSelection(0, step)
+  }
 }
 
 function toCanvasXY(clientX: number, clientY: number, container: HTMLElement): { x: number; y: number } {
@@ -371,11 +444,13 @@ function obstaclePosition(obs: BuilderObstacle): { x: number; y: number } {
 }
 
 function moveObstacle(obs: BuilderObstacle, x: number, y: number) {
-  obs.x = snap(x)
-  obs.y = snap(y)
+  const nx = Math.max(0, Math.min(courseWidth, snap(x)))
+  const ny = Math.max(0, Math.min(props.worldHeight, snap(y)))
+  obs.x = nx
+  obs.y = ny
   if (obs.type === 'pendulum') {
-    obs.pivot_x = snap(x)
-    obs.pivot_y = snap(y)
+    obs.pivot_x = nx
+    obs.pivot_y = ny
   }
 }
 
@@ -406,7 +481,7 @@ function stopDrag() {
 }
 
 function duplicateSelected() {
-  if (!selectedObstacle.value) return
+  if (!selectedObstacle.value || selectedIds.value.length > 1) return
   const source = selectedObstacle.value
   const copy: BuilderObstacle = {
     ...JSON.parse(JSON.stringify(source)),
@@ -419,15 +494,43 @@ function duplicateSelected() {
     copy.pivot_y = Number(copy.pivot_y ?? source.y) + 48
   }
   obstacles.value.push(copy)
+  selectedIds.value = [copy.id]
   selectedId.value = copy.id
 }
 
 function deleteSelected() {
-  const ids = selectedIds.value.length > 0 ? new Set(selectedIds.value) : new Set(selectedId.value ? [selectedId.value] : [])
+  const ids = selectedIdSet()
   if (ids.size === 0) return
   obstacles.value = obstacles.value.filter((o) => !ids.has(o.id))
   selectedIds.value = []
   selectedId.value = null
+}
+
+function selectAll() {
+  const ids = obstacles.value.map((o) => o.id)
+  selectedIds.value = ids
+  selectedId.value = ids[0] ?? null
+}
+
+function clearSelection() {
+  selectedIds.value = []
+  selectedId.value = null
+}
+
+function toggleHiddenForSelection() {
+  const ids = selectedIdSet()
+  if (ids.size === 0) return
+  for (const id of ids) {
+    toggleHidden(id)
+  }
+}
+
+function toggleLockForSelection() {
+  const ids = selectedIdSet()
+  if (ids.size === 0) return
+  for (const id of ids) {
+    toggleLock(id)
+  }
 }
 
 function applyPreset(preset: 'starter' | 'rings' | 'gates') {
@@ -794,6 +897,7 @@ function focusSelectedObstacle() {
 onMounted(() => {
   void requestPreview()
   void analyzeRisk()
+  window.addEventListener('keydown', onWindowKeyDown)
 })
 
 onUnmounted(() => {
@@ -809,6 +913,7 @@ onUnmounted(() => {
     window.clearTimeout(riskDebounce)
     riskDebounce = null
   }
+  window.removeEventListener('keydown', onWindowKeyDown)
 })
 </script>
 
@@ -833,11 +938,38 @@ onUnmounted(() => {
         Duplicate
       </button>
       <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700"
+        @click="selectAll"
+      >
+        Select All
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="selectedIds.length === 0 && !selectedObstacle"
+        @click="clearSelection"
+      >
+        Clear Selection
+      </button>
+      <button
         class="rounded border border-rose-600/50 bg-rose-900/40 px-2 py-1 text-[11px] text-rose-200 hover:bg-rose-800/50 disabled:opacity-40"
         :disabled="!selectedObstacle && selectedIds.length === 0"
         @click="deleteSelected"
       >
         Delete{{ selectedIds.length > 1 ? ` (${selectedIds.length})` : '' }}
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="selectedIds.length === 0 && !selectedObstacle"
+        @click="toggleLockForSelection"
+      >
+        Toggle Lock Selected
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="selectedIds.length === 0 && !selectedObstacle"
+        @click="toggleHiddenForSelection"
+      >
+        Toggle Hide Selected
       </button>
       <button
         class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
@@ -953,6 +1085,9 @@ onUnmounted(() => {
           />
           <span class="text-slate-400">{{ previewStateLabel() }}</span>
         </div>
+        <p class="text-[11px] text-slate-500">
+          Shortcuts: Delete=remove, Ctrl/Cmd+D=duplicate, Ctrl/Cmd+A=select all, Esc=clear, Arrows=move (Shift=20px).
+        </p>
 
         <div
           data-builder-canvas
