@@ -176,6 +176,52 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         )
         assert generated_safe_strict_repeat.status_code == 200
         assert generated_safe_strict_repeat.json() == generated_safe_strict_body
+        strict_analysis = client.post(
+            "/analyze/config",
+            json={
+                "config": {
+                    "render": {"width": 1080, "height": 1920},
+                    "obstacles": generated_safe_strict_body["obstacles"],
+                }
+            },
+        )
+        assert strict_analysis.status_code == 200
+        strict_analysis_body = strict_analysis.json()
+        assert strict_analysis_body["risk_score"] == generated_safe_strict_body["risk_score"]
+        assert strict_analysis_body["warning_count"] == generated_safe_strict_body["warning_count"]
+
+        candidate_risks: list[int] = []
+        for attempt in range(3):
+            candidate_seed = 99 + attempt
+            candidate_generated = client.post(
+                "/templates/obstacles/generate",
+                json={
+                    "count": 6,
+                    "start_y": 950,
+                    "spacing": 240,
+                    "width": 1080,
+                    "seed": candidate_seed,
+                },
+            )
+            assert candidate_generated.status_code == 200
+            candidate_obstacles = candidate_generated.json()["obstacles"]
+            candidate_analysis = client.post(
+                "/analyze/config",
+                json={
+                    "config": {
+                        "render": {"width": 1080, "height": 1920},
+                        "obstacles": candidate_obstacles,
+                    }
+                },
+            )
+            assert candidate_analysis.status_code == 200
+            candidate_risks.append(int(candidate_analysis.json()["risk_score"]))
+
+        best_risk = min(candidate_risks)
+        first_best_idx = candidate_risks.index(best_risk)
+        assert generated_safe_strict_body["risk_score"] == best_risk
+        assert generated_safe_strict_body["seed"] == 99 + first_best_idx
+        assert generated_safe_strict_body["attempts"] == first_best_idx + 1
 
         inline_valid = client.post("/validate/config", json={"config": payload_config})
         assert inline_valid.status_code == 200
