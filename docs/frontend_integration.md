@@ -587,6 +587,7 @@ The frontend app in `frontend/` already implements:
 - changing API base also clears the previously shown safe-generation result badge to avoid stale cross-backend status,
 - capability ranges from backend are normalized client-side (finite values, `min <= max`, default clamped into range) before being applied to controls,
 - App-level render form fetches preview world-height bounds from `/builder/capabilities` and clamps `render.world_height` before submitting inline job configs,
+- changing API base in App triggers refresh of jobs/projects/system-info plus builder capability bounds from the selected backend,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,

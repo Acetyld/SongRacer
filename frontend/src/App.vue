@@ -755,6 +755,9 @@ onMounted(() => {
 watch(
   () => apiBase.value,
   () => {
+    refreshJobs()
+    refreshProjects()
+    refreshSystemInfo()
     refreshBuilderCapabilities()
   },
 )
