@@ -107,7 +107,15 @@ const previewError = ref('')
 const followPreviewCamera = ref(true)
 const showGrid = ref(true)
 const riskScore = ref<number | null>(null)
-const riskWarnings = ref<Array<{ level: string; code: string; message: string }>>([])
+const riskWarnings = ref<
+  Array<{
+    level: string
+    code: string
+    message: string
+    obstacle_index?: number
+    obstacle_indices?: number[]
+  }>
+>([])
 const riskyObstacleIds = ref<Set<string>>(new Set())
 const clipboardStatus = ref('')
 const historyStack = ref<string[]>([])
@@ -948,11 +956,16 @@ async function analyzeRisk() {
     riskWarnings.value = Array.isArray(body.warnings) ? body.warnings : []
     const idSet = new Set<string>()
     for (const w of riskWarnings.value) {
-      const m = /Obstacle\s+#(\d+)/i.exec(String(w.message || ''))
-      if (m) {
-        const i = Number(m[1])
-        const id = visibleObstacles.value[i]?.id
+      if (typeof w.obstacle_index === 'number') {
+        const id = visibleObstacles.value[w.obstacle_index]?.id
         if (id) idSet.add(id)
+      }
+      if (Array.isArray(w.obstacle_indices)) {
+        for (const idx of w.obstacle_indices) {
+          if (typeof idx !== 'number') continue
+          const id = visibleObstacles.value[idx]?.id
+          if (id) idSet.add(id)
+        }
       }
     }
     riskyObstacleIds.value = idSet

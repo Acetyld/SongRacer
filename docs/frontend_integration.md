@@ -277,7 +277,8 @@ Response:
     {
       "level": "high",
       "code": "rows_too_close",
-      "message": "Obstacle rows around y=980 and y=1060 are < 144px apart."
+      "message": "Obstacle rows around y=980 and y=1060 are < 144px apart.",
+      "obstacle_indices": [2, 3]
     }
   ]
 }

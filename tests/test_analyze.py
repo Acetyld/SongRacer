@@ -20,3 +20,7 @@ def test_analyze_config_risk_detects_trap_patterns() -> None:
     assert "blocker_too_wide" in codes
     assert "rows_too_close" in codes
     assert "ring_gap_too_small" in codes
+    blocker_warning = next(w for w in out["warnings"] if w["code"] == "blocker_too_wide")
+    assert blocker_warning["obstacle_index"] == 0
+    row_warning = next(w for w in out["warnings"] if w["code"] == "rows_too_close")
+    assert set(row_warning["obstacle_indices"]) == {0, 1}
