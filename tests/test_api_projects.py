@@ -99,6 +99,16 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert "types" in types_body
         assert any(t["type"] == "ring_gap" for t in types_body["types"])
         assert any(t["label"] == "Ring Gap" for t in types_body["types"])
+        assert [t["type"] for t in types_body["types"]] == [
+            "rect",
+            "moving_rect",
+            "circle",
+            "ring_gap",
+            "spinner",
+            "pendulum",
+            "one_way_gate",
+        ]
+        assert all(str(t["label"]).strip() for t in types_body["types"])
         assert bootstrap_body["obstacle_types"] == types_body["types"]
         generated = client.post(
             "/templates/obstacles/generate",
