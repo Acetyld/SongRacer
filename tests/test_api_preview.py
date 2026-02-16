@@ -51,7 +51,7 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert isinstance(body["winner_index"], int)
         assert isinstance(body["winner_frame"], int)
         assert (body["winner_index"] >= 0) == (body["winner_frame"] >= 0)
-        assert isinstance(body["truncated"], bool)
+        assert body["truncated"] is False
         assert body["cache_hit"] is False
         expected_step = max(1, int(math.ceil(payload["render"]["fps"] / payload["sample_fps"])))
         assert body["sample_step_frames"] == expected_step
@@ -63,6 +63,7 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert abs(body["sample_interval_seconds"] - (expected_step / payload["render"]["fps"])) < 1e-9
         assert body["sample_fps"] <= payload["sample_fps"]
         assert body["total_sample_frames"] >= len(body["frame_indices"])
+        assert body["total_sample_frames"] == len(body["frame_indices"])
 
 
 def test_preview_simulate_rejects_invalid_obstacle_type() -> None:
@@ -134,6 +135,8 @@ def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
         assert abs(body["sample_fps"] - (payload["render"]["fps"] / expected_step)) < 1e-9
         assert body["sample_fps"] <= default_sample_fps
         assert len(body["frame_indices"]) <= default_max_frames
+        assert body["truncated"] is False
+        assert body["total_sample_frames"] == len(body["frame_indices"])
 
 
 def test_preview_simulate_respects_max_frames_cap() -> None:

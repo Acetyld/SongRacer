@@ -202,6 +202,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - live preview scrub row shows requested→effective sampled fps plus frame-step metadata from backend,
 - preview API response includes both requested and effective sampling metadata for diagnostics,
 - effective preview sampling rate is bounded by both requested sample-fps and render fps,
+- when preview is not truncated, `total_sample_frames` equals returned sampled frame count,
 - truncation warning includes shown/total sampled frames plus requested frame-cap value,
 - preview cache diagnostics/clear controls available via API and builder toolbar,
 - preview cache hits occur for semantically identical preview JSON payloads (key order ignored); changing knobs/layout recomputes simulation,
