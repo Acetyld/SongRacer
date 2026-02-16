@@ -55,6 +55,8 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert body["total_source_frames"] >= len(body["frame_indices"])
         assert body["total_source_frames"] >= body["total_sample_frames"]
         assert body["total_source_frames"] > 0
+        expected_source_duration = max(0.0, (body["total_source_frames"] - 1) / body["fps"])
+        assert abs(body["source_duration_seconds"] - expected_source_duration) < 1e-9
         assert isinstance(body["winner_index"], int)
         assert isinstance(body["winner_frame"], int)
         assert (body["winner_index"] >= 0) == (body["winner_frame"] >= 0)
@@ -76,6 +78,7 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert abs(body["total_sample_duration_seconds"] - expected_total_duration) < 1e-9
         assert body["total_sample_duration_seconds"] == body["returned_sample_duration_seconds"]
         assert body["total_sample_duration_seconds"] <= (body["total_source_frames"] - 1) / body["fps"]
+        assert body["total_sample_duration_seconds"] <= body["source_duration_seconds"]
         assert body["sample_fps"] <= payload["sample_fps"]
         assert body["total_sample_frames"] >= len(body["frame_indices"])
         assert body["total_sample_frames"] == len(body["frame_indices"])
@@ -197,6 +200,8 @@ def test_preview_simulate_single_sample_has_zero_sampled_duration() -> None:
         assert body["frame_indices"] == [0]
         assert body["returned_sample_duration_seconds"] == 0.0
         assert body["total_sample_duration_seconds"] == 0.0
+        expected_source_duration = max(0.0, (body["total_source_frames"] - 1) / body["fps"])
+        assert abs(body["source_duration_seconds"] - expected_source_duration) < 1e-9
 
 
 def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
@@ -236,6 +241,7 @@ def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
         assert abs(body["total_sample_duration_seconds"] - expected_total_duration) < 1e-9
         assert body["total_sample_duration_seconds"] == body["returned_sample_duration_seconds"]
         assert body["total_sample_duration_seconds"] <= (body["total_source_frames"] - 1) / body["fps"]
+        assert body["total_sample_duration_seconds"] <= body["source_duration_seconds"]
         assert len(body["frame_indices"]) <= default_max_frames
         assert body["returned_sample_frames"] == len(body["frame_indices"])
         assert body["returned_sample_frames"] <= body["requested_max_frames"]
@@ -354,6 +360,7 @@ def test_preview_simulate_respects_max_frames_cap() -> None:
         assert abs(body["total_sample_duration_seconds"] - expected_total_duration) < 1e-9
         assert body["total_sample_duration_seconds"] > body["returned_sample_duration_seconds"]
         assert body["total_sample_duration_seconds"] <= (body["total_source_frames"] - 1) / body["fps"]
+        assert body["total_sample_duration_seconds"] <= body["source_duration_seconds"]
 
 
 def test_preview_simulate_effective_fps_never_exceeds_request() -> None:

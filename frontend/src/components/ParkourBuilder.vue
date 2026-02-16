@@ -59,6 +59,7 @@ type PreviewData = {
   sample_step_frames: number
   sample_interval_seconds: number
   total_source_frames: number
+  source_duration_seconds: number
   returned_sample_frames: number
   returned_sample_duration_seconds: number
   total_sample_duration_seconds: number
@@ -1615,6 +1616,7 @@ async function requestPreview() {
       sample_step_frames: Number(body.sample_step_frames ?? 1),
       sample_interval_seconds: Number(body.sample_interval_seconds ?? 1 / 15),
       total_source_frames: Number(body.total_source_frames ?? 0),
+      source_duration_seconds: Number(body.source_duration_seconds ?? 0),
       returned_sample_frames: Number(
         body.returned_sample_frames ??
           (Array.isArray(body.frame_indices) ? body.frame_indices.length : 0),
@@ -1876,8 +1878,12 @@ function previewSampleCountText(): string {
 function previewSourceFramesText(): string {
   if (!previewData.value) return ''
   const sourceFrames = Number(previewData.value.total_source_frames || 0)
+  const sourceSeconds = Number(previewData.value.source_duration_seconds || 0)
   if (!Number.isFinite(sourceFrames) || sourceFrames <= 0) return ''
-  return `source ${Math.round(sourceFrames)}f`
+  if (!Number.isFinite(sourceSeconds) || sourceSeconds < 0) {
+    return `source ${Math.round(sourceFrames)}f`
+  }
+  return `source ${Math.round(sourceFrames)}f / ${sourceSeconds.toFixed(2)}s`
 }
 
 function previewSampleWindowText(): string {

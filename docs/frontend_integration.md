@@ -376,7 +376,7 @@ Response includes sampled arrays for:
 - `leaders`,
 - `camera_y`,
 - `obstacle_visuals`,
-- and metadata like `requested_sample_fps`, `requested_max_frames`, `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `total_source_frames`, `goal_y`, `winner_index`, `winner_frame`, `returned_sample_frames`, `returned_sample_duration_seconds`, `total_sample_frames`, `total_sample_duration_seconds`, `truncated`, `cache_hit`.
+- and metadata like `requested_sample_fps`, `requested_max_frames`, `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `total_source_frames`, `source_duration_seconds`, `goal_y`, `winner_index`, `winner_frame`, `returned_sample_frames`, `returned_sample_duration_seconds`, `total_sample_frames`, `total_sample_duration_seconds`, `truncated`, `cache_hit`.
 - winner fields use `-1`/`-1` when no winner is reached within simulated frames.
 
 Sampling metadata note:
@@ -389,6 +389,7 @@ Sampling metadata note:
 - `returned_sample_frames = frame_indices.length`.
 - `returned_sample_duration_seconds = max(0, (returned_sample_frames - 1) * sample_interval_seconds)`.
 - `total_sample_duration_seconds = max(0, (total_sample_frames - 1) * sample_interval_seconds)`.
+- `source_duration_seconds = max(0, (total_source_frames - 1) / fps)`.
 - `total_sample_duration_seconds <= (total_source_frames - 1) / fps`.
 - when only one sample frame is returned, `returned_sample_duration_seconds` is `0`.
 - `returned_sample_frames <= requested_max_frames`.
@@ -406,7 +407,7 @@ Live preview notes:
 - builder can read and clear preview-cache via `/preview/cache` + `/preview/cache/clear`,
 - builder scrub row surfaces requested→effective sampled fps plus frame-step/requested-cap metadata (`sample_fps`, `sample_step_frames`, `requested_max_frames`),
 - builder scrub row also shows sampled frame count (`returned_sample_frames/total_sample_frames`),
-- builder scrub row also shows full source frame count (`total_source_frames`),
+- builder scrub row also shows full source timeline (`total_source_frames` / `source_duration_seconds`),
 - builder scrub row also shows sampled time-window span (`returned_sample_duration_seconds/total_sample_duration_seconds`),
 - truncation warning includes shown/total sampled frames plus requested frame cap (`requested_max_frames`),
 - use full render jobs for authoritative final video/audio output.
