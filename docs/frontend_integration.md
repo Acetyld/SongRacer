@@ -376,7 +376,7 @@ Response includes sampled arrays for:
 - `leaders`,
 - `camera_y`,
 - `obstacle_visuals`,
-- and metadata like `requested_sample_fps`, `requested_max_frames`, `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `total_source_frames`, `source_duration_seconds`, `goal_y`, `winner_index`, `winner_frame`, `returned_sample_frames`, `sampling_coverage_ratio`, `sampled_coverage_ratio`, `returned_sample_duration_seconds`, `total_sample_frames`, `total_sample_duration_seconds`, `truncated`, `cache_hit`.
+- and metadata like `requested_sample_fps`, `requested_max_frames`, `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `total_source_frames`, `source_duration_seconds`, `goal_y`, `winner_index`, `winner_frame`, `returned_sample_frames`, `returned_last_sample_frame_index`, `sampling_coverage_ratio`, `sampled_coverage_ratio`, `returned_sample_duration_seconds`, `total_sample_frames`, `total_last_sample_frame_index`, `total_sample_duration_seconds`, `truncated`, `cache_hit`.
 - winner fields use `-1`/`-1` when no winner is reached within simulated frames.
 
 Sampling metadata note:
@@ -387,9 +387,11 @@ Sampling metadata note:
 - when requested sample fps is above render fps, effective `sample_fps` equals render fps (`sample_step_frames = 1`).
 - `frame_indices` are monotonically increasing sampled frame numbers starting at `0`, spaced by `sample_step_frames`.
 - `returned_sample_frames = frame_indices.length`.
+- `returned_last_sample_frame_index = frame_indices[-1]` (or `-1` when empty).
 - `sampling_coverage_ratio = returned_sample_frames / total_source_frames`.
 - `sampled_coverage_ratio = returned_sample_frames / total_sample_frames`.
 - `returned_sample_duration_seconds = max(0, (returned_sample_frames - 1) * sample_interval_seconds)`.
+- `total_last_sample_frame_index = (total_sample_frames - 1) * sample_step_frames`.
 - `total_sample_duration_seconds = max(0, (total_sample_frames - 1) * sample_interval_seconds)`.
 - `source_duration_seconds = max(0, (total_source_frames - 1) / fps)`.
 - `total_sample_duration_seconds <= (total_source_frames - 1) / fps`.
@@ -415,7 +417,7 @@ Live preview notes:
 - builder scrub row also shows source coverage percentage (`returned_sample_frames / total_source_frames`),
 - builder scrub row also shows full source timeline (`total_source_frames` / `source_duration_seconds`),
 - builder scrub row also shows sampled time-window span (`returned_sample_duration_seconds/total_sample_duration_seconds`),
-- truncation warning includes shown/total sampled frames plus requested frame cap (`requested_max_frames`),
+- truncation warning includes shown/total sampled frames plus requested frame cap (`requested_max_frames`) and sampled last-frame indices,
 - use full render jobs for authoritative final video/audio output.
 
 ### `GET /preview/cache`

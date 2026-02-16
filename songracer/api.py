@@ -627,6 +627,7 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
         "total_source_frames": int(sim.positions.shape[0]),
         "source_duration_seconds": max(0.0, (sim.positions.shape[0] - 1) / cfg.render.fps),
         "frame_indices": frame_ids,
+        "returned_last_sample_frame_index": int(frame_ids[-1]) if frame_ids else -1,
         "returned_sample_frames": len(frame_ids),
         "sampling_coverage_ratio": (
             float(len(frame_ids) / sim.positions.shape[0]) if sim.positions.shape[0] > 0 else 0.0
@@ -638,6 +639,7 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
             0.0, (len(frame_ids) - 1) * (step / cfg.render.fps)
         ),
         "total_sample_frames": len(full_frame_ids),
+        "total_last_sample_frame_index": int(full_frame_ids[-1]) if full_frame_ids else -1,
         "total_sample_duration_seconds": max(
             0.0, (len(full_frame_ids) - 1) * (step / cfg.render.fps)
         ),

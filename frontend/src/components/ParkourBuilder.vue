@@ -59,12 +59,14 @@ type PreviewData = {
   sample_step_frames: number
   sample_interval_seconds: number
   total_source_frames: number
+  returned_last_sample_frame_index: number
   source_duration_seconds: number
   returned_sample_frames: number
   sampling_coverage_ratio: number
   sampled_coverage_ratio: number
   returned_sample_duration_seconds: number
   total_sample_duration_seconds: number
+  total_last_sample_frame_index: number
   positions: number[][][]
   leaders: number[]
   camera_y: number[]
@@ -1618,6 +1620,7 @@ async function requestPreview() {
       sample_step_frames: Number(body.sample_step_frames ?? 1),
       sample_interval_seconds: Number(body.sample_interval_seconds ?? 1 / 15),
       total_source_frames: Number(body.total_source_frames ?? 0),
+      returned_last_sample_frame_index: Number(body.returned_last_sample_frame_index ?? -1),
       source_duration_seconds: Number(body.source_duration_seconds ?? 0),
       returned_sample_frames: Number(
         body.returned_sample_frames ??
@@ -1627,6 +1630,7 @@ async function requestPreview() {
       sampled_coverage_ratio: Number(body.sampled_coverage_ratio ?? 0),
       returned_sample_duration_seconds: Number(body.returned_sample_duration_seconds ?? 0),
       total_sample_duration_seconds: Number(body.total_sample_duration_seconds ?? 0),
+      total_last_sample_frame_index: Number(body.total_last_sample_frame_index ?? -1),
       positions: Array.isArray(body.positions) ? body.positions : [],
       leaders: Array.isArray(body.leaders) ? body.leaders : [],
       camera_y: Array.isArray(body.camera_y) ? body.camera_y : [],
@@ -1867,7 +1871,11 @@ function previewTruncationText(): string {
   const shown = Number(previewData.value.returned_sample_frames || previewData.value.positions.length)
   const total = Number(previewData.value.total_sample_frames || shown)
   const cap = Number(previewData.value.requested_max_frames || shown)
-  return `Preview truncated to ${shown} / ${total} sampled frames (requested max ${cap}).`
+  const shownLast = Number(previewData.value.returned_last_sample_frame_index ?? -1)
+  const totalLast = Number(previewData.value.total_last_sample_frame_index ?? -1)
+  const idxHint =
+    shownLast >= 0 && totalLast >= shownLast ? ` last idx ${shownLast}/${totalLast}.` : ''
+  return `Preview truncated to ${shown} / ${total} sampled frames (requested max ${cap}).${idxHint}`
 }
 
 function previewSampleCountText(): string {
