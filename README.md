@@ -253,6 +253,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - preview API defaults `render.world_height` from capability-advertised preview bounds when omitted.
 - main render form fetches preview world-height bounds from `/builder/capabilities` and clamps world-height input before building inline job configs.
 - changing API base in main render form refreshes jobs/projects/system info and capability bounds against the selected backend.
+- changing API base clears active artifact preview URL to avoid stale links to previous backend.
 - world-height control in main form shows capability-derived bounds/default hint for quick operator feedback.
 - world-height control includes a one-click "Default" action to restore capability-advertised default.
 - capability-derived world-height bounds/default are normalized to integer values before UI application.

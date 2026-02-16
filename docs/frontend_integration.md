@@ -588,6 +588,7 @@ The frontend app in `frontend/` already implements:
 - capability ranges from backend are normalized client-side (finite values, `min <= max`, default clamped into range) before being applied to controls,
 - App-level render form fetches preview world-height bounds from `/builder/capabilities` and clamps `render.world_height` before submitting inline job configs,
 - changing API base in App triggers refresh of jobs/projects/system-info plus builder capability bounds from the selected backend,
+- changing API base also clears any currently open artifact preview URL to avoid stale cross-backend artifact links,
 - world-height input displays capability-derived min/max/default hint values in the main render form,
 - world-height input has a one-click reset-to-default action sourced from capability default,
 - capability-derived world-height bounds/default are normalized to integers before being applied in App form controls,

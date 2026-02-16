@@ -799,6 +799,7 @@ onMounted(() => {
 watch(
   () => apiBase.value,
   () => {
+    previewArtifactUrl.value = null
     refreshJobs()
     refreshProjects()
     refreshSystemInfo()
