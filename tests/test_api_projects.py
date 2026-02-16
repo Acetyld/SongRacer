@@ -388,15 +388,15 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
                 "seed": 99,
                 "target_max_risk": 0,
                 "max_attempts": 3,
+                "analysis_height": float(gen_caps["safe_analysis_height"]["default"]) + 320.0,
             },
         )
         assert generated_safe_strict.status_code == 200
         generated_safe_strict_body = generated_safe_strict.json()
         assert generated_safe_strict_body["count"] == 6
         assert 1 <= generated_safe_strict_body["attempts"] <= 3
-        assert generated_safe_strict_body["analysis_height"] == float(
-            gen_caps["safe_analysis_height"]["default"]
-        )
+        strict_analysis_height = float(gen_caps["safe_analysis_height"]["default"]) + 320.0
+        assert generated_safe_strict_body["analysis_height"] == strict_analysis_height
         assert generated_safe_strict_body["target_max_risk"] == 0
         assert generated_safe_strict_body["warning_count"] == len(
             generated_safe_strict_body["warnings"]
@@ -414,6 +414,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
                 "seed": 99,
                 "target_max_risk": 0,
                 "max_attempts": 3,
+                "analysis_height": strict_analysis_height,
             },
         )
         assert generated_safe_strict_repeat.status_code == 200
@@ -422,7 +423,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
             "/analyze/config",
             json={
                 "config": {
-                    "render": {"width": 1080, "height": 1920},
+                    "render": {"width": 1080, "height": strict_analysis_height},
                     "obstacles": generated_safe_strict_body["obstacles"],
                 }
             },
@@ -451,7 +452,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
                 "/analyze/config",
                 json={
                     "config": {
-                        "render": {"width": 1080, "height": 1920},
+                        "render": {"width": 1080, "height": strict_analysis_height},
                         "obstacles": candidate_obstacles,
                     }
                 },
