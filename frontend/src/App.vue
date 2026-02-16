@@ -806,6 +806,12 @@ watch(
   () => apiBase.value,
   () => {
     previewArtifactUrl.value = null
+    jobs.value = []
+    projects.value = []
+    systemInfo.value = {}
+    clearActiveProjectSelection()
+    riskScore.value = null
+    riskWarnings.value = []
     refreshJobs()
     refreshProjects()
     refreshSystemInfo()
