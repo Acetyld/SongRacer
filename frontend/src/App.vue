@@ -94,6 +94,7 @@ const obstacleJson = ref(
 )
 
 let pollHandle: number | null = null
+let builderCapsRequestNonce = 0
 
 const uploadedReady = computed(() => racers.value.length > 0 && racers.value.every((r) => !!r.uploadedPath))
 const canRender = computed(() => uploadedReady.value && !isBusy.value)
@@ -529,12 +530,14 @@ async function refreshSystemInfo() {
 }
 
 async function refreshBuilderCapabilities() {
+  const req = ++builderCapsRequestNonce
   try {
     const resp = await fetch(`${apiBase.value}/builder/capabilities`)
     if (!resp.ok) {
       return
     }
     const body = await resp.json()
+    if (req !== builderCapsRequestNonce) return
     worldHeightCaps.value = normalizeIntegerRangeCaps(
       (body as Record<string, any>)?.preview?.world_height,
       worldHeightCaps.value,
