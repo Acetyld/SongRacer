@@ -358,7 +358,21 @@ function safeGenerationSignature(): string {
   return JSON.stringify({
     obstacles: obstacles.value.map((o) => obstacleToSerializable(o)),
     hidden_ids: [...hiddenIds.value].sort(),
+    target_max_risk: Math.round(generateSafeTarget.value),
+    max_attempts: Math.round(generateSafeAttempts.value),
+    analysis_height: safeAnalysisHeightForRequest(),
   })
+}
+
+function invalidateSafeGenerationIfStale() {
+  if (
+    lastSafeGeneration.value &&
+    lastSafeGenerationSignature.value &&
+    lastSafeGenerationSignature.value !== safeGenerationSignature()
+  ) {
+    lastSafeGeneration.value = null
+    lastSafeGenerationSignature.value = null
+  }
 }
 
 function parseObstacleJson(raw: string): BuilderObstacle[] {
@@ -547,14 +561,7 @@ watch(
     applyRiskPayload(null, [])
     schedulePreview()
     scheduleRiskAnalyze()
-    if (
-      lastSafeGeneration.value &&
-      lastSafeGenerationSignature.value &&
-      lastSafeGenerationSignature.value !== safeGenerationSignature()
-    ) {
-      lastSafeGeneration.value = null
-      lastSafeGenerationSignature.value = null
-    }
+    invalidateSafeGenerationIfStale()
   },
   { deep: true },
 )
@@ -563,14 +570,11 @@ watch(hiddenIds, () => {
   applyRiskPayload(null, [])
   schedulePreview()
   scheduleRiskAnalyze()
-  if (
-    lastSafeGeneration.value &&
-    lastSafeGenerationSignature.value &&
-    lastSafeGenerationSignature.value !== safeGenerationSignature()
-  ) {
-    lastSafeGeneration.value = null
-    lastSafeGenerationSignature.value = null
-  }
+  invalidateSafeGenerationIfStale()
+})
+
+watch([generateSafeTarget, generateSafeAttempts, () => props.worldHeight], () => {
+  invalidateSafeGenerationIfStale()
 })
 
 watch([previewSampleFps, previewMaxFrames], () => {
@@ -1482,6 +1486,7 @@ function applyBuilderCapabilities(body: unknown) {
     builderCaps.value.generator.safe_max_attempts.min,
     Math.min(builderCaps.value.generator.safe_max_attempts.max, generateSafeAttempts.value),
   )
+  invalidateSafeGenerationIfStale()
 }
 
 function applyObstacleTypeCatalog(entriesInput: unknown) {
