@@ -1448,6 +1448,10 @@ function fitCameraToContent() {
   cameraY.value = clampCamera(top - 140)
 }
 
+function randomizeGenerateSeed() {
+  generateSeed.value = Math.floor(Math.random() * 2_000_000_000)
+}
+
 onMounted(() => {
   loadPrefs()
   tryLoadBuilderShareFromUrl()
@@ -1717,6 +1721,12 @@ onUnmounted(() => {
           class="w-20 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
         />
       </label>
+      <button
+        class="rounded border border-fuchsia-800/50 bg-fuchsia-950/50 px-2 py-1 text-[11px] text-fuchsia-200 hover:bg-fuchsia-900/40"
+        @click="randomizeGenerateSeed"
+      >
+        Random Seed
+      </button>
       <button
         class="rounded border border-fuchsia-600/50 bg-fuchsia-900/30 px-2 py-1 text-[11px] text-fuchsia-200 hover:bg-fuchsia-800/40"
         @click="generateObstacleStream('append')"

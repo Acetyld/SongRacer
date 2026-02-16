@@ -432,6 +432,7 @@ The frontend app in `frontend/` already implements:
 - local browser persistence for builder tuning preferences (grid/snap/preview knobs),
 - preset buttons resolve from `/templates/obstacles` and gracefully fallback to local defaults,
 - procedural stream generation is available via `/templates/obstacles/generate` (append/replace in UI),
+- UI includes one-click random seed for quick stream iteration,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,
