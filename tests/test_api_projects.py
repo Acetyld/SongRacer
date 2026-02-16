@@ -59,6 +59,11 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert set(templates_body["templates"].keys()) >= {"starter", "rings", "gates"}
         assert str(templates_body["version"]).startswith("sha256:")
         assert int(templates_body["template_count"]) >= 3
+        capabilities = client.get("/builder/capabilities")
+        assert capabilities.status_code == 200
+        cap_body = capabilities.json()
+        assert cap_body["preview"]["sample_fps"]["min"] == 4
+        assert cap_body["generator"]["count"]["max"] >= 100
         obstacle_types = client.get("/templates/obstacle-types")
         assert obstacle_types.status_code == 200
         types_body = obstacle_types.json()

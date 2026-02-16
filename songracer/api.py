@@ -59,6 +59,19 @@ job_manager = JobManager(max_workers=2)
 _preview_cache_lock = threading.Lock()
 _preview_cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
 _PREVIEW_CACHE_MAX_ITEMS = 8
+_BUILDER_CAPABILITIES = {
+    "preview": {
+        "sample_fps": {"min": 4, "max": 60, "default": 15},
+        "max_frames": {"min": 30, "max": 1500, "default": 300},
+    },
+    "generator": {
+        "count": {"min": 1, "max": 200, "default": 8},
+        "start_y": {"min": 0.0, "max": 100000.0, "default": 900.0},
+        "spacing": {"min": 40.0, "max": 4000.0, "default": 260.0},
+        "width": {"min": 200.0, "max": 4000.0, "default": 1080.0},
+        "seed": {"min": 0, "max": 2_000_000_000, "default": 13},
+    },
+}
 
 
 @asynccontextmanager
@@ -344,6 +357,11 @@ def system_info() -> dict[str, Any]:
 @app.get("/templates/obstacles")
 def templates_obstacles() -> dict[str, Any]:
     return obstacle_templates_payload()
+
+
+@app.get("/builder/capabilities")
+def builder_capabilities() -> dict[str, Any]:
+    return _BUILDER_CAPABILITIES
 
 
 @app.get("/templates/obstacle-types")

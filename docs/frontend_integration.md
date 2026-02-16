@@ -25,6 +25,23 @@ Response:
 ### `GET /system/info`
 Resolved runtime storage locations (useful when writable fallback paths are selected).
 
+### `GET /builder/capabilities`
+Returns frontend-facing limits/defaults for builder controls (preview sampling + generator ranges).
+
+Response:
+
+```json
+{
+  "preview": {
+    "sample_fps": { "min": 4, "max": 60, "default": 15 },
+    "max_frames": { "min": 30, "max": 1500, "default": 300 }
+  },
+  "generator": {
+    "count": { "min": 1, "max": 200, "default": 8 }
+  }
+}
+```
+
 ### `GET /templates/obstacle-types`
 Returns obstacle type catalog for builder palette rendering.
 

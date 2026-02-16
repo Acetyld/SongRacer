@@ -132,6 +132,19 @@ const clipboardStatus = ref('')
 const templateCatalog = ref<Record<string, Array<Record<string, unknown>>>>({})
 const templateSource = ref<'fallback' | 'api'>('fallback')
 const templateVersion = ref('')
+const builderCaps = ref({
+  preview: {
+    sample_fps: { min: 4, max: 60, default: 15 },
+    max_frames: { min: 30, max: 1500, default: 300 },
+  },
+  generator: {
+    count: { min: 1, max: 200, default: 8 },
+    start_y: { min: 0, max: 100000, default: 900 },
+    spacing: { min: 40, max: 4000, default: 260 },
+    width: { min: 200, max: 4000, default: 1080 },
+    seed: { min: 0, max: 2000000000, default: 13 },
+  },
+})
 const historyStack = ref<string[]>([])
 const historyIndex = ref(-1)
 const applyingHistory = ref(false)
@@ -451,6 +464,7 @@ watch(
 watch(
   () => props.apiBase,
   () => {
+    void loadBuilderCapabilities()
     void loadObstacleTypeCatalog()
     void loadPresetTemplates()
     void refreshPreviewCacheInfo()
@@ -1012,11 +1026,29 @@ async function generateObstacleStream(mode: 'replace' | 'append') {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        count: Math.max(1, Math.min(120, Math.round(generateCount.value))),
-        start_y: startY,
-        spacing: Math.max(60, Math.min(2000, Math.round(generateSpacing.value))),
-        width: courseWidth,
-        seed: Math.max(0, Math.round(generateSeed.value)),
+        count: Math.max(
+          builderCaps.value.generator.count.min,
+          Math.min(builderCaps.value.generator.count.max, Math.round(generateCount.value)),
+        ),
+        start_y: Math.max(
+          builderCaps.value.generator.start_y.min,
+          Math.min(builderCaps.value.generator.start_y.max, startY),
+        ),
+        spacing: Math.max(
+          builderCaps.value.generator.spacing.min,
+          Math.min(
+            builderCaps.value.generator.spacing.max,
+            Math.round(generateSpacing.value),
+          ),
+        ),
+        width: Math.max(
+          builderCaps.value.generator.width.min,
+          Math.min(builderCaps.value.generator.width.max, courseWidth),
+        ),
+        seed: Math.max(
+          builderCaps.value.generator.seed.min,
+          Math.min(builderCaps.value.generator.seed.max, Math.round(generateSeed.value)),
+        ),
       }),
     })
     if (!resp.ok) {
@@ -1086,6 +1118,81 @@ function previewRacersPayload(): PreviewRacer[] {
     y: 420 + (idx % 2) * 42,
     radius: 96,
   }))
+}
+
+async function loadBuilderCapabilities() {
+  try {
+    const resp = await fetch(`${props.apiBase}/builder/capabilities`)
+    if (!resp.ok) return
+    const body = await resp.json()
+    const p = body?.preview
+    const g = body?.generator
+    if (p && g) {
+      builderCaps.value = {
+        preview: {
+          sample_fps: {
+            min: Number(p.sample_fps?.min ?? 4),
+            max: Number(p.sample_fps?.max ?? 60),
+            default: Number(p.sample_fps?.default ?? 15),
+          },
+          max_frames: {
+            min: Number(p.max_frames?.min ?? 30),
+            max: Number(p.max_frames?.max ?? 1500),
+            default: Number(p.max_frames?.default ?? 300),
+          },
+        },
+        generator: {
+          count: {
+            min: Number(g.count?.min ?? 1),
+            max: Number(g.count?.max ?? 200),
+            default: Number(g.count?.default ?? 8),
+          },
+          start_y: {
+            min: Number(g.start_y?.min ?? 0),
+            max: Number(g.start_y?.max ?? 100000),
+            default: Number(g.start_y?.default ?? 900),
+          },
+          spacing: {
+            min: Number(g.spacing?.min ?? 40),
+            max: Number(g.spacing?.max ?? 4000),
+            default: Number(g.spacing?.default ?? 260),
+          },
+          width: {
+            min: Number(g.width?.min ?? 200),
+            max: Number(g.width?.max ?? 4000),
+            default: Number(g.width?.default ?? 1080),
+          },
+          seed: {
+            min: Number(g.seed?.min ?? 0),
+            max: Number(g.seed?.max ?? 2000000000),
+            default: Number(g.seed?.default ?? 13),
+          },
+        },
+      }
+      previewSampleFps.value = Math.max(
+        builderCaps.value.preview.sample_fps.min,
+        Math.min(builderCaps.value.preview.sample_fps.max, previewSampleFps.value),
+      )
+      previewMaxFrames.value = Math.max(
+        builderCaps.value.preview.max_frames.min,
+        Math.min(builderCaps.value.preview.max_frames.max, previewMaxFrames.value),
+      )
+      generateCount.value = Math.max(
+        builderCaps.value.generator.count.min,
+        Math.min(builderCaps.value.generator.count.max, generateCount.value),
+      )
+      generateSpacing.value = Math.max(
+        builderCaps.value.generator.spacing.min,
+        Math.min(builderCaps.value.generator.spacing.max, generateSpacing.value),
+      )
+      generateSeed.value = Math.max(
+        builderCaps.value.generator.seed.min,
+        Math.min(builderCaps.value.generator.seed.max, generateSeed.value),
+      )
+    }
+  } catch (_err) {
+    // keep defaults when capabilities endpoint unavailable
+  }
 }
 
 async function loadObstacleTypeCatalog() {
@@ -1200,8 +1307,20 @@ async function requestPreview() {
         },
         racers: previewRacersPayload(),
         obstacles: visibleObstacles.value.map((o) => obstacleToSerializable(o)),
-        sample_fps: Math.max(4, Math.min(60, Math.round(previewSampleFps.value))),
-        max_frames: Math.max(40, Math.min(1200, Math.round(previewMaxFrames.value))),
+        sample_fps: Math.max(
+          builderCaps.value.preview.sample_fps.min,
+          Math.min(
+            builderCaps.value.preview.sample_fps.max,
+            Math.round(previewSampleFps.value),
+          ),
+        ),
+        max_frames: Math.max(
+          builderCaps.value.preview.max_frames.min,
+          Math.min(
+            builderCaps.value.preview.max_frames.max,
+            Math.round(previewMaxFrames.value),
+          ),
+        ),
       }),
     })
     if (!resp.ok) {
@@ -1493,12 +1612,15 @@ function fitCameraToContent() {
 }
 
 function randomizeGenerateSeed() {
-  generateSeed.value = Math.floor(Math.random() * 2_000_000_000)
+  generateSeed.value = Math.floor(
+    Math.random() * Math.max(1, builderCaps.value.generator.seed.max),
+  )
 }
 
 onMounted(() => {
   loadPrefs()
   tryLoadBuilderShareFromUrl()
+  void loadBuilderCapabilities()
   void loadObstacleTypeCatalog()
   void loadPresetTemplates()
   void refreshPreviewCacheInfo()
@@ -1742,8 +1864,8 @@ onUnmounted(() => {
         <input
           v-model.number="generateCount"
           type="number"
-          min="1"
-          max="120"
+          :min="builderCaps.generator.count.min"
+          :max="builderCaps.generator.count.max"
           class="w-14 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
         />
       </label>
@@ -1752,8 +1874,8 @@ onUnmounted(() => {
         <input
           v-model.number="generateSpacing"
           type="number"
-          min="60"
-          max="2000"
+          :min="builderCaps.generator.spacing.min"
+          :max="builderCaps.generator.spacing.max"
           class="w-16 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
         />
       </label>
@@ -1762,7 +1884,8 @@ onUnmounted(() => {
         <input
           v-model.number="generateSeed"
           type="number"
-          min="0"
+          :min="builderCaps.generator.seed.min"
+          :max="builderCaps.generator.seed.max"
           class="w-20 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
         />
       </label>
@@ -1798,8 +1921,8 @@ onUnmounted(() => {
             <input
               v-model.number="previewSampleFps"
               type="number"
-              min="4"
-              max="60"
+              :min="builderCaps.preview.sample_fps.min"
+              :max="builderCaps.preview.sample_fps.max"
               class="w-14 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
             />
           </label>
@@ -1808,8 +1931,8 @@ onUnmounted(() => {
             <input
               v-model.number="previewMaxFrames"
               type="number"
-              min="40"
-              max="1200"
+              :min="builderCaps.preview.max_frames.min"
+              :max="builderCaps.preview.max_frames.max"
               class="w-16 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
             />
           </label>
