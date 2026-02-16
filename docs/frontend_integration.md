@@ -42,6 +42,31 @@ Response:
 }
 ```
 
+### `POST /templates/obstacles/generate`
+Generates a procedural obstacle stream for builder workflows.
+
+Request:
+
+```json
+{
+  "count": 8,
+  "start_y": 900,
+  "spacing": 260,
+  "width": 1080,
+  "seed": 13
+}
+```
+
+Response:
+
+```json
+{
+  "seed": 13,
+  "count": 8,
+  "obstacles": [{ "... obstacle ..." }]
+}
+```
+
 ### `POST /validate`
 Validate config before rendering.
 
@@ -406,6 +431,7 @@ The frontend app in `frontend/` already implements:
 - camera focus helpers for selected obstacle and full-content fit,
 - local browser persistence for builder tuning preferences (grid/snap/preview knobs),
 - preset buttons resolve from `/templates/obstacles` and gracefully fallback to local defaults,
+- procedural stream generation is available via `/templates/obstacles/generate` (append/replace in UI),
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,

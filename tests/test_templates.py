@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from songracer.config import ObstacleConfig
-from songracer.templates import obstacle_templates, obstacle_templates_payload
+from songracer.templates import (
+    generate_obstacle_stream,
+    obstacle_templates,
+    obstacle_templates_payload,
+)
 
 
 def test_obstacle_templates_are_parseable_configs() -> None:
@@ -28,3 +32,11 @@ def test_obstacle_templates_payload_has_version_and_count() -> None:
     assert payload["template_count"] >= 3
     assert str(payload["version"]).startswith("sha256:")
     assert "templates" in payload
+
+
+def test_generate_obstacle_stream_deterministic_for_same_seed() -> None:
+    a = generate_obstacle_stream(count=6, start_y=900, spacing=240, width=1080, seed=42)
+    b = generate_obstacle_stream(count=6, start_y=900, spacing=240, width=1080, seed=42)
+    c = generate_obstacle_stream(count=6, start_y=900, spacing=240, width=1080, seed=43)
+    assert a == b
+    assert a != c

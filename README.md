@@ -135,6 +135,7 @@ Endpoints:
 - `GET /health`
 - `GET /system/info` (resolved writable storage + DB paths)
 - `GET /templates/obstacles` (preset obstacle layouts for builder)
+- `POST /templates/obstacles/generate` (procedural obstacle stream generator)
 - `POST /uploads` (multipart video upload)
 - `POST /sync/audio` with `{ "video_paths": [...], "sample_rate": 16000, "max_shift_seconds": 8 }`
 - `POST /sync/preview` (sync analysis + waveform arrays in one call)
@@ -187,6 +188,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - focus helpers (`Focus Selected`, `Fit Camera`) for large courses,
 - malformed numeric obstacle fields are sanitized to safe defaults in builder import/parsing flow,
 - preset courses are loaded from backend template catalog with local fallback when offline,
+- procedural obstacle-stream generation (append/replace) from seed/count/spacing in builder,
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - preview cache diagnostics/clear controls available via API and builder toolbar,
 - preview endpoint includes lightweight cache-hit metadata for rapid repeated edits,

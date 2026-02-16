@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import random
 from typing import Any
 
 
@@ -177,3 +178,95 @@ def obstacle_templates_payload() -> dict[str, Any]:
         "version": f"sha256:{digest[:16]}",
         "template_count": len(templates),
     }
+
+
+def generate_obstacle_stream(
+    *,
+    count: int,
+    start_y: float,
+    spacing: float,
+    width: float,
+    seed: int,
+) -> list[dict[str, Any]]:
+    rng = random.Random(seed)
+    x_min = max(120.0, width * 0.18)
+    x_max = max(x_min + 20.0, width - x_min)
+    out: list[dict[str, Any]] = []
+    for idx in range(max(0, count)):
+        y = start_y + idx * spacing
+        kind = rng.choice(
+            [
+                "rect",
+                "moving_rect",
+                "ring_gap",
+                "spinner",
+                "one_way_gate",
+            ]
+        )
+        x = rng.uniform(x_min, x_max)
+        if kind == "rect":
+            out.append(
+                {
+                    "type": "rect",
+                    "x": round(x, 1),
+                    "y": round(y, 1),
+                    "width": round(rng.uniform(width * 0.2, width * 0.34), 1),
+                    "height": 28,
+                    "angle_deg": round(rng.uniform(-30, 30), 1),
+                    "fill_color": "#182037",
+                }
+            )
+        elif kind == "moving_rect":
+            out.append(
+                {
+                    "type": "moving_rect",
+                    "x": round(x, 1),
+                    "y": round(y, 1),
+                    "width": round(rng.uniform(width * 0.22, width * 0.36), 1),
+                    "height": 28,
+                    "angle_deg": round(rng.uniform(-22, 22), 1),
+                    "amplitude": round(rng.uniform(70, 140), 1),
+                    "frequency_hz": round(rng.uniform(0.15, 0.35), 3),
+                    "axis": "x",
+                    "fill_color": "#182037",
+                }
+            )
+        elif kind == "ring_gap":
+            out.append(
+                {
+                    "type": "ring_gap",
+                    "x": round(x, 1),
+                    "y": round(y, 1),
+                    "radius": round(rng.uniform(108, 168), 1),
+                    "thickness": round(rng.uniform(24, 36), 1),
+                    "rotation_speed_deg": round(rng.uniform(45, 130), 1),
+                    "gap_center_deg": round(rng.uniform(180, 320), 1),
+                    "gap_size_deg": round(rng.uniform(52, 74), 1),
+                    "fill_color": "#182037",
+                }
+            )
+        elif kind == "spinner":
+            out.append(
+                {
+                    "type": "spinner",
+                    "x": round(x, 1),
+                    "y": round(y, 1),
+                    "length": round(rng.uniform(width * 0.2, width * 0.34), 1),
+                    "thickness": round(rng.uniform(18, 28), 1),
+                    "spin_speed_deg": round(rng.uniform(80, 190), 1),
+                    "fill_color": "#182037",
+                }
+            )
+        else:
+            out.append(
+                {
+                    "type": "one_way_gate",
+                    "x": round(width * 0.5, 1),
+                    "y": round(y, 1),
+                    "width": round(rng.uniform(width * 0.45, width * 0.68), 1),
+                    "height": 24,
+                    "one_way": rng.choice(["down", "up"]),
+                    "fill_color": "#182037",
+                }
+            )
+    return out

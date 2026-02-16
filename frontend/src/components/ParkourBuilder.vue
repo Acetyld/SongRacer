@@ -131,6 +131,9 @@ const templateVersion = ref('')
 const historyStack = ref<string[]>([])
 const historyIndex = ref(-1)
 const applyingHistory = ref(false)
+const generateCount = ref(8)
+const generateSpacing = ref(260)
+const generateSeed = ref(13)
 
 let suppressEmit = false
 let previewDebounce: number | null = null
@@ -987,6 +990,44 @@ function clearObstacles() {
   hiddenIds.value = []
 }
 
+async function generateObstacleStream(mode: 'replace' | 'append') {
+  const existingYs = obstacles.value.map((o) => obstaclePosition(o).y)
+  const maxY = existingYs.length > 0 ? Math.max(...existingYs) : 0
+  const startY =
+    mode === 'append' ? Math.max(900, maxY + generateSpacing.value) : Math.max(900, cameraY.value + 220)
+  try {
+    const resp = await fetch(`${props.apiBase}/templates/obstacles/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        count: Math.max(1, Math.min(120, Math.round(generateCount.value))),
+        start_y: startY,
+        spacing: Math.max(60, Math.min(2000, Math.round(generateSpacing.value))),
+        width: courseWidth,
+        seed: Math.max(0, Math.round(generateSeed.value)),
+      }),
+    })
+    if (!resp.ok) {
+      throw new Error(await resp.text())
+    }
+    const body = await resp.json()
+    const generatedRaw = Array.isArray(body?.obstacles) ? body.obstacles : []
+    const generated = parseObstacleJson(JSON.stringify(generatedRaw))
+    if (mode === 'replace') {
+      obstacles.value = generated
+    } else {
+      obstacles.value = [...obstacles.value, ...generated]
+    }
+    const first = generated[0]?.id ?? obstacles.value[0]?.id ?? null
+    selectedId.value = first
+    selectedIds.value = first ? [first] : []
+    generateSeed.value = Math.max(0, Math.round(Number(body?.seed ?? generateSeed.value) + 1))
+    clipboardStatus.value = `Generated ${generated.length} obstacle${generated.length === 1 ? '' : 's'} (${mode}).`
+  } catch (_err) {
+    clipboardStatus.value = 'Failed to generate obstacle stream.'
+  }
+}
+
 function moveSelectedLayer(delta: -1 | 1) {
   if (!selectedId.value) return
   const idx = obstacles.value.findIndex((o) => o.id === selectedId.value)
@@ -1642,6 +1683,51 @@ onUnmounted(() => {
         @click="fitCameraToContent"
       >
         Fit Camera
+      </button>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300">
+      <span class="uppercase tracking-wide text-slate-400">Procedural stream</span>
+      <label class="flex items-center gap-1">
+        Count
+        <input
+          v-model.number="generateCount"
+          type="number"
+          min="1"
+          max="120"
+          class="w-14 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
+        />
+      </label>
+      <label class="flex items-center gap-1">
+        Spacing
+        <input
+          v-model.number="generateSpacing"
+          type="number"
+          min="60"
+          max="2000"
+          class="w-16 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
+        />
+      </label>
+      <label class="flex items-center gap-1">
+        Seed
+        <input
+          v-model.number="generateSeed"
+          type="number"
+          min="0"
+          class="w-20 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
+        />
+      </label>
+      <button
+        class="rounded border border-fuchsia-600/50 bg-fuchsia-900/30 px-2 py-1 text-[11px] text-fuchsia-200 hover:bg-fuchsia-800/40"
+        @click="generateObstacleStream('append')"
+      >
+        Generate Append
+      </button>
+      <button
+        class="rounded border border-fuchsia-700/50 bg-fuchsia-950/40 px-2 py-1 text-[11px] text-fuchsia-200 hover:bg-fuchsia-900/40"
+        @click="generateObstacleStream('replace')"
+      >
+        Generate Replace
       </button>
     </div>
 

@@ -59,6 +59,14 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert set(templates_body["templates"].keys()) >= {"starter", "rings", "gates"}
         assert str(templates_body["version"]).startswith("sha256:")
         assert int(templates_body["template_count"]) >= 3
+        generated = client.post(
+            "/templates/obstacles/generate",
+            json={"count": 6, "start_y": 950, "spacing": 240, "width": 1080, "seed": 99},
+        )
+        assert generated.status_code == 200
+        generated_body = generated.json()
+        assert generated_body["count"] == 6
+        assert len(generated_body["obstacles"]) == 6
 
         inline_valid = client.post("/validate/config", json={"config": payload_config})
         assert inline_valid.status_code == 200

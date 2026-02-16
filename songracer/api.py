@@ -42,7 +42,7 @@ from .jobs import JobManager
 from .pipeline import render_race
 from .simulation import simulate_race
 from .storage import resolve_writable_dir
-from .templates import obstacle_templates_payload
+from .templates import generate_obstacle_stream, obstacle_templates_payload
 from .sync import (
     SyncError,
     apply_analysis_to_config_obj,
@@ -205,6 +205,14 @@ class PreviewSimRequest(BaseModel):
     max_frames: int = Field(300, ge=30, le=1500)
 
 
+class TemplateGenerateRequest(BaseModel):
+    count: int = Field(8, ge=1, le=200)
+    start_y: float = Field(900.0, ge=0.0, le=100000.0)
+    spacing: float = Field(260.0, ge=40.0, le=4000.0)
+    width: float = Field(1080.0, ge=200.0, le=4000.0)
+    seed: int = Field(13, ge=0, le=2_000_000_000)
+
+
 def _build_preview_cfg(payload: PreviewSimRequest) -> RaceConfig:
     render = RenderConfig(
         width=payload.render.width,
@@ -332,6 +340,18 @@ def system_info() -> dict[str, Any]:
 @app.get("/templates/obstacles")
 def templates_obstacles() -> dict[str, Any]:
     return obstacle_templates_payload()
+
+
+@app.post("/templates/obstacles/generate")
+def templates_obstacles_generate(payload: TemplateGenerateRequest) -> dict[str, Any]:
+    obstacles = generate_obstacle_stream(
+        count=payload.count,
+        start_y=payload.start_y,
+        spacing=payload.spacing,
+        width=payload.width,
+        seed=payload.seed,
+    )
+    return {"seed": payload.seed, "count": len(obstacles), "obstacles": obstacles}
 
 
 @app.post("/uploads")
