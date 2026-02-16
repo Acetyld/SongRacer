@@ -1225,13 +1225,7 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
   const maxY = existingYs.length > 0 ? Math.max(...existingYs) : 0
   const startY =
     mode === 'append' ? Math.max(900, maxY + generateSpacing.value) : Math.max(900, cameraY.value + 220)
-  const safeAnalysisHeight = Math.max(
-    builderCaps.value.generator.safe_analysis_height.min,
-    Math.min(
-      builderCaps.value.generator.safe_analysis_height.max,
-      props.worldHeight || builderCaps.value.generator.safe_analysis_height.default,
-    ),
-  )
+  const safeAnalysisHeight = safeAnalysisHeightForRequest()
   try {
     const resp = await fetch(`${props.apiBase}/templates/obstacles/generate-safe`, {
       method: 'POST',
@@ -1274,7 +1268,7 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
             Math.round(generateSafeAttempts.value),
           ),
         ),
-        analysis_height: Math.round(safeAnalysisHeight),
+        analysis_height: safeAnalysisHeight,
       }),
     })
     if (!resp.ok) {
@@ -1305,7 +1299,7 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
       warnings: Number(body?.warning_count ?? warnings.length),
     }
     lastSafeGenerationSignature.value = safeGenerationSignature()
-    clipboardStatus.value = `Generated ${generated.length} safe obstacle${generated.length === 1 ? '' : 's'} (${mode}) · risk ${risk} · attempts ${attempts}${accepted ? '' : ' (best effort)'}.`
+    clipboardStatus.value = `Generated ${generated.length} safe obstacle${generated.length === 1 ? '' : 's'} (${mode}) · risk ${risk} · attempts ${attempts} · analysis height ${safeAnalysisHeight}${accepted ? '' : ' (best effort)'}.`
   } catch (_err) {
     lastSafeGeneration.value = null
     lastSafeGenerationSignature.value = null
@@ -1983,8 +1977,15 @@ function builderLimitsText(): string {
     `gen count ${caps.generator.count.min}-${caps.generator.count.max}`,
     `safe risk ${caps.generator.safe_target_max_risk.min}-${caps.generator.safe_target_max_risk.max}`,
     `safe tries ${caps.generator.safe_max_attempts.min}-${caps.generator.safe_max_attempts.max}`,
-    `safe h ${caps.generator.safe_analysis_height.min}-${caps.generator.safe_analysis_height.max}`,
+    `safe height ${caps.generator.safe_analysis_height.min}-${caps.generator.safe_analysis_height.max}`,
   ].join(', ')
+}
+
+function safeAnalysisHeightForRequest(): number {
+  const caps = builderCaps.value.generator.safe_analysis_height
+  const requested = Number(props.worldHeight || caps.default)
+  if (!Number.isFinite(requested) || requested <= 0) return Math.round(caps.default)
+  return Math.round(Math.max(caps.min, Math.min(caps.max, requested)))
 }
 
 const previewFrameMax = computed(() => {

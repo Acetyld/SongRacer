@@ -569,6 +569,7 @@ The frontend app in `frontend/` already implements:
 - risk warning rows are clickable and focus linked obstacle(s) in the builder (with linked obstacle index hints),
 - safe generation status badge summarizes returned risk/attempts/acceptance and is invalidated after subsequent layout/visibility edits,
 - UI displays live min/max limits from `/builder/capabilities` for preview and safe-generation controls (sample fps, frame cap, generator count, safe risk/attempts/analysis-height),
+- safe-generation requests derive `analysis_height` from the active builder world height and clamp it to `/builder/capabilities.generator.safe_analysis_height`,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,
