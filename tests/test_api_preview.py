@@ -113,11 +113,12 @@ def test_preview_simulate_cache_hit_on_repeat_payload() -> None:
         assert after.status_code == 200
         assert after.json()["size"] >= 1
         assert after.json()["size"] >= before.json()["size"]
+        assert after.json()["max_size"] == before.json()["max_size"]
         clear = client.post("/preview/cache/clear")
         assert clear.status_code == 200
         assert clear.json()["cleared"] == after.json()["size"]
         assert clear.json()["size"] == 0
-        assert clear.json()["max_size"] >= 1
+        assert clear.json()["max_size"] == before.json()["max_size"]
         clear_again = client.post("/preview/cache/clear")
         assert clear_again.status_code == 200
         assert clear_again.json()["cleared"] == 0
