@@ -1845,6 +1845,14 @@ function previewTimeText(): string {
   return `${current.toFixed(2)}s / ${total.toFixed(2)}s`
 }
 
+function previewTruncationText(): string {
+  if (!previewData.value) return ''
+  const shown = previewData.value.positions.length
+  const total = Number(previewData.value.total_sample_frames || shown)
+  const cap = Number(previewData.value.requested_max_frames || shown)
+  return `Preview truncated to ${shown} / ${total} sampled frames (requested max ${cap}).`
+}
+
 function previewSamplingText(): string {
   if (!previewData.value) return ''
   const requested = Number(previewData.value.requested_sample_fps || 0)
@@ -2333,7 +2341,7 @@ onUnmounted(() => {
           v-if="previewData?.truncated"
           class="text-[11px] text-amber-300"
         >
-          Preview truncated to {{ previewData.positions.length }} / {{ previewData.total_sample_frames }} sampled frames (raise max frames for full timeline).
+          {{ previewTruncationText() }} Raise max frames for full timeline.
         </p>
         <p v-if="clipboardStatus" class="text-[11px] text-cyan-300">{{ clipboardStatus }}</p>
 
