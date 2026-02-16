@@ -574,6 +574,8 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
             "world_height": cfg.render.world_height,
         },
         "fps": cfg.render.fps,
+        "requested_sample_fps": payload.sample_fps,
+        "requested_max_frames": payload.max_frames,
         "sample_fps": effective_sample_fps,
         "sample_step_frames": step,
         "sample_interval_seconds": step / cfg.render.fps,

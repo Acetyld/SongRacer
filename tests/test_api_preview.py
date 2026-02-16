@@ -37,6 +37,8 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert body["world"]["width"] == 320
         assert body["world"]["height"] == 560
         assert len(body["frame_indices"]) > 5
+        assert body["requested_sample_fps"] == payload["sample_fps"]
+        assert body["requested_max_frames"] == payload["max_frames"]
         assert len(body["positions"]) == len(body["frame_indices"])
         assert len(body["leaders"]) == len(body["frame_indices"])
         assert len(body["camera_y"]) == len(body["frame_indices"])
@@ -125,6 +127,8 @@ def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
         resp = client.post("/preview/simulate", json=payload)
         assert resp.status_code == 200
         body = resp.json()
+        assert body["requested_sample_fps"] == default_sample_fps
+        assert body["requested_max_frames"] == default_max_frames
         expected_step = max(1, int(math.ceil(payload["render"]["fps"] / default_sample_fps)))
         assert body["sample_step_frames"] == expected_step
         assert abs(body["sample_fps"] - (payload["render"]["fps"] / expected_step)) < 1e-9
@@ -151,6 +155,7 @@ def test_preview_simulate_respects_max_frames_cap() -> None:
         resp = client.post("/preview/simulate", json=payload)
         assert resp.status_code == 200
         body = resp.json()
+        assert body["requested_max_frames"] == payload["max_frames"]
         assert len(body["frame_indices"]) <= 40
         assert len(body["frame_indices"]) == 40
         assert len(body["positions"]) == len(body["frame_indices"])

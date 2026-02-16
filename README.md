@@ -200,6 +200,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - safe generation result badge shows seed/risk/warnings/attempts + accepted/best-effort outcome, and auto-clears when layout visibility/geometry changes,
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - live preview scrub row shows requested→effective sampled fps plus frame-step metadata from backend,
+- preview API response includes both requested and effective sampling metadata for diagnostics,
 - preview cache diagnostics/clear controls available via API and builder toolbar,
 - preview cache hits occur for semantically identical preview JSON payloads (key order ignored); changing knobs/layout recomputes simulation,
 - preview endpoint includes lightweight cache-hit metadata for rapid repeated edits,

@@ -53,6 +53,8 @@ type RiskWarningEntry = {
 }
 
 type PreviewData = {
+  requested_sample_fps: number
+  requested_max_frames: number
   sample_fps: number
   sample_step_frames: number
   sample_interval_seconds: number
@@ -1603,6 +1605,8 @@ async function requestPreview() {
       return
     }
     previewData.value = {
+      requested_sample_fps: Number(body.requested_sample_fps ?? previewSampleFps.value),
+      requested_max_frames: Number(body.requested_max_frames ?? previewMaxFrames.value),
       sample_fps: Number(body.sample_fps ?? 15),
       sample_step_frames: Number(body.sample_step_frames ?? 1),
       sample_interval_seconds: Number(body.sample_interval_seconds ?? 1 / 15),
@@ -1843,15 +1847,13 @@ function previewTimeText(): string {
 
 function previewSamplingText(): string {
   if (!previewData.value) return ''
-  const requested = Math.max(
-    builderCaps.value.preview.sample_fps.min,
-    Math.min(builderCaps.value.preview.sample_fps.max, Math.round(previewSampleFps.value)),
-  )
+  const requested = Number(previewData.value.requested_sample_fps || 0)
   const effective = Number(previewData.value.sample_fps || 0)
   const step = Number(previewData.value.sample_step_frames || 0)
   if (!Number.isFinite(effective) || effective <= 0) return ''
-  if (!Number.isFinite(step) || step <= 0) return `req ${requested} → ${effective.toFixed(2)} fps`
-  return `req ${requested} → ${effective.toFixed(2)} fps (step ${step}f)`
+  const requestedText = Number.isFinite(requested) && requested > 0 ? `${requested}` : '?'
+  if (!Number.isFinite(step) || step <= 0) return `req ${requestedText} → ${effective.toFixed(2)} fps`
+  return `req ${requestedText} → ${effective.toFixed(2)} fps (step ${step}f)`
 }
 
 const previewFrameMax = computed(() => {
