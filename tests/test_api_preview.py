@@ -300,6 +300,26 @@ def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
         assert body["total_sample_frames"] == len(body["frame_indices"])
 
 
+def test_preview_simulate_render_world_height_default_aligns_with_capabilities() -> None:
+    payload = {
+        "racers": [{"name": "A", "x": 140, "y": 90, "radius": 24}],
+        "obstacles": [],
+        "sample_fps": 10,
+        "max_frames": 80,
+    }
+    with TestClient(app) as client:
+        capabilities = client.get("/builder/capabilities")
+        assert capabilities.status_code == 200
+        world_height_default = int(capabilities.json()["preview"]["world_height"]["default"])
+
+        resp = client.post("/preview/simulate", json=payload)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["world"]["world_height"] == world_height_default
+        assert body["world"]["world_height"] >= body["world"]["height"]
+        assert body["total_source_frames"] >= body["returned_sample_frames"] > 0
+
+
 def test_preview_simulate_defaulted_request_cache_hit_consistency() -> None:
     payload = {
         "render": {

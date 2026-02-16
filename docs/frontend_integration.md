@@ -378,6 +378,7 @@ Request:
 ```
 
 `sample_fps` and `max_frames` are optional; omitted values use backend defaults (also exposed via `/builder/capabilities`).
+`render.world_height` also defaults from `/builder/capabilities.preview.world_height.default` when not provided.
 Out-of-range values are rejected with request-validation errors (HTTP 422), using the same bounds as `/builder/capabilities`.
 
 Response includes sampled arrays for:
