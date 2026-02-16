@@ -390,6 +390,7 @@ Live preview notes:
 - sampled output is capped by `sample_fps` + `max_frames`,
 - frontend exposes sample-FPS / frame-cap controls and auto-preview toggle for responsiveness tuning,
 - cache reuse applies to semantically identical request JSON (key ordering does not matter); changed preview knobs/layout produce fresh simulations,
+- omitted sampling fields and explicitly provided default values map to the same cache identity,
 - cache-hit responses keep the same payload content as fresh responses, except `cache_hit=true`,
 - this includes stable sampled-length metadata (`returned_sample_frames`, `frame_indices.length`) across fresh/cache-hit responses,
 - builder can read and clear preview-cache via `/preview/cache` + `/preview/cache/clear`,
