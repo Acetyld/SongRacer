@@ -176,6 +176,9 @@ The Render Controls panel also includes a **Parkour Builder**:
 - shift-click multi-select + bulk delete,
 - keep raw obstacle JSON synchronized for full-control edits.
 
+Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.
+Use render jobs for final authoritative output.
+
 If frontend shows backend offline / connection refused, start API first:
 
 ```bash

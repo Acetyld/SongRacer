@@ -250,6 +250,11 @@ Response includes sampled arrays for:
 - `obstacle_visuals`,
 - and metadata like `sample_fps`, `winner_index`, `winner_frame`.
 
+Live preview notes:
+- designed for interactive builder feedback (not final rendering),
+- sampled output is capped by `sample_fps` + `max_frames`,
+- use full render jobs for authoritative final video/audio output.
+
 Response:
 
 ```json

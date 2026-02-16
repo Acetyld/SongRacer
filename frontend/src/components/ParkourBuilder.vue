@@ -50,7 +50,10 @@ type PreviewData = {
   positions: number[][][]
   leaders: number[]
   camera_y: number[]
+  states: number[]
   obstacle_visuals: PreviewFrameObstacle[][]
+  winner_index: number
+  winner_frame: number
 }
 
 const props = defineProps<{
@@ -223,10 +226,19 @@ function syncFromModel(raw: string) {
     const parsed = parseObstacleJson(raw)
     suppressEmit = true
     obstacles.value = parsed
-    selectedId.value = null
-    selectedIds.value = []
+    const firstId = parsed[0]?.id ?? null
+    selectedId.value = firstId
+    selectedIds.value = firstId ? [firstId] : []
     lockedIds.value = []
     hiddenIds.value = []
+    if (parsed.length > 0) {
+      const sorted = parsed
+        .map((o) => obstaclePosition(o).y)
+        .sort((a, b) => a - b)
+      const rawCamera = (sorted[0] ?? 0) - 180
+      const maxCamera = Math.max(0, props.worldHeight - viewportHeight)
+      cameraY.value = Math.max(0, Math.min(maxCamera, rawCamera))
+    }
     parseError.value = ''
   } catch (err) {
     parseError.value = `Builder parse failed: ${String(err)}`
@@ -288,6 +300,16 @@ function isHidden(id: string): boolean {
   return hiddenIds.value.includes(id)
 }
 
+function clampCamera(y: number): number {
+  return Math.max(0, Math.min(cameraMax.value, y))
+}
+
+function focusOnObstacle(obs: BuilderObstacle | null, offset = 220) {
+  if (!obs) return
+  const pos = obstaclePosition(obs)
+  cameraY.value = clampCamera(pos.y - offset)
+}
+
 function selectObstacle(id: string, additive = false) {
   if (additive) {
     if (selectedIds.value.includes(id)) {
@@ -304,6 +326,10 @@ function selectObstacle(id: string, additive = false) {
 
 function clickObstacleHandle(obs: BuilderObstacle, ev: MouseEvent) {
   selectObstacle(obs.id, ev.shiftKey)
+}
+
+function clickLayerRow(id: string, ev: MouseEvent) {
+  selectObstacle(id, ev.shiftKey)
 }
 
 function toCanvasXY(clientX: number, clientY: number, container: HTMLElement): { x: number; y: number } {
@@ -524,7 +550,10 @@ async function requestPreview() {
       positions: Array.isArray(body.positions) ? body.positions : [],
       leaders: Array.isArray(body.leaders) ? body.leaders : [],
       camera_y: Array.isArray(body.camera_y) ? body.camera_y : [],
+      states: Array.isArray(body.states) ? body.states : [],
       obstacle_visuals: Array.isArray(body.obstacle_visuals) ? body.obstacle_visuals : [],
+      winner_index: Number(body.winner_index ?? -1),
+      winner_frame: Number(body.winner_frame ?? -1),
     }
     previewFrame.value = 0
     if (followPreviewCamera.value && previewData.value.camera_y.length > 0) {
@@ -626,6 +655,24 @@ watch(previewPlaying, (play) => {
   }, ms)
 })
 
+watch(previewFrame, (next) => {
+  if (!previewData.value) return
+  const max = Math.max(0, previewData.value.positions.length - 1)
+  if (next < 0) {
+    previewFrame.value = 0
+    return
+  }
+  if (next > max) {
+    previewFrame.value = max
+    return
+  }
+  if (followPreviewCamera.value && previewData.value.camera_y?.length) {
+    cameraY.value = clampCamera(
+      Number(previewData.value.camera_y[Math.min(next, previewData.value.camera_y.length - 1)] ?? cameraY.value),
+    )
+  }
+})
+
 const currentPreviewPositions = computed(() => {
   if (!previewData.value || previewData.value.positions.length === 0) return []
   return previewData.value.positions[Math.min(previewFrame.value, previewData.value.positions.length - 1)] || []
@@ -725,6 +772,23 @@ function previewProgressText(): string {
   const total = previewData.value?.positions.length ?? 0
   if (total <= 0) return 'No preview yet.'
   return `Frame ${previewFrame.value + 1} / ${total}`
+}
+
+const previewFrameMax = computed(() => {
+  const total = previewData.value?.positions.length ?? 0
+  return Math.max(0, total - 1)
+})
+
+function previewStateLabel(): string {
+  if (!previewData.value || previewData.value.states.length === 0) return ''
+  const s = Number(previewData.value.states[Math.min(previewFrame.value, previewData.value.states.length - 1)] ?? 1)
+  if (s === 0) return 'countdown'
+  if (s === 2) return 'winner_hold'
+  return 'racing'
+}
+
+function focusSelectedObstacle() {
+  focusOnObstacle(selectedObstacle.value)
 }
 
 onMounted(() => {
@@ -833,6 +897,13 @@ onUnmounted(() => {
       >
         Reset
       </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="!selectedObstacle"
+        @click="focusSelectedObstacle"
+      >
+        Focus Selected
+      </button>
     </div>
 
     <div class="grid gap-3 lg:grid-cols-[2.1fr_1fr]">
@@ -869,6 +940,18 @@ onUnmounted(() => {
           >
             Risk {{ riskScore }}
           </span>
+        </div>
+        <div v-if="previewData && previewFrameMax > 0" class="flex items-center gap-2 text-xs text-slate-300">
+          <span>Scrub</span>
+          <input
+            v-model.number="previewFrame"
+            type="range"
+            min="0"
+            :max="previewFrameMax"
+            step="1"
+            class="w-56"
+          />
+          <span class="text-slate-400">{{ previewStateLabel() }}</span>
         </div>
 
         <div
@@ -1108,7 +1191,7 @@ onUnmounted(() => {
             >
               <button
                 class="rounded border border-slate-600 px-1.5 py-0.5 text-[10px] hover:bg-slate-700"
-                @click="selectObstacle(o.id, false)"
+                @click="clickLayerRow(o.id, $event)"
               >
                 #{{ idx + 1 }}
               </button>

@@ -52,3 +52,26 @@ def test_preview_simulate_rejects_invalid_obstacle_type() -> None:
         resp = client.post("/preview/simulate", json=payload)
         assert resp.status_code == 400
         assert "Invalid obstacle type" in str(resp.json().get("detail"))
+
+
+def test_preview_simulate_respects_max_frames_cap() -> None:
+    payload = {
+        "render": {
+            "width": 320,
+            "height": 560,
+            "world_height": 1800,
+            "fps": 30,
+            "duration_seconds": 8.0,
+            "countdown_seconds": 0.0,
+        },
+        "racers": [{"name": "A", "x": 140, "y": 90, "radius": 24}],
+        "obstacles": [{"type": "rect", "x": 160, "y": 300, "width": 180, "height": 24}],
+        "sample_fps": 24,
+        "max_frames": 40,
+    }
+    with TestClient(app) as client:
+        resp = client.post("/preview/simulate", json=payload)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body["frame_indices"]) <= 40
+        assert len(body["positions"]) == len(body["frame_indices"])
