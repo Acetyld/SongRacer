@@ -295,6 +295,32 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
             },
         )
         assert generated_safe_invalid_attempts.status_code == 422
+        generated_safe_invalid_count = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": int(gen_caps["count"]["min"]) - 1,
+                "start_y": 950,
+                "spacing": 240,
+                "width": 1080,
+                "seed": 99,
+                "target_max_risk": int(gen_caps["safe_target_max_risk"]["default"]),
+                "max_attempts": int(gen_caps["safe_max_attempts"]["default"]),
+            },
+        )
+        assert generated_safe_invalid_count.status_code == 422
+        generated_safe_invalid_width = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": int(gen_caps["count"]["min"]),
+                "start_y": 950,
+                "spacing": 240,
+                "width": float(gen_caps["width"]["max"]) + 1.0,
+                "seed": 99,
+                "target_max_risk": int(gen_caps["safe_target_max_risk"]["default"]),
+                "max_attempts": int(gen_caps["safe_max_attempts"]["default"]),
+            },
+        )
+        assert generated_safe_invalid_width.status_code == 422
 
         generated_safe_strict = client.post(
             "/templates/obstacles/generate-safe",
