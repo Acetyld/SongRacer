@@ -1907,6 +1907,11 @@ onUnmounted(() => {
       >
         Generate Replace
       </button>
+      <span class="text-slate-500">
+        limits: preview fps {{ builderCaps.preview.sample_fps.min }}-{{ builderCaps.preview.sample_fps.max }},
+        frames {{ builderCaps.preview.max_frames.min }}-{{ builderCaps.preview.max_frames.max }},
+        gen count {{ builderCaps.generator.count.min }}-{{ builderCaps.generator.count.max }}
+      </span>
     </div>
 
     <div class="grid gap-3 lg:grid-cols-[2.1fr_1fr]">

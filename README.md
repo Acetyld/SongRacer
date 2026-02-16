@@ -197,6 +197,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - preview cache diagnostics/clear controls available via API and builder toolbar,
 - preview endpoint includes lightweight cache-hit metadata for rapid repeated edits,
 - builder UI preferences (grid/snap/preview tuning) persist locally in browser storage,
+- builder UI surfaces capability limits fetched from backend contract.
 - keep raw obstacle JSON synchronized for full-control edits.
 
 Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.

@@ -466,6 +466,7 @@ The frontend app in `frontend/` already implements:
 - procedural stream generation is available via `/templates/obstacles/generate` (append/replace in UI),
 - generated stream mixes multiple obstacle families (rect/moving/rings/spinners/circles/pendulums/gates),
 - UI includes one-click random seed for quick stream iteration,
+- UI can display live min/max limits from `/builder/capabilities` for user guidance,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,
