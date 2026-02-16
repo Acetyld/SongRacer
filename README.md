@@ -171,6 +171,9 @@ The Render Controls panel also includes a **Parkour Builder**:
 - drag obstacle types onto the canvas,
 - move and edit obstacles in-place,
 - play live simulation preview (racers + camera) without full MP4 rendering,
+- apply starter presets,
+- lock/hide obstacles and reorder layers while editing,
+- shift-click multi-select + bulk delete,
 - keep raw obstacle JSON synchronized for full-control edits.
 
 If frontend shows backend offline / connection refused, start API first:

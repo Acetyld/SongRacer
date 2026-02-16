@@ -83,6 +83,9 @@ const paletteTypes: ObstacleType[] = [
 const obstacles = ref<BuilderObstacle[]>([])
 const parseError = ref('')
 const selectedId = ref<string | null>(null)
+const selectedIds = ref<string[]>([])
+const lockedIds = ref<string[]>([])
+const hiddenIds = ref<string[]>([])
 const cameraY = ref(0)
 const snapEnabled = ref(true)
 const dragMode = ref<'none' | 'move'>('none')
@@ -96,7 +99,7 @@ const followPreviewCamera = ref(true)
 const showGrid = ref(true)
 const riskScore = ref<number | null>(null)
 const riskWarnings = ref<Array<{ level: string; code: string; message: string }>>([])
-const riskyObstacleIdx = ref<Set<number>>(new Set())
+const riskyObstacleIds = ref<Set<string>>(new Set())
 
 let suppressEmit = false
 let previewDebounce: number | null = null
@@ -220,6 +223,10 @@ function syncFromModel(raw: string) {
     const parsed = parseObstacleJson(raw)
     suppressEmit = true
     obstacles.value = parsed
+    selectedId.value = null
+    selectedIds.value = []
+    lockedIds.value = []
+    hiddenIds.value = []
     parseError.value = ''
   } catch (err) {
     parseError.value = `Builder parse failed: ${String(err)}`
@@ -241,6 +248,13 @@ watch(
 watch(
   obstacles,
   () => {
+    const idSet = new Set(obstacles.value.map((o) => o.id))
+    selectedIds.value = selectedIds.value.filter((id) => idSet.has(id))
+    lockedIds.value = lockedIds.value.filter((id) => idSet.has(id))
+    hiddenIds.value = hiddenIds.value.filter((id) => idSet.has(id))
+    if (selectedId.value && !idSet.has(selectedId.value)) {
+      selectedId.value = selectedIds.value[0] ?? null
+    }
     if (suppressEmit) return
     const payload = JSON.stringify(
       obstacles.value.map((o) => obstacleToSerializable(o)),
@@ -257,6 +271,40 @@ watch(
 const selectedObstacle = computed(() =>
   obstacles.value.find((o) => o.id === selectedId.value) ?? null,
 )
+
+const visibleObstacles = computed(() =>
+  obstacles.value.filter((o) => !hiddenIds.value.includes(o.id)),
+)
+
+function isSelected(id: string): boolean {
+  return selectedIds.value.includes(id)
+}
+
+function isLocked(id: string): boolean {
+  return lockedIds.value.includes(id)
+}
+
+function isHidden(id: string): boolean {
+  return hiddenIds.value.includes(id)
+}
+
+function selectObstacle(id: string, additive = false) {
+  if (additive) {
+    if (selectedIds.value.includes(id)) {
+      selectedIds.value = selectedIds.value.filter((v) => v !== id)
+    } else {
+      selectedIds.value = [...selectedIds.value, id]
+    }
+    selectedId.value = selectedIds.value[selectedIds.value.length - 1] ?? null
+    return
+  }
+  selectedIds.value = [id]
+  selectedId.value = id
+}
+
+function clickObstacleHandle(obs: BuilderObstacle, ev: MouseEvent) {
+  selectObstacle(obs.id, ev.shiftKey)
+}
 
 function toCanvasXY(clientX: number, clientY: number, container: HTMLElement): { x: number; y: number } {
   const rect = container.getBoundingClientRect()
@@ -282,6 +330,7 @@ function onCanvasDrop(ev: DragEvent) {
   const pt = toCanvasXY(ev.clientX, ev.clientY, container)
   const obs = defaultObstacle(type, snap(pt.x), snap(pt.y))
   obstacles.value.push(obs)
+  selectedIds.value = [obs.id]
   selectedId.value = obs.id
 }
 
@@ -305,7 +354,12 @@ function moveObstacle(obs: BuilderObstacle, x: number, y: number) {
 }
 
 function startDragObstacle(obs: BuilderObstacle, ev: PointerEvent) {
-  selectedId.value = obs.id
+  if (isLocked(obs.id)) return
+  if (ev.shiftKey) {
+    selectObstacle(obs.id, true)
+    return
+  }
+  selectObstacle(obs.id, false)
   const container = (ev.currentTarget as HTMLElement).closest('[data-builder-canvas]') as HTMLElement | null
   if (!container) return
   const pt = toCanvasXY(ev.clientX, ev.clientY, container)
@@ -343,8 +397,10 @@ function duplicateSelected() {
 }
 
 function deleteSelected() {
-  if (!selectedId.value) return
-  obstacles.value = obstacles.value.filter((o) => o.id !== selectedId.value)
+  const ids = selectedIds.value.length > 0 ? new Set(selectedIds.value) : new Set(selectedId.value ? [selectedId.value] : [])
+  if (ids.size === 0) return
+  obstacles.value = obstacles.value.filter((o) => !ids.has(o.id))
+  selectedIds.value = []
   selectedId.value = null
 }
 
@@ -375,7 +431,38 @@ function applyPreset(preset: 'starter' | 'rings' | 'gates') {
       { ...make('pendulum', 540, 1820), length: 290, angle_deg: 15, amplitude: 56 },
     ]
   }
-  selectedId.value = obstacles.value[0]?.id ?? null
+  const first = obstacles.value[0]?.id ?? null
+  selectedId.value = first
+  selectedIds.value = first ? [first] : []
+}
+
+function moveSelectedLayer(delta: -1 | 1) {
+  if (!selectedId.value) return
+  const idx = obstacles.value.findIndex((o) => o.id === selectedId.value)
+  if (idx < 0) return
+  const target = idx + delta
+  if (target < 0 || target >= obstacles.value.length) return
+  const next = obstacles.value.slice()
+  const [item] = next.splice(idx, 1)
+  if (!item) return
+  next.splice(target, 0, item)
+  obstacles.value = next
+}
+
+function toggleLock(id: string) {
+  if (lockedIds.value.includes(id)) {
+    lockedIds.value = lockedIds.value.filter((v) => v !== id)
+  } else {
+    lockedIds.value = [...lockedIds.value, id]
+  }
+}
+
+function toggleHidden(id: string) {
+  if (hiddenIds.value.includes(id)) {
+    hiddenIds.value = hiddenIds.value.filter((v) => v !== id)
+  } else {
+    hiddenIds.value = [...hiddenIds.value, id]
+  }
 }
 
 const cameraMax = computed(() => Math.max(0, props.worldHeight - viewportHeight))
@@ -423,7 +510,7 @@ async function requestPreview() {
           obstacle_stream_repeats: 1,
         },
         racers: previewRacersPayload(),
-        obstacles: obstacles.value.map((o) => obstacleToSerializable(o)),
+        obstacles: visibleObstacles.value.map((o) => obstacleToSerializable(o)),
         sample_fps: 15,
         max_frames: 360,
       }),
@@ -458,7 +545,7 @@ async function analyzeRisk() {
       body: JSON.stringify({
         config: {
           render: { width: 1080, height: 1920 },
-          obstacles: obstacles.value.map((o) => obstacleToSerializable(o)),
+          obstacles: visibleObstacles.value.map((o) => obstacleToSerializable(o)),
         },
       }),
     })
@@ -468,16 +555,20 @@ async function analyzeRisk() {
     const body = await resp.json()
     riskScore.value = Number(body.risk_score ?? 0)
     riskWarnings.value = Array.isArray(body.warnings) ? body.warnings : []
-    const idxSet = new Set<number>()
+    const idSet = new Set<string>()
     for (const w of riskWarnings.value) {
       const m = /Obstacle\s+#(\d+)/i.exec(String(w.message || ''))
-      if (m) idxSet.add(Number(m[1]))
+      if (m) {
+        const i = Number(m[1])
+        const id = visibleObstacles.value[i]?.id
+        if (id) idSet.add(id)
+      }
     }
-    riskyObstacleIdx.value = idxSet
+    riskyObstacleIds.value = idSet
   } catch (_err) {
     riskScore.value = null
     riskWarnings.value = []
-    riskyObstacleIdx.value = new Set()
+    riskyObstacleIds.value = new Set()
   }
 }
 
@@ -547,7 +638,7 @@ const currentPreviewLeader = computed(() => {
 
 const currentVisuals = computed<PreviewFrameObstacle[]>(() => {
   if (!previewData.value || previewData.value.obstacle_visuals.length === 0) {
-    return obstacles.value.map((o) => {
+    return visibleObstacles.value.map((o) => {
       if (o.type === 'rect' || o.type === 'moving_rect' || o.type === 'one_way_gate') {
         return {
           type: o.type,
@@ -672,17 +763,31 @@ onUnmounted(() => {
       </button>
       <button
         class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
-        :disabled="!selectedObstacle"
+        :disabled="!selectedObstacle || selectedIds.length > 1"
         @click="duplicateSelected"
       >
         Duplicate
       </button>
       <button
         class="rounded border border-rose-600/50 bg-rose-900/40 px-2 py-1 text-[11px] text-rose-200 hover:bg-rose-800/50 disabled:opacity-40"
-        :disabled="!selectedObstacle"
+        :disabled="!selectedObstacle && selectedIds.length === 0"
         @click="deleteSelected"
       >
-        Delete
+        Delete{{ selectedIds.length > 1 ? ` (${selectedIds.length})` : '' }}
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="!selectedObstacle"
+        @click="moveSelectedLayer(-1)"
+      >
+        Layer Up
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="!selectedObstacle"
+        @click="moveSelectedLayer(1)"
+      >
+        Layer Down
       </button>
       <button
         class="rounded border border-cyan-600/50 bg-cyan-900/30 px-2 py-1 text-[11px] text-cyan-200 hover:bg-cyan-800/40"
@@ -855,7 +960,7 @@ onUnmounted(() => {
 
             <g v-for="(o, idx) in obstacles" :key="o.id">
               <circle
-                v-if="o.id === selectedId"
+                v-if="isSelected(o.id)"
                 :cx="obstaclePosition(o).x"
                 :cy="obstacleScreenY(obstaclePosition(o).y)"
                 r="18"
@@ -869,11 +974,12 @@ onUnmounted(() => {
                 :cy="obstacleScreenY(obstaclePosition(o).y)"
                 r="12"
                 fill="#0f172a"
-                :stroke="riskyObstacleIdx.has(idx) ? '#fb7185' : '#e2e8f0'"
+                :stroke="isLocked(o.id) ? '#f59e0b' : riskyObstacleIds.has(o.id) ? '#fb7185' : '#e2e8f0'"
                 stroke-width="2"
-                class="cursor-move"
+                :class="isLocked(o.id) ? 'cursor-not-allowed' : 'cursor-move'"
+                :opacity="isHidden(o.id) ? 0.45 : 1"
                 @pointerdown.stop.prevent="startDragObstacle(o, $event)"
-                @click.stop="selectedId = o.id"
+                @click.stop="clickObstacleHandle(o, $event)"
               />
               <text
                 :x="obstaclePosition(o).x + 16"
@@ -881,7 +987,7 @@ onUnmounted(() => {
                 fill="#cbd5e1"
                 font-size="14"
               >
-                {{ idx + 1 }}
+                {{ idx + 1 }}{{ isLocked(o.id) ? ' 🔒' : '' }}{{ isHidden(o.id) ? ' 👁‍🗨' : '' }}
               </text>
             </g>
 
@@ -987,6 +1093,41 @@ onUnmounted(() => {
               Stroke
               <input v-model="selectedObstacle.stroke_color" type="color" class="mt-1 h-8 w-full rounded border border-slate-600 bg-slate-950 px-1" />
             </label>
+          </div>
+        </div>
+        <div class="mt-3 rounded border border-slate-700 bg-slate-950/60 p-2">
+          <p class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
+            Obstacle layers (shift-click for multi-select)
+          </p>
+          <div class="max-h-40 space-y-1 overflow-auto pr-1 text-[11px] text-slate-200">
+            <div
+              v-for="(o, idx) in obstacles"
+              :key="`row_${o.id}`"
+              class="flex items-center gap-1 rounded border px-1.5 py-1"
+              :class="isSelected(o.id) ? 'border-cyan-500/50 bg-cyan-900/20' : 'border-slate-700 bg-slate-900/60'"
+            >
+              <button
+                class="rounded border border-slate-600 px-1.5 py-0.5 text-[10px] hover:bg-slate-700"
+                @click="selectObstacle(o.id, false)"
+              >
+                #{{ idx + 1 }}
+              </button>
+              <span class="min-w-0 flex-1 truncate">{{ obstacleLabel(o.type) }}</span>
+              <button
+                class="rounded border border-slate-600 px-1.5 py-0.5 text-[10px] hover:bg-slate-700"
+                :class="isHidden(o.id) ? 'text-amber-300' : 'text-slate-300'"
+                @click="toggleHidden(o.id)"
+              >
+                {{ isHidden(o.id) ? 'Show' : 'Hide' }}
+              </button>
+              <button
+                class="rounded border border-slate-600 px-1.5 py-0.5 text-[10px] hover:bg-slate-700"
+                :class="isLocked(o.id) ? 'text-amber-300' : 'text-slate-300'"
+                @click="toggleLock(o.id)"
+              >
+                {{ isLocked(o.id) ? 'Unlock' : 'Lock' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
