@@ -80,6 +80,22 @@ def test_preview_simulate_rejects_invalid_obstacle_type() -> None:
         assert "Invalid obstacle type" in str(resp.json().get("detail"))
 
 
+def test_preview_simulate_rejects_out_of_range_sampling_limits() -> None:
+    payload = {
+        "render": {"width": 320, "height": 560, "world_height": 1400, "duration_seconds": 1.2},
+        "racers": [{"name": "A", "x": 100, "y": 90, "radius": 24}],
+        "obstacles": [],
+        "sample_fps": 2,
+        "max_frames": 20,
+    }
+    with TestClient(app) as client:
+        resp = client.post("/preview/simulate", json=payload)
+        assert resp.status_code == 422
+        detail = str(resp.json().get("detail"))
+        assert "sample_fps" in detail
+        assert "max_frames" in detail
+
+
 def test_preview_simulate_reports_no_winner_with_negative_fields() -> None:
     payload = {
         "seed": 22,
