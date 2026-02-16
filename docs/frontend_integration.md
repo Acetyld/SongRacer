@@ -44,6 +44,8 @@ Response:
 }
 ```
 
+Each capability entry guarantees `min <= default <= max`.
+
 ### `GET /builder/bootstrap`
 Combined builder bootstrap payload to reduce round-trips. Includes:
 - `capabilities` (same as `/builder/capabilities`)

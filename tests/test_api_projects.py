@@ -68,6 +68,9 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert cap_body["generator"]["count"]["max"] >= 100
         assert cap_body["generator"]["safe_target_max_risk"]["max"] == 100
         assert cap_body["generator"]["safe_max_attempts"]["max"] >= 16
+        for section in ("preview", "generator"):
+            for bounds in cap_body[section].values():
+                assert bounds["min"] <= bounds["default"] <= bounds["max"]
         bootstrap = client.get("/builder/bootstrap")
         assert bootstrap.status_code == 200
         bootstrap_body = bootstrap.json()
