@@ -356,6 +356,7 @@ The frontend app in `frontend/` already implements:
 - per-racer waveform preview with trim marker (`/waveform`),
 - realtime drag-and-drop parkour builder with live simulation preview (`/preview/simulate`),
 - builder productivity controls: presets, lock/hide toggles, layer ordering, shift-select bulk delete, and keyboard shortcuts,
+- builder history support (undo/redo buttons + keyboard shortcuts),
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,

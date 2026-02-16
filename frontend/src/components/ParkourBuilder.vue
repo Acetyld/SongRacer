@@ -106,11 +106,15 @@ const showGrid = ref(true)
 const riskScore = ref<number | null>(null)
 const riskWarnings = ref<Array<{ level: string; code: string; message: string }>>([])
 const riskyObstacleIds = ref<Set<string>>(new Set())
+const historyStack = ref<string[]>([])
+const historyIndex = ref(-1)
+const applyingHistory = ref(false)
 
 let suppressEmit = false
 let previewDebounce: number | null = null
 let playbackHandle: number | null = null
 let riskDebounce: number | null = null
+let historyDebounce: number | null = null
 let previewRequestNonce = 0
 
 function obstacleLabel(t: ObstacleType): string {
@@ -184,6 +188,10 @@ function obstacleToSerializable(obs: BuilderObstacle): Record<string, unknown> {
   return out
 }
 
+function obstaclesToCompactJson(list: BuilderObstacle[]): string {
+  return JSON.stringify(list.map((o) => obstacleToSerializable(o)))
+}
+
 function parseObstacleJson(raw: string): BuilderObstacle[] {
   if (!raw.trim()) return []
   const parsed = JSON.parse(raw)
@@ -243,12 +251,96 @@ function syncFromModel(raw: string) {
       const maxCamera = Math.max(0, props.worldHeight - viewportHeight)
       cameraY.value = Math.max(0, Math.min(maxCamera, rawCamera))
     }
+    resetHistoryWithCurrent()
     parseError.value = ''
   } catch (err) {
     parseError.value = `Builder parse failed: ${String(err)}`
   } finally {
     suppressEmit = false
   }
+}
+
+function resetHistoryWithCurrent() {
+  const snapshot = obstaclesToCompactJson(obstacles.value)
+  historyStack.value = [snapshot]
+  historyIndex.value = 0
+}
+
+function canUndo(): boolean {
+  return historyIndex.value > 0
+}
+
+function canRedo(): boolean {
+  return historyIndex.value >= 0 && historyIndex.value < historyStack.value.length - 1
+}
+
+function pushHistorySnapshot() {
+  if (suppressEmit || applyingHistory.value) return
+  const snapshot = obstaclesToCompactJson(obstacles.value)
+  const idx = historyIndex.value
+  if (idx >= 0 && historyStack.value[idx] === snapshot) return
+  const nextStack = historyStack.value.slice(0, idx + 1)
+  nextStack.push(snapshot)
+  if (nextStack.length > 140) {
+    const trim = nextStack.length - 140
+    historyStack.value = nextStack.slice(trim)
+    historyIndex.value = historyStack.value.length - 1
+  } else {
+    historyStack.value = nextStack
+    historyIndex.value = nextStack.length - 1
+  }
+}
+
+function scheduleHistorySnapshot() {
+  if (historyDebounce) {
+    window.clearTimeout(historyDebounce)
+    historyDebounce = null
+  }
+  historyDebounce = window.setTimeout(() => {
+    pushHistorySnapshot()
+  }, 120)
+}
+
+function applyHistorySnapshot(snapshot: string) {
+  applyingHistory.value = true
+  try {
+    const parsed = parseObstacleJson(snapshot)
+    suppressEmit = true
+    obstacles.value = parsed
+    suppressEmit = false
+    const payload = JSON.stringify(
+      parsed.map((o) => obstacleToSerializable(o)),
+      null,
+      2,
+    )
+    emit('update:modelValue', payload)
+    const firstId = parsed[0]?.id ?? null
+    selectedId.value = firstId
+    selectedIds.value = firstId ? [firstId] : []
+    schedulePreview()
+    scheduleRiskAnalyze()
+  } finally {
+    suppressEmit = false
+    applyingHistory.value = false
+  }
+}
+
+function undoHistory() {
+  if (!canUndo()) return
+  const next = historyIndex.value - 1
+  historyIndex.value = next
+  const snapshot = historyStack.value[next]
+  if (!snapshot) return
+  applyHistorySnapshot(snapshot)
+}
+
+function redoHistory() {
+  if (!canRedo()) return
+  const next = historyIndex.value + 1
+  historyIndex.value = next
+  const snapshot = historyStack.value[next]
+  if (!snapshot) return
+  applyHistorySnapshot(snapshot)
 }
 
 watch(
@@ -272,6 +364,7 @@ watch(
       selectedId.value = selectedIds.value[0] ?? null
     }
     if (suppressEmit) return
+    scheduleHistorySnapshot()
     const payload = JSON.stringify(
       obstacles.value.map((o) => obstacleToSerializable(o)),
       null,
@@ -373,6 +466,19 @@ function shouldIgnoreKeyboardShortcuts(target: EventTarget | null): boolean {
 function onWindowKeyDown(ev: KeyboardEvent) {
   if (shouldIgnoreKeyboardShortcuts(ev.target)) return
   const step = ev.shiftKey ? 20 : 5
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z' && !ev.shiftKey) {
+    ev.preventDefault()
+    undoHistory()
+    return
+  }
+  if (
+    (ev.ctrlKey || ev.metaKey) &&
+    (ev.key.toLowerCase() === 'y' || (ev.key.toLowerCase() === 'z' && ev.shiftKey))
+  ) {
+    ev.preventDefault()
+    redoHistory()
+    return
+  }
   if (ev.key === 'Delete' || ev.key === 'Backspace') {
     const ids = selectedIdSet()
     if (ids.size > 0) {
@@ -937,6 +1043,10 @@ onUnmounted(() => {
     window.clearTimeout(riskDebounce)
     riskDebounce = null
   }
+  if (historyDebounce) {
+    window.clearTimeout(historyDebounce)
+    historyDebounce = null
+  }
   window.removeEventListener('keydown', onWindowKeyDown)
 })
 </script>
@@ -966,6 +1076,20 @@ onUnmounted(() => {
         @click="selectAll"
       >
         Select All
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="!canUndo()"
+        @click="undoHistory"
+      >
+        Undo
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="!canRedo()"
+        @click="redoHistory"
+      >
+        Redo
       </button>
       <button
         class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
@@ -1134,7 +1258,7 @@ onUnmounted(() => {
           <span class="text-slate-400">{{ previewStateLabel() }}</span>
         </div>
         <p class="text-[11px] text-slate-500">
-          Shortcuts: Delete=remove, Ctrl/Cmd+D=duplicate, Ctrl/Cmd+A=select all, Esc=clear, Arrows=move (Shift=20px).
+          Shortcuts: Delete=remove, Ctrl/Cmd+Z=undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y=redo, Ctrl/Cmd+D=duplicate, Ctrl/Cmd+A=select all, Esc=clear, Arrows=move (Shift=20px).
         </p>
 
         <div

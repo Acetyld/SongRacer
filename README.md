@@ -175,6 +175,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - lock/hide obstacles and reorder layers while editing,
 - shift-click multi-select + bulk delete,
 - keyboard shortcuts for fast editing (delete/duplicate/select all/nudge),
+- undo/redo history controls with keyboard shortcuts,
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - keep raw obstacle JSON synchronized for full-control edits.
 
@@ -183,6 +184,8 @@ Use render jobs for final authoritative output.
 
 Builder keyboard shortcuts:
 - `Delete/Backspace`: delete selection
+- `Ctrl/Cmd + Z`: undo
+- `Ctrl/Cmd + Shift + Z` (or `Ctrl/Cmd + Y`): redo
 - `Ctrl/Cmd + D`: duplicate selected obstacle
 - `Ctrl/Cmd + A`: select all obstacles
 - `Esc`: clear selection
