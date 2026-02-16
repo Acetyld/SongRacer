@@ -67,6 +67,12 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         generated_body = generated.json()
         assert generated_body["count"] == 6
         assert len(generated_body["obstacles"]) == 6
+        generated2 = client.post(
+            "/templates/obstacles/generate",
+            json={"count": 6, "start_y": 950, "spacing": 240, "width": 1080, "seed": 99},
+        )
+        assert generated2.status_code == 200
+        assert generated2.json()["obstacles"] == generated_body["obstacles"]
 
         inline_valid = client.post("/validate/config", json={"config": payload_config})
         assert inline_valid.status_code == 200
