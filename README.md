@@ -207,6 +207,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - live preview scrub row shows sampled-window span (`shown/total` seconds) from backend metadata,
 - preview API response includes both requested and effective sampling metadata for diagnostics,
 - preview API includes explicit `returned_sample_frames` for quick sampled-length checks,
+- preview metadata includes resolved goal line position (`goal_y`) used for winner detection,
 - if preview returns a single sample frame, sampled-window duration is `0s`,
 - preview response guarantees `returned_sample_frames <= requested_max_frames`,
 - effective preview sampling rate is bounded by both requested sample-fps and render fps,

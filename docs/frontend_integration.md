@@ -376,7 +376,7 @@ Response includes sampled arrays for:
 - `leaders`,
 - `camera_y`,
 - `obstacle_visuals`,
-- and metadata like `requested_sample_fps`, `requested_max_frames`, `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `winner_index`, `winner_frame`, `returned_sample_frames`, `returned_sample_duration_seconds`, `total_sample_frames`, `truncated`, `cache_hit`.
+- and metadata like `requested_sample_fps`, `requested_max_frames`, `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `goal_y`, `winner_index`, `winner_frame`, `returned_sample_frames`, `returned_sample_duration_seconds`, `total_sample_frames`, `truncated`, `cache_hit`.
 - winner fields use `-1`/`-1` when no winner is reached within simulated frames.
 
 Sampling metadata note:
