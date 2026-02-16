@@ -40,6 +40,7 @@ from .jobs import JobManager
 from .pipeline import render_race
 from .simulation import simulate_race
 from .storage import resolve_writable_dir
+from .templates import obstacle_templates
 from .sync import (
     SyncError,
     apply_analysis_to_config_obj,
@@ -287,6 +288,11 @@ def system_info() -> dict[str, Any]:
         "output_dir": str(OUTPUT_DIR),
         "db_path": str(db_path),
     }
+
+
+@app.get("/templates/obstacles")
+def templates_obstacles() -> dict[str, Any]:
+    return {"templates": obstacle_templates()}
 
 
 @app.post("/uploads")

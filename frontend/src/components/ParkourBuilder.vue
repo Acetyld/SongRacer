@@ -122,6 +122,7 @@ const riskWarnings = ref<
 >([])
 const riskyObstacleIds = ref<Set<string>>(new Set())
 const clipboardStatus = ref('')
+const templateCatalog = ref<Record<string, Array<Record<string, unknown>>>>({})
 const historyStack = ref<string[]>([])
 const historyIndex = ref(-1)
 const applyingHistory = ref(false)
@@ -424,6 +425,13 @@ watch(
   [autoPreview, previewSampleFps, previewMaxFrames, snapEnabled, snapSize, showGrid, followPreviewCamera],
   () => {
     savePrefs()
+  },
+)
+
+watch(
+  () => props.apiBase,
+  () => {
+    void loadPresetTemplates()
   },
 )
 
@@ -917,32 +925,45 @@ function alignSelection(axis: 'x' | 'y') {
   }
 }
 
-function applyPreset(preset: 'starter' | 'rings' | 'gates') {
-  const make = (type: ObstacleType, x: number, y: number) => defaultObstacle(type, x, y)
+function fallbackPresetTemplate(
+  preset: 'starter' | 'rings' | 'gates',
+): Array<Record<string, unknown>> {
+  const make = (type: ObstacleType, x: number, y: number) =>
+    obstacleToSerializable(defaultObstacle(type, x, y))
   if (preset === 'starter') {
-    obstacles.value = [
+    return [
       { ...make('rect', 280, 980), angle_deg: -22, width: 300 },
       { ...make('moving_rect', 760, 1120), angle_deg: 18, width: 290, amplitude: 120 },
       { ...make('ring_gap', 540, 1380), radius: 160, gap_size_deg: 64 },
       { ...make('spinner', 540, 1680), length: 340, spin_speed_deg: 160 },
       { ...make('one_way_gate', 540, 1940), width: 620, one_way: 'down' },
     ]
-  } else if (preset === 'rings') {
-    obstacles.value = [
+  }
+  if (preset === 'rings') {
+    return [
       { ...make('ring_gap', 350, 980), radius: 126, gap_center_deg: 250, gap_size_deg: 62 },
       { ...make('ring_gap', 730, 1210), radius: 130, gap_center_deg: 200, gap_size_deg: 58 },
       { ...make('ring_gap', 420, 1460), radius: 142, gap_center_deg: 280, gap_size_deg: 60 },
       { ...make('ring_gap', 700, 1730), radius: 132, gap_center_deg: 245, gap_size_deg: 58 },
       { ...make('spinner', 540, 2060), length: 320, spin_speed_deg: 150 },
     ]
-  } else {
-    obstacles.value = [
-      { ...make('rect', 260, 940), angle_deg: -18, width: 320 },
-      { ...make('one_way_gate', 540, 1120), width: 640, one_way: 'down' },
-      { ...make('one_way_gate', 540, 1270), width: 640, one_way: 'up' },
-      { ...make('moving_rect', 740, 1510), angle_deg: 14, width: 320, axis: 'x' },
-      { ...make('pendulum', 540, 1820), length: 290, angle_deg: 15, amplitude: 56 },
-    ]
+  }
+  return [
+    { ...make('rect', 260, 940), angle_deg: -18, width: 320 },
+    { ...make('one_way_gate', 540, 1120), width: 640, one_way: 'down' },
+    { ...make('one_way_gate', 540, 1270), width: 640, one_way: 'up' },
+    { ...make('moving_rect', 740, 1510), angle_deg: 14, width: 320, axis: 'x' },
+    { ...make('pendulum', 540, 1820), length: 290, angle_deg: 15, amplitude: 56 },
+  ]
+}
+
+function applyPreset(preset: 'starter' | 'rings' | 'gates') {
+  const fromApi = templateCatalog.value[preset]
+  const raw = Array.isArray(fromApi) && fromApi.length > 0 ? fromApi : fallbackPresetTemplate(preset)
+  try {
+    obstacles.value = parseObstacleJson(JSON.stringify(raw))
+  } catch (_err) {
+    obstacles.value = parseObstacleJson(JSON.stringify(fallbackPresetTemplate(preset)))
   }
   const first = obstacles.value[0]?.id ?? null
   selectedId.value = first
@@ -1003,6 +1024,29 @@ function previewRacersPayload(): PreviewRacer[] {
     y: 420 + (idx % 2) * 42,
     radius: 96,
   }))
+}
+
+async function loadPresetTemplates() {
+  try {
+    const resp = await fetch(`${props.apiBase}/templates/obstacles`)
+    if (!resp.ok) return
+    const body = await resp.json()
+    const t = body?.templates
+    if (!t || typeof t !== 'object') return
+    const next: Record<string, Array<Record<string, unknown>>> = {}
+    for (const [name, value] of Object.entries(t as Record<string, unknown>)) {
+      if (Array.isArray(value)) {
+        next[name] = value.filter((v) => !!v && typeof v === 'object') as Array<
+          Record<string, unknown>
+        >
+      }
+    }
+    if (Object.keys(next).length > 0) {
+      templateCatalog.value = next
+    }
+  } catch (_err) {
+    // ignore template fetch failures and keep local fallback templates
+  }
 }
 
 async function requestPreview() {
@@ -1316,6 +1360,7 @@ function focusSelectedObstacle() {
 onMounted(() => {
   loadPrefs()
   tryLoadBuilderShareFromUrl()
+  void loadPresetTemplates()
   void requestPreview()
   void analyzeRisk()
   window.addEventListener('keydown', onWindowKeyDown)

@@ -52,6 +52,12 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
     }
 
     with TestClient(app) as client:
+        templates = client.get("/templates/obstacles")
+        assert templates.status_code == 200
+        templates_body = templates.json()
+        assert "templates" in templates_body
+        assert set(templates_body["templates"].keys()) >= {"starter", "rings", "gates"}
+
         inline_valid = client.post("/validate/config", json={"config": payload_config})
         assert inline_valid.status_code == 200
         assert inline_valid.json()["valid"] is True

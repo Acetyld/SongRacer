@@ -134,6 +134,7 @@ Endpoints:
 
 - `GET /health`
 - `GET /system/info` (resolved writable storage + DB paths)
+- `GET /templates/obstacles` (preset obstacle layouts for builder)
 - `POST /uploads` (multipart video upload)
 - `POST /sync/audio` with `{ "video_paths": [...], "sample_rate": 16000, "max_shift_seconds": 8 }`
 - `POST /sync/preview` (sync analysis + waveform arrays in one call)

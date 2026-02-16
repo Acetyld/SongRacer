@@ -25,6 +25,21 @@ Response:
 ### `GET /system/info`
 Resolved runtime storage locations (useful when writable fallback paths are selected).
 
+### `GET /templates/obstacles`
+Returns preset obstacle layouts for the realtime parkour builder.
+
+Response:
+
+```json
+{
+  "templates": {
+    "starter": [{ "... obstacle ..." }],
+    "rings": [{ "... obstacle ..." }],
+    "gates": [{ "... obstacle ..." }]
+  }
+}
+```
+
 ### `POST /validate`
 Validate config before rendering.
 
