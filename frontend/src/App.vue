@@ -99,6 +99,11 @@ let jobsRequestNonce = 0
 let projectsRequestNonce = 0
 let systemInfoRequestNonce = 0
 
+function clearActiveProjectSelection() {
+  activeProjectId.value = null
+  projectNameInput.value = 'My SongRacer Project'
+}
+
 const uploadedReady = computed(() => racers.value.length > 0 && racers.value.every((r) => !!r.uploadedPath))
 const canRender = computed(() => uploadedReady.value && !isBusy.value)
 const builderPreviewRacers = computed(() => {
@@ -524,7 +529,7 @@ async function refreshProjects() {
       activeProjectId.value !== null &&
       !nextProjects.some((p) => Number(p.id) === activeProjectId.value)
     ) {
-      activeProjectId.value = null
+      clearActiveProjectSelection()
     }
     backendOnline.value = true
   } catch (_err) {
@@ -645,7 +650,7 @@ async function removeProject(projectId: number) {
     const resp = await fetch(`${apiBase.value}/projects/${projectId}`, { method: 'DELETE' })
     if (!resp.ok) throw new Error(await resp.text())
     if (activeProjectId.value === projectId) {
-      activeProjectId.value = null
+      clearActiveProjectSelection()
     }
     await refreshProjects()
     statusMessage.value = `Deleted project #${projectId}.`
