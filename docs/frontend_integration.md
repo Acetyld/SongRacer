@@ -44,6 +44,12 @@ Response:
 }
 ```
 
+### `GET /builder/bootstrap`
+Combined builder bootstrap payload to reduce round-trips. Includes:
+- `capabilities` (same as `/builder/capabilities`)
+- `obstacle_types` (same as `/templates/obstacle-types`)
+- `templates` (same as `/templates/obstacles`)
+
 ### `GET /templates/obstacle-types`
 Returns obstacle type catalog for builder palette rendering.
 

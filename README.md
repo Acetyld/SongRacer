@@ -135,6 +135,7 @@ Endpoints:
 - `GET /health`
 - `GET /system/info` (resolved writable storage + DB paths)
 - `GET /builder/capabilities` (builder/UI limits for preview and procedural generation)
+- `GET /builder/bootstrap` (combined builder capabilities + obstacle types + templates)
 - `GET /templates/obstacle-types` (obstacle type catalog + labels for builder palette)
 - `GET /templates/obstacles` (preset obstacle layouts for builder)
 - `POST /templates/obstacles/generate` (procedural obstacle stream generator)

@@ -374,6 +374,15 @@ def builder_capabilities() -> dict[str, Any]:
     return _BUILDER_CAPABILITIES
 
 
+@app.get("/builder/bootstrap")
+def builder_bootstrap() -> dict[str, Any]:
+    return {
+        "capabilities": _BUILDER_CAPABILITIES,
+        "obstacle_types": obstacle_type_catalog(),
+        "templates": obstacle_templates_payload(),
+    }
+
+
 @app.get("/templates/obstacle-types")
 def templates_obstacle_types() -> dict[str, Any]:
     return {"types": obstacle_type_catalog()}

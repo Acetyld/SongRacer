@@ -481,10 +481,13 @@ watch(
 watch(
   () => props.apiBase,
   () => {
-    void loadBuilderCapabilities()
-    void loadObstacleTypeCatalog()
-    void loadPresetTemplates()
-    void refreshPreviewCacheInfo()
+    void (async () => {
+      const ok = await loadBuilderBootstrap()
+      if (!ok) {
+        await Promise.all([loadBuilderCapabilities(), loadObstacleTypeCatalog(), loadPresetTemplates()])
+      }
+      await refreshPreviewCacheInfo()
+    })()
   },
 )
 
@@ -1231,94 +1234,156 @@ function previewRacersPayload(): PreviewRacer[] {
   }))
 }
 
+function applyBuilderCapabilities(body: unknown) {
+  const obj = body as Record<string, any> | null
+  const p = obj?.preview
+  const g = obj?.generator
+  if (!p || !g) return
+  builderCaps.value = {
+    preview: {
+      sample_fps: {
+        min: Number(p.sample_fps?.min ?? 4),
+        max: Number(p.sample_fps?.max ?? 60),
+        default: Number(p.sample_fps?.default ?? 15),
+      },
+      max_frames: {
+        min: Number(p.max_frames?.min ?? 30),
+        max: Number(p.max_frames?.max ?? 1500),
+        default: Number(p.max_frames?.default ?? 300),
+      },
+    },
+    generator: {
+      count: {
+        min: Number(g.count?.min ?? 1),
+        max: Number(g.count?.max ?? 200),
+        default: Number(g.count?.default ?? 8),
+      },
+      start_y: {
+        min: Number(g.start_y?.min ?? 0),
+        max: Number(g.start_y?.max ?? 100000),
+        default: Number(g.start_y?.default ?? 900),
+      },
+      spacing: {
+        min: Number(g.spacing?.min ?? 40),
+        max: Number(g.spacing?.max ?? 4000),
+        default: Number(g.spacing?.default ?? 260),
+      },
+      width: {
+        min: Number(g.width?.min ?? 200),
+        max: Number(g.width?.max ?? 4000),
+        default: Number(g.width?.default ?? 1080),
+      },
+      seed: {
+        min: Number(g.seed?.min ?? 0),
+        max: Number(g.seed?.max ?? 2000000000),
+        default: Number(g.seed?.default ?? 13),
+      },
+      safe_target_max_risk: {
+        min: Number(g.safe_target_max_risk?.min ?? 0),
+        max: Number(g.safe_target_max_risk?.max ?? 100),
+        default: Number(g.safe_target_max_risk?.default ?? 35),
+      },
+      safe_max_attempts: {
+        min: Number(g.safe_max_attempts?.min ?? 1),
+        max: Number(g.safe_max_attempts?.max ?? 64),
+        default: Number(g.safe_max_attempts?.default ?? 8),
+      },
+    },
+  }
+  previewSampleFps.value = Math.max(
+    builderCaps.value.preview.sample_fps.min,
+    Math.min(builderCaps.value.preview.sample_fps.max, previewSampleFps.value),
+  )
+  previewMaxFrames.value = Math.max(
+    builderCaps.value.preview.max_frames.min,
+    Math.min(builderCaps.value.preview.max_frames.max, previewMaxFrames.value),
+  )
+  generateCount.value = Math.max(
+    builderCaps.value.generator.count.min,
+    Math.min(builderCaps.value.generator.count.max, generateCount.value),
+  )
+  generateSpacing.value = Math.max(
+    builderCaps.value.generator.spacing.min,
+    Math.min(builderCaps.value.generator.spacing.max, generateSpacing.value),
+  )
+  generateSeed.value = Math.max(
+    builderCaps.value.generator.seed.min,
+    Math.min(builderCaps.value.generator.seed.max, generateSeed.value),
+  )
+  generateSafeTarget.value = Math.max(
+    builderCaps.value.generator.safe_target_max_risk.min,
+    Math.min(builderCaps.value.generator.safe_target_max_risk.max, generateSafeTarget.value),
+  )
+  generateSafeAttempts.value = Math.max(
+    builderCaps.value.generator.safe_max_attempts.min,
+    Math.min(builderCaps.value.generator.safe_max_attempts.max, generateSafeAttempts.value),
+  )
+}
+
+function applyObstacleTypeCatalog(entriesInput: unknown) {
+  const entries = Array.isArray(entriesInput) ? entriesInput : []
+  const nextTypes: ObstacleType[] = []
+  const labelMap: Record<string, string> = {}
+  for (const item of entries) {
+    if (!item || typeof item !== 'object') continue
+    const t = String((item as Record<string, unknown>).type || '')
+    if (!isObstacleType(t)) continue
+    if (!nextTypes.includes(t)) {
+      nextTypes.push(t)
+    }
+    const label = String((item as Record<string, unknown>).label || '').trim()
+    if (label) {
+      labelMap[t] = label
+    }
+  }
+  if (nextTypes.length > 0) {
+    paletteTypes.value = nextTypes
+    paletteLabelByType.value = {
+      ...Object.fromEntries(FALLBACK_PALETTE_TYPES.map((t) => [t, t.replace(/_/g, ' ')])),
+      ...labelMap,
+    }
+  }
+}
+
+function applyTemplateCatalog(body: unknown) {
+  const obj = body as Record<string, unknown> | null
+  const t = obj?.templates
+  if (!t || typeof t !== 'object') return
+  const next: Record<string, Array<Record<string, unknown>>> = {}
+  for (const [name, value] of Object.entries(t as Record<string, unknown>)) {
+    if (Array.isArray(value)) {
+      next[name] = value.filter((v) => !!v && typeof v === 'object') as Array<
+        Record<string, unknown>
+      >
+    }
+  }
+  if (Object.keys(next).length > 0) {
+    templateCatalog.value = next
+    templateSource.value = 'api'
+    templateVersion.value = String(obj?.version || '')
+  }
+}
+
+async function loadBuilderBootstrap() {
+  try {
+    const resp = await fetch(`${props.apiBase}/builder/bootstrap`)
+    if (!resp.ok) return false
+    const body = await resp.json()
+    applyBuilderCapabilities((body as Record<string, unknown>).capabilities)
+    applyObstacleTypeCatalog((body as Record<string, unknown>).obstacle_types)
+    applyTemplateCatalog((body as Record<string, unknown>).templates)
+    return true
+  } catch (_err) {
+    return false
+  }
+}
+
 async function loadBuilderCapabilities() {
   try {
     const resp = await fetch(`${props.apiBase}/builder/capabilities`)
     if (!resp.ok) return
     const body = await resp.json()
-    const p = body?.preview
-    const g = body?.generator
-    if (p && g) {
-      builderCaps.value = {
-        preview: {
-          sample_fps: {
-            min: Number(p.sample_fps?.min ?? 4),
-            max: Number(p.sample_fps?.max ?? 60),
-            default: Number(p.sample_fps?.default ?? 15),
-          },
-          max_frames: {
-            min: Number(p.max_frames?.min ?? 30),
-            max: Number(p.max_frames?.max ?? 1500),
-            default: Number(p.max_frames?.default ?? 300),
-          },
-        },
-        generator: {
-          count: {
-            min: Number(g.count?.min ?? 1),
-            max: Number(g.count?.max ?? 200),
-            default: Number(g.count?.default ?? 8),
-          },
-          start_y: {
-            min: Number(g.start_y?.min ?? 0),
-            max: Number(g.start_y?.max ?? 100000),
-            default: Number(g.start_y?.default ?? 900),
-          },
-          spacing: {
-            min: Number(g.spacing?.min ?? 40),
-            max: Number(g.spacing?.max ?? 4000),
-            default: Number(g.spacing?.default ?? 260),
-          },
-          width: {
-            min: Number(g.width?.min ?? 200),
-            max: Number(g.width?.max ?? 4000),
-            default: Number(g.width?.default ?? 1080),
-          },
-          seed: {
-            min: Number(g.seed?.min ?? 0),
-            max: Number(g.seed?.max ?? 2000000000),
-            default: Number(g.seed?.default ?? 13),
-          },
-          safe_target_max_risk: {
-            min: Number(g.safe_target_max_risk?.min ?? 0),
-            max: Number(g.safe_target_max_risk?.max ?? 100),
-            default: Number(g.safe_target_max_risk?.default ?? 35),
-          },
-          safe_max_attempts: {
-            min: Number(g.safe_max_attempts?.min ?? 1),
-            max: Number(g.safe_max_attempts?.max ?? 64),
-            default: Number(g.safe_max_attempts?.default ?? 8),
-          },
-        },
-      }
-      previewSampleFps.value = Math.max(
-        builderCaps.value.preview.sample_fps.min,
-        Math.min(builderCaps.value.preview.sample_fps.max, previewSampleFps.value),
-      )
-      previewMaxFrames.value = Math.max(
-        builderCaps.value.preview.max_frames.min,
-        Math.min(builderCaps.value.preview.max_frames.max, previewMaxFrames.value),
-      )
-      generateCount.value = Math.max(
-        builderCaps.value.generator.count.min,
-        Math.min(builderCaps.value.generator.count.max, generateCount.value),
-      )
-      generateSpacing.value = Math.max(
-        builderCaps.value.generator.spacing.min,
-        Math.min(builderCaps.value.generator.spacing.max, generateSpacing.value),
-      )
-      generateSeed.value = Math.max(
-        builderCaps.value.generator.seed.min,
-        Math.min(builderCaps.value.generator.seed.max, generateSeed.value),
-      )
-      generateSafeTarget.value = Math.max(
-        builderCaps.value.generator.safe_target_max_risk.min,
-        Math.min(builderCaps.value.generator.safe_target_max_risk.max, generateSafeTarget.value),
-      )
-      generateSafeAttempts.value = Math.max(
-        builderCaps.value.generator.safe_max_attempts.min,
-        Math.min(builderCaps.value.generator.safe_max_attempts.max, generateSafeAttempts.value),
-      )
-    }
+    applyBuilderCapabilities(body)
   } catch (_err) {
     // keep defaults when capabilities endpoint unavailable
   }
@@ -1329,28 +1394,7 @@ async function loadObstacleTypeCatalog() {
     const resp = await fetch(`${props.apiBase}/templates/obstacle-types`)
     if (!resp.ok) return
     const body = await resp.json()
-    const entries = Array.isArray(body?.types) ? body.types : []
-    const nextTypes: ObstacleType[] = []
-    const labelMap: Record<string, string> = {}
-    for (const item of entries) {
-      if (!item || typeof item !== 'object') continue
-      const t = String((item as Record<string, unknown>).type || '')
-      if (!isObstacleType(t)) continue
-      if (!nextTypes.includes(t)) {
-        nextTypes.push(t)
-      }
-      const label = String((item as Record<string, unknown>).label || '').trim()
-      if (label) {
-        labelMap[t] = label
-      }
-    }
-    if (nextTypes.length > 0) {
-      paletteTypes.value = nextTypes
-      paletteLabelByType.value = {
-        ...Object.fromEntries(FALLBACK_PALETTE_TYPES.map((t) => [t, t.replace(/_/g, ' ')])),
-        ...labelMap,
-      }
-    }
+    applyObstacleTypeCatalog(body?.types)
   } catch (_err) {
     // ignore catalog load failure and keep fallback palette
   }
@@ -1361,21 +1405,7 @@ async function loadPresetTemplates() {
     const resp = await fetch(`${props.apiBase}/templates/obstacles`)
     if (!resp.ok) return
     const body = await resp.json()
-    const t = body?.templates
-    if (!t || typeof t !== 'object') return
-    const next: Record<string, Array<Record<string, unknown>>> = {}
-    for (const [name, value] of Object.entries(t as Record<string, unknown>)) {
-      if (Array.isArray(value)) {
-        next[name] = value.filter((v) => !!v && typeof v === 'object') as Array<
-          Record<string, unknown>
-        >
-      }
-    }
-    if (Object.keys(next).length > 0) {
-      templateCatalog.value = next
-      templateSource.value = 'api'
-      templateVersion.value = String(body?.version || '')
-    }
+    applyTemplateCatalog(body)
   } catch (_err) {
     // ignore template fetch failures and keep local fallback templates
     templateSource.value = 'fallback'
@@ -1749,10 +1779,13 @@ function randomizeGenerateSeed() {
 onMounted(() => {
   loadPrefs()
   tryLoadBuilderShareFromUrl()
-  void loadBuilderCapabilities()
-  void loadObstacleTypeCatalog()
-  void loadPresetTemplates()
-  void refreshPreviewCacheInfo()
+  void (async () => {
+    const ok = await loadBuilderBootstrap()
+    if (!ok) {
+      await Promise.all([loadBuilderCapabilities(), loadObstacleTypeCatalog(), loadPresetTemplates()])
+    }
+    await refreshPreviewCacheInfo()
+  })()
   void requestPreview()
   void analyzeRisk()
   window.addEventListener('keydown', onWindowKeyDown)
