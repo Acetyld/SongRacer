@@ -163,6 +163,30 @@ def test_preview_simulate_reports_no_winner_with_negative_fields() -> None:
         assert body["winner_frame"] == -1
 
 
+def test_preview_simulate_single_sample_has_zero_sampled_duration() -> None:
+    payload = {
+        "render": {
+            "width": 320,
+            "height": 560,
+            "world_height": 1200,
+            "fps": 10,
+            "duration_seconds": 0.21,
+            "countdown_seconds": 0.0,
+        },
+        "racers": [{"name": "A", "x": 140, "y": 90, "radius": 24}],
+        "obstacles": [],
+        "sample_fps": 4,
+        "max_frames": 30,
+    }
+    with TestClient(app) as client:
+        resp = client.post("/preview/simulate", json=payload)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["returned_sample_frames"] == 1
+        assert body["frame_indices"] == [0]
+        assert body["returned_sample_duration_seconds"] == 0.0
+
+
 def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
     payload = {
         "render": {

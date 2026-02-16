@@ -388,6 +388,7 @@ Sampling metadata note:
 - `frame_indices` are monotonically increasing sampled frame numbers starting at `0`, spaced by `sample_step_frames`.
 - `returned_sample_frames = frame_indices.length`.
 - `returned_sample_duration_seconds = max(0, (returned_sample_frames - 1) * sample_interval_seconds)`.
+- when only one sample frame is returned, `returned_sample_duration_seconds` is `0`.
 - `returned_sample_frames <= requested_max_frames`.
 - `truncated=false` means all sampled frames are returned (`total_sample_frames == frame_indices.length`).
 
