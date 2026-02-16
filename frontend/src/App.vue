@@ -31,6 +31,14 @@ type ProjectRow = {
   config?: Record<string, unknown>
 }
 
+type SystemInfo = {
+  storage_root?: string
+  upload_dir?: string
+  job_config_dir?: string
+  output_dir?: string
+  db_path?: string
+}
+
 const apiBase = ref('http://localhost:8080')
 const title = ref('SongRacer Job')
 const duration = ref(24)
@@ -52,6 +60,7 @@ const loadingWaveforms = ref(false)
 const projects = ref<ProjectRow[]>([])
 const projectNameInput = ref('My SongRacer Project')
 const activeProjectId = ref<number | null>(null)
+const systemInfo = ref<SystemInfo>({})
 const obstacleJson = ref(
   JSON.stringify(
     [
@@ -383,6 +392,20 @@ async function refreshProjects() {
   }
 }
 
+async function refreshSystemInfo() {
+  try {
+    const resp = await fetch(`${apiBase.value}/system/info`)
+    if (!resp.ok) {
+      backendOnline.value = false
+      return
+    }
+    systemInfo.value = await resp.json()
+    backendOnline.value = true
+  } catch (_err) {
+    backendOnline.value = false
+  }
+}
+
 async function saveProject() {
   isBusy.value = true
   try {
@@ -470,6 +493,52 @@ async function removeProject(projectId: number) {
   }
 }
 
+async function exportProject(projectId: number) {
+  try {
+    const resp = await fetch(`${apiBase.value}/projects/${projectId}/export`)
+    if (!resp.ok) throw new Error(await resp.text())
+    const payload = await resp.json()
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `songracer_project_${projectId}.json`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    statusMessage.value = `Exported project #${projectId}.`
+  } catch (err) {
+    statusMessage.value = `Export project failed: ${String(err)}`
+  }
+}
+
+async function importProjectFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  try {
+    const raw = await file.text()
+    const parsed = JSON.parse(raw)
+    const name = String(parsed?.name || `Imported ${new Date().toISOString()}`)
+    const config = parsed?.config ?? parsed
+    const resp = await fetch(`${apiBase.value}/projects/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, config }),
+    })
+    if (!resp.ok) throw new Error(await resp.text())
+    const body = await resp.json()
+    await refreshProjects()
+    await loadProject(body.id)
+    statusMessage.value = `Imported project #${body.id}.`
+    backendOnline.value = true
+  } catch (err) {
+    backendOnline.value = false
+    statusMessage.value = `Import project failed: ${String(err)}`
+  } finally {
+    input.value = ''
+  }
+}
+
 async function renderSavedProject(projectId: number, isPreview: boolean) {
   isBusy.value = true
   statusMessage.value = isPreview
@@ -534,6 +603,7 @@ async function syncSavedProject(projectId: number) {
 onMounted(() => {
   refreshJobs()
   refreshProjects()
+  refreshSystemInfo()
   pollHandle = window.setInterval(refreshJobs, 2000)
 })
 
@@ -802,6 +872,16 @@ onUnmounted(() => {
               >
                 Refresh List
               </button>
+              <label
+                class="cursor-pointer rounded bg-violet-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-600"
+              >
+                Import Project JSON
+                <input type="file" accept="application/json" class="hidden" @change="importProjectFile" />
+              </label>
+            </div>
+            <div class="mb-3 rounded border border-slate-700 bg-slate-950/60 p-2 text-[11px] text-slate-400">
+              <p><span class="text-slate-200">DB:</span> {{ systemInfo.db_path || 'unknown' }}</p>
+              <p><span class="text-slate-200">Storage:</span> {{ systemInfo.storage_root || 'unknown' }}</p>
             </div>
             <div class="max-h-56 space-y-2 overflow-auto pr-1">
               <article
@@ -825,6 +905,13 @@ onUnmounted(() => {
                     @click="loadProject(p.id)"
                   >
                     Load
+                  </button>
+                  <button
+                    class="rounded bg-slate-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-slate-500"
+                    :disabled="isBusy"
+                    @click="exportProject(p.id)"
+                  >
+                    Export
                   </button>
                   <button
                     class="rounded bg-cyan-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-cyan-500"

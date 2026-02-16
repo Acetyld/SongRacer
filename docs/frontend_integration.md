@@ -22,6 +22,9 @@ Response:
 { "status": "ok" }
 ```
 
+### `GET /system/info`
+Resolved runtime storage locations (useful when writable fallback paths are selected).
+
 ### `POST /validate`
 Validate config before rendering.
 

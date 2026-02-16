@@ -124,6 +124,7 @@ uvicorn songracer.api:app --host 0.0.0.0 --port 8080
 Endpoints:
 
 - `GET /health`
+- `GET /system/info` (resolved writable storage + DB paths)
 - `POST /uploads` (multipart video upload)
 - `POST /sync/audio` with `{ "video_paths": [...], "sample_rate": 16000, "max_shift_seconds": 8 }`
 - `POST /waveform` with `{ "video_path": "...", "sample_rate": 8000, "points": 320 }`
