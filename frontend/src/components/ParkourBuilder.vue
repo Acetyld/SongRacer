@@ -54,6 +54,8 @@ type PreviewData = {
   obstacle_visuals: PreviewFrameObstacle[][]
   winner_index: number
   winner_frame: number
+  total_sample_frames: number
+  truncated: boolean
 }
 
 const props = defineProps<{
@@ -1003,6 +1005,8 @@ async function requestPreview() {
       obstacle_visuals: Array.isArray(body.obstacle_visuals) ? body.obstacle_visuals : [],
       winner_index: Number(body.winner_index ?? -1),
       winner_frame: Number(body.winner_frame ?? -1),
+      total_sample_frames: Number(body.total_sample_frames ?? 0),
+      truncated: Boolean(body.truncated),
     }
     previewFrame.value = 0
     if (followPreviewCamera.value && previewData.value.camera_y.length > 0) {
@@ -1534,6 +1538,12 @@ onUnmounted(() => {
         </div>
         <p class="text-[11px] text-slate-500">
           Shortcuts: Delete=remove, Ctrl/Cmd+Z=undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y=redo, Ctrl/Cmd+D=duplicate, Ctrl/Cmd+A=select all, Ctrl/Cmd+C=copy, Ctrl/Cmd+V=paste, Esc=clear, Arrows=move (Shift=20px).
+        </p>
+        <p
+          v-if="previewData?.truncated"
+          class="text-[11px] text-amber-300"
+        >
+          Preview truncated to {{ previewData.positions.length }} / {{ previewData.total_sample_frames }} sampled frames (raise max frames for full timeline).
         </p>
         <p v-if="clipboardStatus" class="text-[11px] text-cyan-300">{{ clipboardStatus }}</p>
 

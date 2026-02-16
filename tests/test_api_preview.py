@@ -43,6 +43,8 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert len(body["positions"][0]) == 2
         assert isinstance(body["winner_index"], int)
         assert isinstance(body["winner_frame"], int)
+        assert isinstance(body["truncated"], bool)
+        assert body["total_sample_frames"] >= len(body["frame_indices"])
 
 
 def test_preview_simulate_rejects_invalid_obstacle_type() -> None:
@@ -78,3 +80,5 @@ def test_preview_simulate_respects_max_frames_cap() -> None:
         body = resp.json()
         assert len(body["frame_indices"]) <= 40
         assert len(body["positions"]) == len(body["frame_indices"])
+        assert body["truncated"] is True
+        assert body["total_sample_frames"] > len(body["frame_indices"])

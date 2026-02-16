@@ -384,9 +384,11 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
     cfg = _build_preview_cfg(payload)
     sim = simulate_race(cfg)
     step = max(1, int(round(cfg.render.fps / max(1, payload.sample_fps))))
-    frame_ids = list(range(0, sim.positions.shape[0], step))
+    full_frame_ids = list(range(0, sim.positions.shape[0], step))
+    frame_ids = full_frame_ids
     if len(frame_ids) > payload.max_frames:
         frame_ids = frame_ids[: payload.max_frames]
+    truncated = len(full_frame_ids) > len(frame_ids)
 
     positions: list[list[list[float]]] = []
     leaders: list[int] = []
@@ -414,6 +416,8 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
         "fps": cfg.render.fps,
         "sample_fps": effective_sample_fps,
         "frame_indices": frame_ids,
+        "total_sample_frames": len(full_frame_ids),
+        "truncated": truncated,
         "countdown_frames": cfg.countdown_frames,
         "winner_index": int(sim.winner_index),
         "winner_frame": int(sim.winner_frame),
