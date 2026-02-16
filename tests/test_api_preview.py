@@ -45,6 +45,7 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert len(body["positions"][0]) == 2
         assert isinstance(body["winner_index"], int)
         assert isinstance(body["winner_frame"], int)
+        assert (body["winner_index"] >= 0) == (body["winner_frame"] >= 0)
         assert isinstance(body["truncated"], bool)
         assert body["cache_hit"] is False
         expected_step = max(1, int(math.ceil(payload["render"]["fps"] / payload["sample_fps"])))
@@ -65,6 +66,33 @@ def test_preview_simulate_rejects_invalid_obstacle_type() -> None:
         resp = client.post("/preview/simulate", json=payload)
         assert resp.status_code == 400
         assert "Invalid obstacle type" in str(resp.json().get("detail"))
+
+
+def test_preview_simulate_reports_no_winner_with_negative_fields() -> None:
+    payload = {
+        "seed": 22,
+        "render": {
+            "width": 320,
+            "height": 560,
+            "world_height": 12000,
+            "fps": 30,
+            "duration_seconds": 1.0,
+            "countdown_seconds": 0.0,
+            "goal_margin": 120,
+            "camera_follow": True,
+            "auto_end_on_winner": True,
+        },
+        "racers": [{"name": "A", "x": 140, "y": 90, "radius": 24}],
+        "obstacles": [],
+        "sample_fps": 10,
+        "max_frames": 120,
+    }
+    with TestClient(app) as client:
+        resp = client.post("/preview/simulate", json=payload)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["winner_index"] == -1
+        assert body["winner_frame"] == -1
 
 
 def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:

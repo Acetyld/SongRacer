@@ -371,6 +371,7 @@ Response includes sampled arrays for:
 - `camera_y`,
 - `obstacle_visuals`,
 - and metadata like `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `winner_index`, `winner_frame`, `total_sample_frames`, `truncated`, `cache_hit`.
+- winner fields use `-1`/`-1` when no winner is reached within simulated frames.
 
 Sampling metadata note:
 - `sample_step_frames` is integer frame-step size used internally.
