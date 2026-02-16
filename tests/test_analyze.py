@@ -14,7 +14,9 @@ def test_analyze_config_risk_detects_trap_patterns() -> None:
         ],
     }
     out = analyze_config_risk(cfg)
+    assert out["warning_count"] == len(out["warnings"])
     assert out["warning_count"] >= 3
+    assert 0 <= out["risk_score"] <= 100
     assert out["risk_score"] > 0
     codes = {w["code"] for w in out["warnings"]}
     assert "blocker_too_wide" in codes

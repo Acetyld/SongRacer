@@ -324,6 +324,7 @@ Response:
 
 ### `POST /analyze/config`
 Analyze obstacle layout risk before render. Helpful to catch trap-prone courses.
+Returns `risk_score` (0-100), `warning_count`, and `warnings[]` with structured obstacle references (`obstacle_index` / `obstacle_indices`). `warning_count` should equal `warnings.length`.
 
 Request:
 

@@ -259,6 +259,8 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         )
         assert analysis.status_code == 200
         analysis_body = analysis.json()
+        assert analysis_body["warning_count"] == len(analysis_body["warnings"])
+        assert 0 <= analysis_body["risk_score"] <= 100
         assert analysis_body["warning_count"] > 0
         assert any(
             ("obstacle_index" in w) or ("obstacle_indices" in w)
