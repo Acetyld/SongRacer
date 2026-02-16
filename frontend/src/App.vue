@@ -509,7 +509,6 @@ async function refreshBuilderCapabilities() {
   try {
     const resp = await fetch(`${apiBase.value}/builder/capabilities`)
     if (!resp.ok) {
-      backendOnline.value = false
       return
     }
     const body = await resp.json()
@@ -520,7 +519,7 @@ async function refreshBuilderCapabilities() {
     worldHeight.value = normalizeWorldHeight(worldHeight.value)
     backendOnline.value = true
   } catch (_err) {
-    backendOnline.value = false
+    // keep current online status; capabilities fetch is an enhancement
   }
 }
 
