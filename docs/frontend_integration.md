@@ -144,6 +144,7 @@ Response:
 {
   "seed": 15,
   "count": 8,
+  "analysis_height": 1920,
   "risk_score": 28,
   "warning_count": 3,
   "warnings": [{ "level": "medium", "code": "..." }],
@@ -153,6 +154,8 @@ Response:
   "obstacles": [{ "... obstacle ..." }]
 }
 ```
+
+`analysis_height` in the response echoes the effective analysis canvas height used for risk scoring.
 
 ### `POST /validate`
 Validate config before rendering.

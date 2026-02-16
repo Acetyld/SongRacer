@@ -483,6 +483,7 @@ def templates_obstacles_generate_safe(payload: TemplateGenerateSafeRequest) -> d
             "warning_count": int(analysis["warning_count"]),
             "warnings": analysis["warnings"],
             "attempts": attempt + 1,
+            "analysis_height": float(payload.analysis_height),
         }
         if best is None or candidate["risk_score"] < best["risk_score"]:
             best = candidate

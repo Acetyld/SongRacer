@@ -221,6 +221,9 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert generated_safe_body["count"] == 6
         assert generated_safe_body["attempts"] == 1
         assert generated_safe_body["seed"] == 99
+        assert generated_safe_body["analysis_height"] == float(
+            gen_caps["safe_analysis_height"]["default"]
+        )
         assert "risk_score" in generated_safe_body
         assert generated_safe_body["target_max_risk"] == 100
         assert generated_safe_body["accepted"] is True
@@ -235,6 +238,9 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert generated_safe_default_body["count"] == int(gen_caps["count"]["default"])
         assert generated_safe_default_body["target_max_risk"] == int(
             gen_caps["safe_target_max_risk"]["default"]
+        )
+        assert generated_safe_default_body["analysis_height"] == float(
+            gen_caps["safe_analysis_height"]["default"]
         )
         assert 1 <= generated_safe_default_body["attempts"] <= int(
             gen_caps["safe_max_attempts"]["default"]
@@ -269,6 +275,9 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
             },
         )
         assert generated_safe_edge_min.status_code == 200
+        assert generated_safe_edge_min.json()["analysis_height"] == float(
+            gen_caps["safe_analysis_height"]["min"]
+        )
         generated_safe_edge_max = client.post(
             "/templates/obstacles/generate-safe",
             json={
@@ -283,6 +292,9 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
             },
         )
         assert generated_safe_edge_max.status_code == 200
+        assert generated_safe_edge_max.json()["analysis_height"] == float(
+            gen_caps["safe_analysis_height"]["max"]
+        )
         generated_safe_invalid_risk = client.post(
             "/templates/obstacles/generate-safe",
             json={
@@ -382,6 +394,9 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         generated_safe_strict_body = generated_safe_strict.json()
         assert generated_safe_strict_body["count"] == 6
         assert 1 <= generated_safe_strict_body["attempts"] <= 3
+        assert generated_safe_strict_body["analysis_height"] == float(
+            gen_caps["safe_analysis_height"]["default"]
+        )
         assert generated_safe_strict_body["target_max_risk"] == 0
         assert generated_safe_strict_body["warning_count"] == len(
             generated_safe_strict_body["warnings"]

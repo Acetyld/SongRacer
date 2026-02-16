@@ -143,6 +143,7 @@ Endpoints:
   - both generator endpoints accept omitted fields and apply capability default values
   - explicit default values are equivalent to omitted fields
   - safe generator `analysis_height` range/default is also capability-derived (`generator.safe_analysis_height`)
+  - safe generator response includes effective `analysis_height` used for risk analysis
 - `POST /uploads` (multipart video upload)
 - `POST /sync/audio` with `{ "video_paths": [...], "sample_rate": 16000, "max_shift_seconds": 8 }`
 - `POST /sync/preview` (sync analysis + waveform arrays in one call)

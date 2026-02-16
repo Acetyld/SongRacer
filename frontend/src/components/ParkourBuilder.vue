@@ -1319,6 +1319,8 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
     applyRiskPayload(risk, warnings)
     const attempts = Number(body?.attempts ?? 1)
     const accepted = Boolean(body?.accepted)
+    const resolvedAnalysisHeight =
+      Number(body?.analysis_height) > 0 ? Math.round(Number(body.analysis_height)) : safeAnalysisHeight
     lastSafeGeneration.value = {
       seed: Number(body?.seed ?? generateSeed.value),
       risk,
@@ -1327,7 +1329,7 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
       warnings: Number(body?.warning_count ?? warnings.length),
     }
     lastSafeGenerationSignature.value = safeGenerationSignature()
-    clipboardStatus.value = `Generated ${generated.length} safe obstacle${generated.length === 1 ? '' : 's'} (${mode}) · risk ${risk} · attempts ${attempts} · analysis height ${safeAnalysisHeight}${accepted ? '' : ' (best effort)'}.`
+    clipboardStatus.value = `Generated ${generated.length} safe obstacle${generated.length === 1 ? '' : 's'} (${mode}) · risk ${risk} · attempts ${attempts} · analysis height ${resolvedAnalysisHeight}${accepted ? '' : ' (best effort)'}.`
   } catch (_err) {
     lastSafeGeneration.value = null
     lastSafeGenerationSignature.value = null
