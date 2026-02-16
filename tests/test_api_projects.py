@@ -64,6 +64,8 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         cap_body = capabilities.json()
         assert cap_body["preview"]["sample_fps"]["min"] == 4
         assert cap_body["generator"]["count"]["max"] >= 100
+        assert cap_body["generator"]["safe_target_max_risk"]["max"] == 100
+        assert cap_body["generator"]["safe_max_attempts"]["max"] >= 16
         obstacle_types = client.get("/templates/obstacle-types")
         assert obstacle_types.status_code == 200
         types_body = obstacle_types.json()
