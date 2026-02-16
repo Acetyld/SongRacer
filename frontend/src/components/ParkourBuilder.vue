@@ -44,6 +44,13 @@ type PreviewRacer = {
 }
 
 type PreviewFrameObstacle = Record<string, any>
+type RiskWarningEntry = {
+  level: string
+  code: string
+  message: string
+  obstacle_index?: number
+  obstacle_indices?: number[]
+}
 
 type PreviewData = {
   sample_fps: number
@@ -118,15 +125,7 @@ const previewError = ref('')
 const followPreviewCamera = ref(true)
 const showGrid = ref(true)
 const riskScore = ref<number | null>(null)
-const riskWarnings = ref<
-  Array<{
-    level: string
-    code: string
-    message: string
-    obstacle_index?: number
-    obstacle_indices?: number[]
-  }>
->([])
+const riskWarnings = ref<RiskWarningEntry[]>([])
 const riskyObstacleIds = ref<Set<string>>(new Set())
 const clipboardStatus = ref('')
 const templateCatalog = ref<Record<string, Array<Record<string, unknown>>>>({})
@@ -183,13 +182,7 @@ function isObstacleType(value: string): value is ObstacleType {
 
 function applyRiskPayload(
   risk: number | null,
-  warnings: Array<{
-    level: string
-    code: string
-    message: string
-    obstacle_index?: number
-    obstacle_indices?: number[]
-  }>,
+  warnings: RiskWarningEntry[],
 ) {
   riskScore.value = risk
   riskWarnings.value = warnings
@@ -208,6 +201,31 @@ function applyRiskPayload(
     }
   }
   riskyObstacleIds.value = idSet
+}
+
+function warningObstacleIds(warning: RiskWarningEntry): string[] {
+  const ids: string[] = []
+  if (typeof warning.obstacle_index === 'number') {
+    const id = visibleObstacles.value[warning.obstacle_index]?.id
+    if (id) ids.push(id)
+  }
+  if (Array.isArray(warning.obstacle_indices)) {
+    for (const idx of warning.obstacle_indices) {
+      if (typeof idx !== 'number') continue
+      const id = visibleObstacles.value[idx]?.id
+      if (id) ids.push(id)
+    }
+  }
+  return [...new Set(ids)]
+}
+
+function focusRiskWarning(warning: RiskWarningEntry) {
+  const ids = warningObstacleIds(warning)
+  if (ids.length === 0) return
+  selectedIds.value = ids
+  selectedId.value = ids[0] ?? null
+  const first = obstacles.value.find((o) => o.id === selectedId.value) ?? null
+  focusOnObstacle(first)
 }
 
 function uid(): string {
@@ -2558,15 +2576,28 @@ onUnmounted(() => {
       <p class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
         Risk Warnings
       </p>
+      <p class="mb-1 text-[10px] text-slate-500">
+        Click a warning to focus linked obstacle(s).
+      </p>
       <ul class="max-h-24 space-y-1 overflow-auto text-[11px] text-slate-400">
         <li v-for="(w, idx) in riskWarnings" :key="`${w.code}_${idx}`">
-          <span
-            class="uppercase"
-            :class="w.level === 'high' ? 'text-rose-300' : w.level === 'medium' ? 'text-amber-300' : 'text-sky-300'"
+          <button
+            type="button"
+            class="w-full rounded border border-transparent px-1 py-0.5 text-left hover:border-slate-700 hover:bg-slate-900/60 disabled:cursor-default disabled:hover:border-transparent disabled:hover:bg-transparent"
+            :disabled="warningObstacleIds(w).length === 0"
+            @click="focusRiskWarning(w)"
           >
-            {{ w.level }}
-          </span>
-          · {{ w.message }}
+            <span
+              class="uppercase"
+              :class="w.level === 'high' ? 'text-rose-300' : w.level === 'medium' ? 'text-amber-300' : 'text-sky-300'"
+            >
+              {{ w.level }}
+            </span>
+            · {{ w.message }}
+            <span v-if="warningObstacleIds(w).length > 0" class="text-cyan-300">
+              (focus {{ warningObstacleIds(w).length }})
+            </span>
+          </button>
         </li>
       </ul>
     </div>
