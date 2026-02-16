@@ -250,6 +250,8 @@ def test_preview_simulate_effective_fps_capped_by_render_fps() -> None:
         resp = client.post("/preview/simulate", json=payload)
         assert resp.status_code == 200
         body = resp.json()
+        assert body["requested_sample_fps"] == payload["sample_fps"]
+        assert body["requested_max_frames"] == payload["max_frames"]
         assert body["sample_step_frames"] == 1
         assert abs(body["sample_fps"] - payload["render"]["fps"]) < 1e-9
         assert body["sample_fps"] <= body["requested_sample_fps"]
@@ -355,3 +357,6 @@ def test_preview_cache_key_is_order_insensitive_for_json_payload() -> None:
         assert second_body["requested_sample_fps"] == payload["sample_fps"]
         assert first_body["requested_max_frames"] == payload["max_frames"]
         assert second_body["requested_max_frames"] == payload["max_frames"]
+        normalized_first = {k: v for k, v in first_body.items() if k != "cache_hit"}
+        normalized_second = {k: v for k, v in second_body.items() if k != "cache_hit"}
+        assert normalized_first == normalized_second

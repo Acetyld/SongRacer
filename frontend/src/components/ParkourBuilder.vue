@@ -1856,12 +1856,19 @@ function previewTruncationText(): string {
 function previewSamplingText(): string {
   if (!previewData.value) return ''
   const requested = Number(previewData.value.requested_sample_fps || 0)
+  const requestedMaxFrames = Number(previewData.value.requested_max_frames || 0)
   const effective = Number(previewData.value.sample_fps || 0)
   const step = Number(previewData.value.sample_step_frames || 0)
   if (!Number.isFinite(effective) || effective <= 0) return ''
   const requestedText = Number.isFinite(requested) && requested > 0 ? `${requested}` : '?'
-  if (!Number.isFinite(step) || step <= 0) return `req ${requestedText} → ${effective.toFixed(2)} fps`
-  return `req ${requestedText} → ${effective.toFixed(2)} fps (step ${step}f)`
+  const maxText =
+    Number.isFinite(requestedMaxFrames) && requestedMaxFrames > 0
+      ? `, max ${Math.round(requestedMaxFrames)}f`
+      : ''
+  if (!Number.isFinite(step) || step <= 0) {
+    return `req ${requestedText} → ${effective.toFixed(2)} fps${maxText}`
+  }
+  return `req ${requestedText} → ${effective.toFixed(2)} fps (step ${step}f${maxText})`
 }
 
 const previewFrameMax = computed(() => {
