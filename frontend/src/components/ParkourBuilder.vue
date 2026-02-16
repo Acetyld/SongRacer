@@ -108,6 +108,8 @@ const previewLoading = ref(false)
 const autoPreview = ref(true)
 const previewSampleFps = ref(15)
 const previewMaxFrames = ref(360)
+const previewCacheSize = ref(0)
+const previewCacheMax = ref(0)
 const previewError = ref('')
 const followPreviewCamera = ref(true)
 const showGrid = ref(true)
@@ -1060,6 +1062,31 @@ async function loadPresetTemplates() {
   }
 }
 
+async function refreshPreviewCacheInfo() {
+  try {
+    const resp = await fetch(`${props.apiBase}/preview/cache`)
+    if (!resp.ok) return
+    const body = await resp.json()
+    previewCacheSize.value = Number(body.size || 0)
+    previewCacheMax.value = Number(body.max_size || 0)
+  } catch (_err) {
+    // ignore cache diagnostics failures
+  }
+}
+
+async function clearPreviewCache() {
+  try {
+    const resp = await fetch(`${props.apiBase}/preview/cache/clear`, { method: 'POST' })
+    if (!resp.ok) return
+    const body = await resp.json()
+    previewCacheSize.value = Number(body.size || 0)
+    previewCacheMax.value = Number(body.max_size || previewCacheMax.value || 0)
+    clipboardStatus.value = `Cleared preview cache entries: ${Number(body.cleared || 0)}`
+  } catch (_err) {
+    clipboardStatus.value = 'Failed to clear preview cache.'
+  }
+}
+
 async function requestPreview() {
   const req = ++previewRequestNonce
   previewLoading.value = true
@@ -1126,6 +1153,7 @@ async function requestPreview() {
   } finally {
     if (req === previewRequestNonce) {
       previewLoading.value = false
+      void refreshPreviewCacheInfo()
     }
   }
 }
@@ -1383,6 +1411,7 @@ onMounted(() => {
   loadPrefs()
   tryLoadBuilderShareFromUrl()
   void loadPresetTemplates()
+  void refreshPreviewCacheInfo()
   void requestPreview()
   void analyzeRisk()
   window.addEventListener('keydown', onWindowKeyDown)
@@ -1541,6 +1570,15 @@ onUnmounted(() => {
       >
         {{ previewLoading ? 'Refreshing...' : 'Refresh Live Preview' }}
       </button>
+      <button
+        class="rounded border border-cyan-700/50 bg-cyan-950/40 px-2 py-1 text-[11px] text-cyan-200 hover:bg-cyan-900/40"
+        @click="clearPreviewCache"
+      >
+        Clear Preview Cache
+      </button>
+      <span class="rounded border border-slate-700 px-2 py-1 text-[10px] text-slate-400">
+        cache {{ previewCacheSize }}/{{ previewCacheMax || 0 }}
+      </span>
       <button
         class="rounded border border-amber-600/50 bg-amber-900/30 px-2 py-1 text-[11px] text-amber-200 hover:bg-amber-800/40"
         @click="analyzeRisk"
