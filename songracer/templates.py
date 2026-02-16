@@ -210,6 +210,7 @@ def generate_obstacle_stream(
             [
                 "rect",
                 "moving_rect",
+                "circle",
                 "ring_gap",
                 "spinner",
                 "one_way_gate",
@@ -254,6 +255,16 @@ def generate_obstacle_stream(
                     "rotation_speed_deg": round(rng.uniform(45, 130), 1),
                     "gap_center_deg": round(rng.uniform(180, 320), 1),
                     "gap_size_deg": round(rng.uniform(52, 74), 1),
+                    "fill_color": "#182037",
+                }
+            )
+        elif kind == "circle":
+            out.append(
+                {
+                    "type": "circle",
+                    "x": round(x, 1),
+                    "y": round(y, 1),
+                    "radius": round(rng.uniform(52, 96), 1),
                     "fill_color": "#182037",
                 }
             )

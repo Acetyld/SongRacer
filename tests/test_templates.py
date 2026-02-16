@@ -43,6 +43,18 @@ def test_generate_obstacle_stream_deterministic_for_same_seed() -> None:
     assert a != c
 
 
+def test_generate_obstacle_stream_includes_circle_variant() -> None:
+    obstacles = generate_obstacle_stream(
+        count=40,
+        start_y=900,
+        spacing=200,
+        width=1080,
+        seed=7,
+    )
+    kinds = {o["type"] for o in obstacles}
+    assert "circle" in kinds
+
+
 def test_obstacle_type_catalog_has_known_labels() -> None:
     catalog = obstacle_type_catalog()
     assert any(item["type"] == "rect" for item in catalog)

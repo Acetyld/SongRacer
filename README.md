@@ -190,6 +190,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - malformed numeric obstacle fields are sanitized to safe defaults in builder import/parsing flow,
 - preset courses are loaded from backend template catalog with local fallback when offline,
 - procedural obstacle-stream generation (append/replace) from seed/count/spacing in builder,
+- stream generator now mixes additional obstacle variants (including circles),
 - quick random-seed action available for procedural stream exploration,
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - preview cache diagnostics/clear controls available via API and builder toolbar,
