@@ -129,6 +129,23 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         )
         assert generated2.status_code == 200
         assert generated2.json()["obstacles"] == generated_body["obstacles"]
+        generated_default = client.post("/templates/obstacles/generate", json={})
+        assert generated_default.status_code == 200
+        generated_default_body = generated_default.json()
+        assert generated_default_body["count"] == int(gen_caps["count"]["default"])
+        assert generated_default_body["seed"] == int(gen_caps["seed"]["default"])
+        generated_default_explicit = client.post(
+            "/templates/obstacles/generate",
+            json={
+                "count": int(gen_caps["count"]["default"]),
+                "start_y": float(gen_caps["start_y"]["default"]),
+                "spacing": float(gen_caps["spacing"]["default"]),
+                "width": float(gen_caps["width"]["default"]),
+                "seed": int(gen_caps["seed"]["default"]),
+            },
+        )
+        assert generated_default_explicit.status_code == 200
+        assert generated_default_explicit.json() == generated_default_body
         generated_edge_min = client.post(
             "/templates/obstacles/generate",
             json={
@@ -200,6 +217,17 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert generated_safe_body["accepted"] == (
             generated_safe_body["risk_score"] <= generated_safe_body["target_max_risk"]
         )
+        generated_safe_default = client.post("/templates/obstacles/generate-safe", json={})
+        assert generated_safe_default.status_code == 200
+        generated_safe_default_body = generated_safe_default.json()
+        assert generated_safe_default_body["count"] == int(gen_caps["count"]["default"])
+        assert generated_safe_default_body["target_max_risk"] == int(
+            gen_caps["safe_target_max_risk"]["default"]
+        )
+        assert 1 <= generated_safe_default_body["attempts"] <= int(
+            gen_caps["safe_max_attempts"]["default"]
+        )
+        assert generated_safe_default_body["seed"] >= int(gen_caps["seed"]["default"])
         generated_safe_edge_min = client.post(
             "/templates/obstacles/generate-safe",
             json={
