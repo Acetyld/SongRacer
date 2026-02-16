@@ -73,12 +73,15 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert "obstacle_types" in bootstrap_body
         assert "templates" in bootstrap_body
         assert str(bootstrap_body["bootstrap_version"]).startswith("sha256:")
+        assert bootstrap_body["templates"]["version"] == templates_body["version"]
+        assert bootstrap_body["templates"]["template_count"] == templates_body["template_count"]
         obstacle_types = client.get("/templates/obstacle-types")
         assert obstacle_types.status_code == 200
         types_body = obstacle_types.json()
         assert "types" in types_body
         assert any(t["type"] == "ring_gap" for t in types_body["types"])
         assert any(t["label"] == "Ring Gap" for t in types_body["types"])
+        assert len(bootstrap_body["obstacle_types"]) == len(types_body["types"])
         generated = client.post(
             "/templates/obstacles/generate",
             json={"count": 6, "start_y": 950, "spacing": 240, "width": 1080, "seed": 99},
