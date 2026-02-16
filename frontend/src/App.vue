@@ -615,6 +615,11 @@ async function saveProject() {
 }
 
 function applyConfigToForm(cfg: Record<string, any>) {
+  for (const racer of racers.value) {
+    if (racer.localPreviewUrl) {
+      URL.revokeObjectURL(racer.localPreviewUrl)
+    }
+  }
   const render = cfg.render || {}
   const bg = cfg.background || {}
   duration.value = normalizeDurationSeconds(
@@ -835,6 +840,9 @@ watch(
     clearActiveProjectSelection()
     riskScore.value = null
     riskWarnings.value = []
+    for (const racer of racers.value) {
+      racer.uploadedPath = undefined
+    }
     refreshJobs()
     refreshProjects()
     refreshSystemInfo()
