@@ -13,6 +13,7 @@ from songracer.config import (
     RaceConfig,
     RacerConfig,
     load_config,
+    load_config_obj,
     validate_config,
 )
 
@@ -103,3 +104,15 @@ def test_legacy_sync_offsets_are_normalized_to_trim_starts(tmp_path: Path) -> No
     cfg = load_config(cfg_path)
     assert cfg.racers[0].sync_trim_start_seconds == pytest.approx(0.0)
     assert cfg.racers[1].sync_trim_start_seconds == pytest.approx(0.5)
+
+
+def test_load_config_obj_resolves_relative_video_path(tmp_path: Path) -> None:
+    video = tmp_path / "clip.mp4"
+    _make_video(video)
+    obj = {
+        "render": {"width": 180, "height": 320, "duration_seconds": 1.0},
+        "racers": [{"name": "A", "video_path": "clip.mp4", "x": 60, "y": 80, "radius": 28}],
+        "obstacles": [],
+    }
+    cfg = load_config_obj(obj, base_dir=tmp_path)
+    assert cfg.racers[0].video_path == str(video.resolve())

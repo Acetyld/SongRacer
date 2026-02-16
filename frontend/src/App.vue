@@ -374,6 +374,23 @@ async function analyzeCourseRisk() {
   }
 }
 
+async function validateCurrentConfig() {
+  try {
+    const resp = await fetch(`${apiBase.value}/validate/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config: buildInlineConfig() }),
+    })
+    if (!resp.ok) throw new Error(await resp.text())
+    const body = await resp.json()
+    statusMessage.value = `Config valid (${body.racers} racers, ${body.obstacles} obstacles).`
+    backendOnline.value = true
+  } catch (err) {
+    backendOnline.value = false
+    statusMessage.value = `Config validation failed: ${String(err)}`
+  }
+}
+
 async function loadWaveforms() {
   if (!uploadedReady.value) {
     statusMessage.value = 'Upload videos before waveform preview.'
@@ -883,6 +900,13 @@ onUnmounted(() => {
                 @click="analyzeCourseRisk"
               >
                 Analyze Course Safety
+              </button>
+              <button
+                class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-500 disabled:opacity-50"
+                :disabled="isBusy"
+                @click="validateCurrentConfig"
+              >
+                Validate Config
               </button>
               <button
                 class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50"

@@ -203,12 +203,19 @@ def _normalize_sync_trims(cfg: RaceConfig) -> None:
         racer.sync_trim_start_seconds = common_anchor - racer.sync_offset_seconds
 
 
-def load_config(path: str | Path) -> RaceConfig:
-    config_path = Path(path).expanduser().resolve()
-    if not config_path.exists():
-        raise ConfigError(f"Config file not found: {config_path}")
+def _resolve_against_base(path_value: str | None, base_dir: Path) -> str | None:
+    if not path_value:
+        return path_value
+    p = Path(path_value)
+    if not p.is_absolute():
+        p = (base_dir / p).resolve()
+    return str(p)
 
-    obj = _load_obj(config_path)
+
+def load_config_obj(obj: dict[str, Any], base_dir: str | Path | None = None) -> RaceConfig:
+    if not isinstance(obj, dict):
+        raise ConfigError("Config root must be an object")
+    resolved_base = Path(base_dir).expanduser().resolve() if base_dir else Path.cwd().resolve()
     cfg = RaceConfig()
     cfg.seed = int(obj.get("seed", cfg.seed))
     cfg.sync_common_window_seconds = float(
@@ -218,22 +225,14 @@ def load_config(path: str | Path) -> RaceConfig:
     cfg.render = _merge_dataclass(cfg.render, obj.get("render", {}))
     cfg.physics = _merge_dataclass(cfg.physics, obj.get("physics", {}))
     cfg.audio = _merge_dataclass(cfg.audio, obj.get("audio", {}))
-    if cfg.audio.countdown_sfx_path:
-        p = Path(cfg.audio.countdown_sfx_path)
-        if not p.is_absolute():
-            p = (config_path.parent / p).resolve()
-        cfg.audio.countdown_sfx_path = str(p)
-    if cfg.audio.victory_sfx_path:
-        p = Path(cfg.audio.victory_sfx_path)
-        if not p.is_absolute():
-            p = (config_path.parent / p).resolve()
-        cfg.audio.victory_sfx_path = str(p)
+    cfg.audio.countdown_sfx_path = _resolve_against_base(
+        cfg.audio.countdown_sfx_path, resolved_base
+    )
+    cfg.audio.victory_sfx_path = _resolve_against_base(
+        cfg.audio.victory_sfx_path, resolved_base
+    )
     cfg.background = _merge_dataclass(cfg.background, obj.get("background", {}))
-    if cfg.background.image_path:
-        image_path = Path(cfg.background.image_path)
-        if not image_path.is_absolute():
-            image_path = (config_path.parent / image_path).resolve()
-        cfg.background.image_path = str(image_path)
+    cfg.background.image_path = _resolve_against_base(cfg.background.image_path, resolved_base)
     cfg.label_style = _merge_dataclass(cfg.label_style, obj.get("label_style", {}))
     cfg.hud_style = _merge_dataclass(cfg.hud_style, obj.get("hud_style", {}))
     cfg.top_circle = _merge_dataclass(cfg.top_circle, obj.get("top_circle", {}))
@@ -244,10 +243,10 @@ def load_config(path: str | Path) -> RaceConfig:
             r = RacerConfig(**racer)
         except TypeError as exc:
             raise ConfigError(f"Invalid racer at index {idx}: {exc}") from exc
-        video_path = Path(r.video_path)
-        if not video_path.is_absolute():
-            video_path = (config_path.parent / video_path).resolve()
-        r.video_path = str(video_path)
+        resolved_video = _resolve_against_base(r.video_path, resolved_base)
+        if not resolved_video:
+            raise ConfigError(f"Racer #{idx} video_path is required")
+        r.video_path = resolved_video
         cfg.racers.append(r)
 
     _normalize_sync_trims(cfg)
@@ -262,6 +261,14 @@ def load_config(path: str | Path) -> RaceConfig:
 
     validate_config(cfg)
     return cfg
+
+
+def load_config(path: str | Path) -> RaceConfig:
+    config_path = Path(path).expanduser().resolve()
+    if not config_path.exists():
+        raise ConfigError(f"Config file not found: {config_path}")
+    obj = _load_obj(config_path)
+    return load_config_obj(obj, base_dir=config_path.parent)
 
 
 def validate_config(cfg: RaceConfig) -> None:

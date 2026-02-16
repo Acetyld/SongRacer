@@ -52,6 +52,16 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
     }
 
     with TestClient(app) as client:
+        inline_valid = client.post("/validate/config", json={"config": payload_config})
+        assert inline_valid.status_code == 200
+        assert inline_valid.json()["valid"] is True
+
+        inline_invalid = client.post(
+            "/validate/config",
+            json={"config": {"render": {"width": 200, "height": 320}, "racers": [], "obstacles": []}},
+        )
+        assert inline_invalid.status_code == 400
+
         analysis = client.post(
             "/analyze/config",
             json={

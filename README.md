@@ -139,6 +139,7 @@ Endpoints:
 - `POST /waveform` with `{ "video_path": "...", "sample_rate": 8000, "points": 320 }`
 - `POST /analyze/config` with `{ "config": { ... } }` to get obstacle risk warnings
 - `POST /validate` with `{ "config_path": "..." }`
+- `POST /validate/config` with inline `{ "config": { ... } }`
 - `POST /render` with
   `{ "config_path": "...", "output_path": "...", "preview_scale": 1.0 }`
 - `POST /jobs` with

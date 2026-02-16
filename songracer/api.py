@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from .analyze import analyze_config_risk
 from .cli import _scaled_config
-from .config import ConfigError, load_config, validate_config
+from .config import ConfigError, load_config, load_config_obj, validate_config
 from .db import (
     create_project,
     delete_project,
@@ -73,6 +73,10 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 class ValidateRequest(BaseModel):
     config_path: str = Field(..., description="Path to SongRacer JSON config")
+
+
+class ValidateConfigPayload(BaseModel):
+    config: dict[str, Any]
 
 
 class RenderRequest(BaseModel):
@@ -227,6 +231,16 @@ def validate(payload: ValidateRequest) -> dict[str, Any]:
     return {"valid": True, "racers": len(cfg.racers), "obstacles": len(cfg.obstacles)}
 
 
+@app.post("/validate/config")
+def validate_config_inline(payload: ValidateConfigPayload) -> dict[str, Any]:
+    try:
+        cfg = load_config_obj(payload.config, base_dir=JOB_CONFIG_DIR)
+        validate_config(cfg)
+    except ConfigError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"valid": True, "racers": len(cfg.racers), "obstacles": len(cfg.obstacles)}
+
+
 @app.post("/analyze/config")
 def analyze_config(payload: AnalyzeConfigPayload) -> dict[str, Any]:
     return analyze_config_risk(payload.config)
@@ -268,13 +282,13 @@ def create_job(payload: RenderRequest) -> JobSubmitResponse:
 def create_job_from_config(payload: InlineJobRequest) -> JobSubmitResponse:
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
     config_path = JOB_CONFIG_DIR / f"job_{ts}.json"
-    config_path.write_text(json.dumps(payload.config, indent=2))
     output_path = payload.output_path or str(OUTPUT_DIR / f"job_{ts}.mp4")
     try:
-        # upfront validation for immediate error feedback
-        cfg = load_config(config_path)
+        # upfront validation for immediate error feedback before writing config artifact
+        cfg = load_config_obj(payload.config, base_dir=JOB_CONFIG_DIR)
         cfg = _scaled_config(cfg, payload.preview_scale)
         validate_config(cfg)
+        config_path.write_text(json.dumps(payload.config, indent=2))
         job = job_manager.submit(
             config_path=str(config_path),
             output_path=output_path,

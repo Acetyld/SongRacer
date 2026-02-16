@@ -46,6 +46,27 @@ Response:
 }
 ```
 
+### `POST /validate/config`
+Validate inline config JSON (no server-side config file required).
+
+Request:
+
+```json
+{
+  "config": { "... full songracer config ..." }
+}
+```
+
+Response:
+
+```json
+{
+  "valid": true,
+  "racers": 5,
+  "obstacles": 7
+}
+```
+
 ### `POST /render`
 Run a render job immediately (synchronous).
 
@@ -266,7 +287,7 @@ Response:
 3. Optionally call `/analyze/config` and adjust obstacle JSON if warnings are high-risk.
 4. Either:
    - write config file and call `/validate` + `/jobs`, or
-   - submit inline config using `/jobs/from-config`.
+   - submit inline config with optional preflight `/validate/config`, then `/jobs/from-config`.
 5. Poll `/jobs/{job_id}` until `completed` or `failed`.
 5. Download `/jobs/{job_id}/artifact` when complete.
 
