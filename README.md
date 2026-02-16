@@ -212,6 +212,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - preview API includes returned/total sampled-window durations for timeline diagnostics,
 - preview API includes `total_source_frames` so sampled timelines can be related back to full simulated frame count,
 - preview API includes `source_duration_seconds` for full simulated timeline span diagnostics,
+- sampled preview durations can be shorter than source duration due frame-step sampling,
 - preview metadata includes resolved goal line position (`goal_y`) used for winner detection,
 - if preview returns a single sample frame, sampled-window duration is `0s`,
 - preview response guarantees `returned_sample_frames <= requested_max_frames`,

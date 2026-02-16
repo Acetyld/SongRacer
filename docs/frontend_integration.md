@@ -391,6 +391,7 @@ Sampling metadata note:
 - `total_sample_duration_seconds = max(0, (total_sample_frames - 1) * sample_interval_seconds)`.
 - `source_duration_seconds = max(0, (total_source_frames - 1) / fps)`.
 - `total_sample_duration_seconds <= (total_source_frames - 1) / fps`.
+- sampled durations can be shorter than source duration because sampling keeps every `sample_step_frames` frame.
 - when only one sample frame is returned, `returned_sample_duration_seconds` is `0`.
 - `returned_sample_frames <= requested_max_frames`.
 - `truncated=false` means all sampled frames are returned (`total_sample_frames == frame_indices.length`).

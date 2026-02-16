@@ -361,6 +361,7 @@ def test_preview_simulate_respects_max_frames_cap() -> None:
         assert body["total_sample_duration_seconds"] > body["returned_sample_duration_seconds"]
         assert body["total_sample_duration_seconds"] <= (body["total_source_frames"] - 1) / body["fps"]
         assert body["total_sample_duration_seconds"] <= body["source_duration_seconds"]
+        assert body["source_duration_seconds"] >= body["total_sample_duration_seconds"]
 
 
 def test_preview_simulate_effective_fps_never_exceeds_request() -> None:
