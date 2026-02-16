@@ -138,6 +138,7 @@ Endpoints:
 - `GET /templates/obstacle-types` (obstacle type catalog + labels for builder palette)
 - `GET /templates/obstacles` (preset obstacle layouts for builder)
 - `POST /templates/obstacles/generate` (procedural obstacle stream generator)
+- `POST /templates/obstacles/generate-safe` (risk-targeted generator with retries)
 - `POST /uploads` (multipart video upload)
 - `POST /sync/audio` with `{ "video_paths": [...], "sample_rate": 16000, "max_shift_seconds": 8 }`
 - `POST /sync/preview` (sync analysis + waveform arrays in one call)
@@ -191,6 +192,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - malformed numeric obstacle fields are sanitized to safe defaults in builder import/parsing flow,
 - preset courses are loaded from backend template catalog with local fallback when offline,
 - procedural obstacle-stream generation (append/replace) from seed/count/spacing in builder,
+- safe procedural stream generation mode (target risk + retry attempts),
 - stream generator now mixes additional obstacle variants (including circles and pendulums),
 - quick random-seed action available for procedural stream exploration,
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,

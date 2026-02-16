@@ -143,6 +143,8 @@ const builderCaps = ref({
     spacing: { min: 40, max: 4000, default: 260 },
     width: { min: 200, max: 4000, default: 1080 },
     seed: { min: 0, max: 2000000000, default: 13 },
+    safe_target_max_risk: { min: 0, max: 100, default: 35 },
+    safe_max_attempts: { min: 1, max: 64, default: 8 },
   },
 })
 const historyStack = ref<string[]>([])
@@ -151,6 +153,8 @@ const applyingHistory = ref(false)
 const generateCount = ref(8)
 const generateSpacing = ref(260)
 const generateSeed = ref(13)
+const generateSafeTarget = ref(35)
+const generateSafeAttempts = ref(8)
 
 let suppressEmit = false
 let previewDebounce: number | null = null
@@ -455,7 +459,20 @@ watch(autoPreview, (enabled) => {
 })
 
 watch(
-  [autoPreview, previewSampleFps, previewMaxFrames, snapEnabled, snapSize, showGrid, followPreviewCamera],
+  [
+    autoPreview,
+    previewSampleFps,
+    previewMaxFrames,
+    snapEnabled,
+    snapSize,
+    showGrid,
+    followPreviewCamera,
+    generateCount,
+    generateSpacing,
+    generateSeed,
+    generateSafeTarget,
+    generateSafeAttempts,
+  ],
   () => {
     savePrefs()
   },
@@ -639,6 +656,21 @@ function loadPrefs() {
     if (typeof obj.followPreviewCamera === 'boolean') {
       followPreviewCamera.value = obj.followPreviewCamera
     }
+    if (typeof obj.generateCount === 'number') {
+      generateCount.value = Math.max(1, Math.min(200, Math.round(obj.generateCount)))
+    }
+    if (typeof obj.generateSpacing === 'number') {
+      generateSpacing.value = Math.max(40, Math.min(4000, Math.round(obj.generateSpacing)))
+    }
+    if (typeof obj.generateSeed === 'number') {
+      generateSeed.value = Math.max(0, Math.min(2_000_000_000, Math.round(obj.generateSeed)))
+    }
+    if (typeof obj.generateSafeTarget === 'number') {
+      generateSafeTarget.value = Math.max(0, Math.min(100, Math.round(obj.generateSafeTarget)))
+    }
+    if (typeof obj.generateSafeAttempts === 'number') {
+      generateSafeAttempts.value = Math.max(1, Math.min(64, Math.round(obj.generateSafeAttempts)))
+    }
   } catch (_err) {
     // ignore corrupt local prefs
   }
@@ -654,6 +686,11 @@ function savePrefs() {
       snapSize: snapSize.value,
       showGrid: showGrid.value,
       followPreviewCamera: followPreviewCamera.value,
+      generateCount: generateCount.value,
+      generateSpacing: generateSpacing.value,
+      generateSeed: generateSeed.value,
+      generateSafeTarget: generateSafeTarget.value,
+      generateSafeAttempts: generateSafeAttempts.value,
     }
     window.localStorage.setItem(PREF_KEY, JSON.stringify(payload))
   } catch (_err) {
@@ -1072,6 +1109,80 @@ async function generateObstacleStream(mode: 'replace' | 'append') {
   }
 }
 
+async function generateSafeObstacleStream(mode: 'replace' | 'append') {
+  const existingYs = obstacles.value.map((o) => obstaclePosition(o).y)
+  const maxY = existingYs.length > 0 ? Math.max(...existingYs) : 0
+  const startY =
+    mode === 'append' ? Math.max(900, maxY + generateSpacing.value) : Math.max(900, cameraY.value + 220)
+  try {
+    const resp = await fetch(`${props.apiBase}/templates/obstacles/generate-safe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        count: Math.max(
+          builderCaps.value.generator.count.min,
+          Math.min(builderCaps.value.generator.count.max, Math.round(generateCount.value)),
+        ),
+        start_y: Math.max(
+          builderCaps.value.generator.start_y.min,
+          Math.min(builderCaps.value.generator.start_y.max, startY),
+        ),
+        spacing: Math.max(
+          builderCaps.value.generator.spacing.min,
+          Math.min(
+            builderCaps.value.generator.spacing.max,
+            Math.round(generateSpacing.value),
+          ),
+        ),
+        width: Math.max(
+          builderCaps.value.generator.width.min,
+          Math.min(builderCaps.value.generator.width.max, courseWidth),
+        ),
+        seed: Math.max(
+          builderCaps.value.generator.seed.min,
+          Math.min(builderCaps.value.generator.seed.max, Math.round(generateSeed.value)),
+        ),
+        target_max_risk: Math.max(
+          builderCaps.value.generator.safe_target_max_risk.min,
+          Math.min(
+            builderCaps.value.generator.safe_target_max_risk.max,
+            Math.round(generateSafeTarget.value),
+          ),
+        ),
+        max_attempts: Math.max(
+          builderCaps.value.generator.safe_max_attempts.min,
+          Math.min(
+            builderCaps.value.generator.safe_max_attempts.max,
+            Math.round(generateSafeAttempts.value),
+          ),
+        ),
+        analysis_height: 1920,
+      }),
+    })
+    if (!resp.ok) {
+      throw new Error(await resp.text())
+    }
+    const body = await resp.json()
+    const generatedRaw = Array.isArray(body?.obstacles) ? body.obstacles : []
+    const generated = parseObstacleJson(JSON.stringify(generatedRaw))
+    if (mode === 'replace') {
+      obstacles.value = generated
+    } else {
+      obstacles.value = [...obstacles.value, ...generated]
+    }
+    const first = generated[0]?.id ?? obstacles.value[0]?.id ?? null
+    selectedId.value = first
+    selectedIds.value = first ? [first] : []
+    generateSeed.value = Math.max(0, Math.round(Number(body?.seed ?? generateSeed.value) + 1))
+    const risk = Number(body?.risk_score ?? 0)
+    const attempts = Number(body?.attempts ?? 1)
+    const accepted = Boolean(body?.accepted)
+    clipboardStatus.value = `Generated ${generated.length} safe obstacle${generated.length === 1 ? '' : 's'} (${mode}) · risk ${risk} · attempts ${attempts}${accepted ? '' : ' (best effort)'}.`
+  } catch (_err) {
+    clipboardStatus.value = 'Failed to generate safe obstacle stream.'
+  }
+}
+
 function moveSelectedLayer(delta: -1 | 1) {
   if (!selectedId.value) return
   const idx = obstacles.value.findIndex((o) => o.id === selectedId.value)
@@ -1167,6 +1278,16 @@ async function loadBuilderCapabilities() {
             max: Number(g.seed?.max ?? 2000000000),
             default: Number(g.seed?.default ?? 13),
           },
+          safe_target_max_risk: {
+            min: Number(g.safe_target_max_risk?.min ?? 0),
+            max: Number(g.safe_target_max_risk?.max ?? 100),
+            default: Number(g.safe_target_max_risk?.default ?? 35),
+          },
+          safe_max_attempts: {
+            min: Number(g.safe_max_attempts?.min ?? 1),
+            max: Number(g.safe_max_attempts?.max ?? 64),
+            default: Number(g.safe_max_attempts?.default ?? 8),
+          },
         },
       }
       previewSampleFps.value = Math.max(
@@ -1188,6 +1309,14 @@ async function loadBuilderCapabilities() {
       generateSeed.value = Math.max(
         builderCaps.value.generator.seed.min,
         Math.min(builderCaps.value.generator.seed.max, generateSeed.value),
+      )
+      generateSafeTarget.value = Math.max(
+        builderCaps.value.generator.safe_target_max_risk.min,
+        Math.min(builderCaps.value.generator.safe_target_max_risk.max, generateSafeTarget.value),
+      )
+      generateSafeAttempts.value = Math.max(
+        builderCaps.value.generator.safe_max_attempts.min,
+        Math.min(builderCaps.value.generator.safe_max_attempts.max, generateSafeAttempts.value),
       )
     }
   } catch (_err) {
@@ -1889,6 +2018,26 @@ onUnmounted(() => {
           class="w-20 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
         />
       </label>
+      <label class="flex items-center gap-1">
+        Safe risk
+        <input
+          v-model.number="generateSafeTarget"
+          type="number"
+          :min="builderCaps.generator.safe_target_max_risk.min"
+          :max="builderCaps.generator.safe_target_max_risk.max"
+          class="w-16 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
+        />
+      </label>
+      <label class="flex items-center gap-1">
+        Safe tries
+        <input
+          v-model.number="generateSafeAttempts"
+          type="number"
+          :min="builderCaps.generator.safe_max_attempts.min"
+          :max="builderCaps.generator.safe_max_attempts.max"
+          class="w-16 rounded border border-slate-600 bg-slate-950 px-1 py-0.5"
+        />
+      </label>
       <button
         class="rounded border border-fuchsia-800/50 bg-fuchsia-950/50 px-2 py-1 text-[11px] text-fuchsia-200 hover:bg-fuchsia-900/40"
         @click="randomizeGenerateSeed"
@@ -1907,10 +2056,23 @@ onUnmounted(() => {
       >
         Generate Replace
       </button>
+      <button
+        class="rounded border border-emerald-700/50 bg-emerald-900/30 px-2 py-1 text-[11px] text-emerald-200 hover:bg-emerald-800/40"
+        @click="generateSafeObstacleStream('append')"
+      >
+        Generate Safe Append
+      </button>
+      <button
+        class="rounded border border-emerald-800/50 bg-emerald-950/40 px-2 py-1 text-[11px] text-emerald-200 hover:bg-emerald-900/40"
+        @click="generateSafeObstacleStream('replace')"
+      >
+        Generate Safe Replace
+      </button>
       <span class="text-slate-500">
         limits: preview fps {{ builderCaps.preview.sample_fps.min }}-{{ builderCaps.preview.sample_fps.max }},
         frames {{ builderCaps.preview.max_frames.min }}-{{ builderCaps.preview.max_frames.max }},
-        gen count {{ builderCaps.generator.count.min }}-{{ builderCaps.generator.count.max }}
+        gen count {{ builderCaps.generator.count.min }}-{{ builderCaps.generator.count.max }},
+        safe risk {{ builderCaps.generator.safe_target_max_risk.min }}-{{ builderCaps.generator.safe_target_max_risk.max }}
       </span>
     </div>
 

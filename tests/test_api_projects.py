@@ -84,6 +84,24 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         )
         assert generated2.status_code == 200
         assert generated2.json()["obstacles"] == generated_body["obstacles"]
+        generated_safe = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": 6,
+                "start_y": 950,
+                "spacing": 240,
+                "width": 1080,
+                "seed": 99,
+                "target_max_risk": 60,
+                "max_attempts": 5,
+            },
+        )
+        assert generated_safe.status_code == 200
+        generated_safe_body = generated_safe.json()
+        assert generated_safe_body["count"] == 6
+        assert generated_safe_body["attempts"] >= 1
+        assert "risk_score" in generated_safe_body
+        assert "accepted" in generated_safe_body
 
         inline_valid = client.post("/validate/config", json={"config": payload_config})
         assert inline_valid.status_code == 200

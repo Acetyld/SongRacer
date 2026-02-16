@@ -37,7 +37,9 @@ Response:
     "max_frames": { "min": 30, "max": 1500, "default": 300 }
   },
   "generator": {
-    "count": { "min": 1, "max": 200, "default": 8 }
+    "count": { "min": 1, "max": 200, "default": 8 },
+    "safe_target_max_risk": { "min": 0, "max": 100, "default": 35 },
+    "safe_max_attempts": { "min": 1, "max": 64, "default": 8 }
   }
 }
 ```
@@ -94,6 +96,39 @@ Response:
 {
   "seed": 13,
   "count": 8,
+  "obstacles": [{ "... obstacle ..." }]
+}
+```
+
+### `POST /templates/obstacles/generate-safe`
+Generates multiple candidate streams across sequential seeds and returns the best (or accepted) stream using risk analysis.
+
+Request:
+
+```json
+{
+  "count": 8,
+  "start_y": 900,
+  "spacing": 260,
+  "width": 1080,
+  "seed": 13,
+  "target_max_risk": 35,
+  "max_attempts": 8,
+  "analysis_height": 1920
+}
+```
+
+Response:
+
+```json
+{
+  "seed": 15,
+  "count": 8,
+  "risk_score": 28,
+  "warning_count": 3,
+  "attempts": 3,
+  "accepted": true,
+  "target_max_risk": 35,
   "obstacles": [{ "... obstacle ..." }]
 }
 ```
@@ -464,6 +499,7 @@ The frontend app in `frontend/` already implements:
 - palette labels/types can be sourced from `/templates/obstacle-types`,
 - preset buttons resolve from `/templates/obstacles` and gracefully fallback to local defaults,
 - procedural stream generation is available via `/templates/obstacles/generate` (append/replace in UI),
+- risk-targeted procedural generation is available via `/templates/obstacles/generate-safe`,
 - generated stream mixes multiple obstacle families (rect/moving/rings/spinners/circles/pendulums/gates),
 - UI includes one-click random seed for quick stream iteration,
 - UI can display live min/max limits from `/builder/capabilities` for user guidance,

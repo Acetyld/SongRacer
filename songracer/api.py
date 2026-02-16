@@ -71,6 +71,8 @@ _BUILDER_CAPABILITIES = {
         "spacing": {"min": 40.0, "max": 4000.0, "default": 260.0},
         "width": {"min": 200.0, "max": 4000.0, "default": 1080.0},
         "seed": {"min": 0, "max": 2_000_000_000, "default": 13},
+        "safe_target_max_risk": {"min": 0, "max": 100, "default": 35},
+        "safe_max_attempts": {"min": 1, "max": 64, "default": 8},
     },
 }
 
@@ -231,6 +233,12 @@ class TemplateGenerateRequest(BaseModel):
     seed: int = Field(13, ge=0, le=2_000_000_000)
 
 
+class TemplateGenerateSafeRequest(TemplateGenerateRequest):
+    target_max_risk: int = Field(35, ge=0, le=100)
+    max_attempts: int = Field(8, ge=1, le=64)
+    analysis_height: float = Field(1920.0, ge=200.0, le=8000.0)
+
+
 def _build_preview_cfg(payload: PreviewSimRequest) -> RaceConfig:
     render = RenderConfig(
         width=payload.render.width,
@@ -381,6 +389,46 @@ def templates_obstacles_generate(payload: TemplateGenerateRequest) -> dict[str, 
         seed=payload.seed,
     )
     return {"seed": payload.seed, "count": len(obstacles), "obstacles": obstacles}
+
+
+@app.post("/templates/obstacles/generate-safe")
+def templates_obstacles_generate_safe(payload: TemplateGenerateSafeRequest) -> dict[str, Any]:
+    best: dict[str, Any] | None = None
+    for attempt in range(payload.max_attempts):
+        seed = int(payload.seed + attempt)
+        obstacles = generate_obstacle_stream(
+            count=payload.count,
+            start_y=payload.start_y,
+            spacing=payload.spacing,
+            width=payload.width,
+            seed=seed,
+        )
+        analysis = analyze_config_risk(
+            {
+                "render": {"width": payload.width, "height": payload.analysis_height},
+                "obstacles": obstacles,
+            }
+        )
+        candidate = {
+            "seed": seed,
+            "count": len(obstacles),
+            "obstacles": obstacles,
+            "risk_score": int(analysis["risk_score"]),
+            "warning_count": int(analysis["warning_count"]),
+            "warnings": analysis["warnings"],
+            "attempts": attempt + 1,
+        }
+        if best is None or candidate["risk_score"] < best["risk_score"]:
+            best = candidate
+        if candidate["risk_score"] <= payload.target_max_risk:
+            best = candidate
+            break
+
+    if best is None:
+        raise HTTPException(status_code=500, detail="Failed to generate obstacle stream")
+    best["target_max_risk"] = payload.target_max_risk
+    best["accepted"] = bool(best["risk_score"] <= payload.target_max_risk)
+    return best
 
 
 @app.post("/uploads")
