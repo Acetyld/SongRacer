@@ -95,6 +95,11 @@ class ProjectPayload(BaseModel):
     config: dict[str, Any]
 
 
+class ProjectRenderPayload(BaseModel):
+    preview_scale: float = Field(1.0, ge=0.01, le=1.0)
+    output_path: str | None = None
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -280,6 +285,31 @@ def projects_delete(project_id: int) -> dict[str, bool]:
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Project not found") from exc
     return {"deleted": True}
+
+
+@app.post("/projects/{project_id}/render", response_model=JobSubmitResponse)
+def projects_render(project_id: int, payload: ProjectRenderPayload) -> JobSubmitResponse:
+    try:
+        record = get_project(project_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Project not found") from exc
+
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+    config_path = JOB_CONFIG_DIR / f"project_{project_id}_{ts}.json"
+    config_path.write_text(json.dumps(record.config, indent=2))
+    output_path = payload.output_path or str(OUTPUT_DIR / f"project_{project_id}_{ts}.mp4")
+    try:
+        cfg = load_config(config_path)
+        cfg = _scaled_config(cfg, payload.preview_scale)
+        validate_config(cfg)
+        job = job_manager.submit(
+            config_path=str(config_path),
+            output_path=output_path,
+            preview_scale=payload.preview_scale,
+        )
+    except ConfigError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return JobSubmitResponse(job_id=job.job_id, state=job.state)
 
 
 def run_dev_server() -> None:

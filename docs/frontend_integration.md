@@ -167,6 +167,7 @@ Response:
 - `GET /projects/{project_id}`
 - `PUT /projects/{project_id}`
 - `DELETE /projects/{project_id}`
+- `POST /projects/{project_id}/render`
 
 Backed by SQLite (`songracer.db`) for persistent frontend project storage.
 Path can be overridden with `SONGRACER_DB_PATH`.
@@ -225,6 +226,7 @@ The frontend app in `frontend/` already implements:
 - per-racer sync trims (+ one-click auto-sync via `/sync/audio`),
 - per-racer waveform preview with trim marker (`/waveform`),
 - project save/load/update/delete against backend DB CRUD,
+- direct preview/final render submission from saved projects,
 - preview and final job submission,
 - live job list polling,
 - artifact preview panel.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import subprocess
+import time
 
 from fastapi.testclient import TestClient
 
@@ -84,6 +85,22 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         body = wave.json()
         assert len(body["samples"]) == 120
         assert body["duration_seconds"] > 2.0
+
+        render_resp = client.post(
+            f"/projects/{project_id}/render",
+            json={"preview_scale": 0.5},
+        )
+        assert render_resp.status_code == 200
+        job_id = render_resp.json()["job_id"]
+        final_state = "queued"
+        for _ in range(250):
+            poll = client.get(f"/jobs/{job_id}")
+            assert poll.status_code == 200
+            final_state = poll.json()["state"]
+            if final_state in {"completed", "failed"}:
+                break
+            time.sleep(0.03)
+        assert final_state == "completed"
 
         deleted = client.delete(f"/projects/{project_id}")
         assert deleted.status_code == 200

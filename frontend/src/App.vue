@@ -470,6 +470,36 @@ async function removeProject(projectId: number) {
   }
 }
 
+async function renderSavedProject(projectId: number, isPreview: boolean) {
+  isBusy.value = true
+  statusMessage.value = isPreview
+    ? `Submitting preview render for project #${projectId}...`
+    : `Submitting final render for project #${projectId}...`
+  try {
+    const payload: Record<string, unknown> = {
+      preview_scale: isPreview ? previewScale.value : finalScale.value,
+    }
+    if (outputPathInput.value.trim()) {
+      payload.output_path = outputPathInput.value.trim()
+    }
+    const resp = await fetch(`${apiBase.value}/projects/${projectId}/render`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!resp.ok) throw new Error(await resp.text())
+    const body = await resp.json()
+    statusMessage.value = `Project render job submitted (${body.job_id.slice(0, 8)}...).`
+    backendOnline.value = true
+    await refreshJobs()
+  } catch (err) {
+    backendOnline.value = false
+    statusMessage.value = `Project render failed: ${String(err)}`
+  } finally {
+    isBusy.value = false
+  }
+}
+
 onMounted(() => {
   refreshJobs()
   refreshProjects()
@@ -764,6 +794,20 @@ onUnmounted(() => {
                     @click="loadProject(p.id)"
                   >
                     Load
+                  </button>
+                  <button
+                    class="rounded bg-cyan-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-cyan-500"
+                    :disabled="isBusy"
+                    @click="renderSavedProject(p.id, true)"
+                  >
+                    Preview
+                  </button>
+                  <button
+                    class="rounded bg-emerald-600 px-2 py-1 text-[11px] font-medium text-white hover:bg-emerald-500"
+                    :disabled="isBusy"
+                    @click="renderSavedProject(p.id, false)"
+                  >
+                    Final
                   </button>
                   <button
                     class="rounded bg-rose-700 px-2 py-1 text-[11px] font-medium text-white hover:bg-rose-600"
