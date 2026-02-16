@@ -213,7 +213,7 @@ Response:
 
 ### Project database CRUD
 
-- `GET /projects`
+- `GET /projects` (use `?include_analysis=true` to include `risk_score` + `warning_count`)
 - `POST /projects`
 - `GET /projects/{project_id}`
 - `PUT /projects/{project_id}`

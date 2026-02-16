@@ -78,9 +78,21 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert created.status_code == 200
         project_id = created.json()["id"]
 
-        listed = client.get("/projects")
+        listed_plain = client.get("/projects")
+        assert listed_plain.status_code == 200
+        plain_projects = listed_plain.json()["projects"]
+        assert any(p["id"] == project_id for p in plain_projects)
+        plain_project = next(p for p in plain_projects if p["id"] == project_id)
+        assert "risk_score" not in plain_project
+        assert "warning_count" not in plain_project
+
+        listed = client.get("/projects?include_analysis=true")
         assert listed.status_code == 200
-        assert any(p["id"] == project_id for p in listed.json()["projects"])
+        listed_projects = listed.json()["projects"]
+        assert any(p["id"] == project_id for p in listed_projects)
+        listed_project = next(p for p in listed_projects if p["id"] == project_id)
+        assert "risk_score" in listed_project
+        assert "warning_count" in listed_project
 
         fetched = client.get(f"/projects/{project_id}")
         assert fetched.status_code == 200

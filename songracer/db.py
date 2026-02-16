@@ -72,20 +72,24 @@ def create_project(name: str, config: dict[str, Any]) -> ProjectRecord:
     return get_project(project_id)
 
 
-def list_projects() -> list[dict[str, Any]]:
+def list_projects(include_config: bool = False) -> list[dict[str, Any]]:
+    fields = "id, name, created_at, updated_at, config_json" if include_config else "id, name, created_at, updated_at"
     with _conn() as conn:
         rows = conn.execute(
-            "SELECT id, name, created_at, updated_at FROM projects ORDER BY updated_at DESC"
+            f"SELECT {fields} FROM projects ORDER BY updated_at DESC"
         ).fetchall()
-    return [
-        {
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        row: dict[str, Any] = {
             "id": int(r["id"]),
             "name": str(r["name"]),
             "created_at": str(r["created_at"]),
             "updated_at": str(r["updated_at"]),
         }
-        for r in rows
-    ]
+        if include_config:
+            row["config"] = json.loads(str(r["config_json"]))
+        out.append(row)
+    return out
 
 
 def get_project(project_id: int) -> ProjectRecord:

@@ -312,8 +312,19 @@ def get_job_artifact(job_id: str) -> FileResponse:
 
 
 @app.get("/projects")
-def projects_list() -> dict[str, list[dict[str, Any]]]:
-    return {"projects": list_projects()}
+def projects_list(include_analysis: bool = False) -> dict[str, list[dict[str, Any]]]:
+    projects = list_projects(include_config=include_analysis)
+    if include_analysis:
+        for item in projects:
+            cfg = item.pop("config", {})
+            if isinstance(cfg, dict):
+                risk = analyze_config_risk(cfg)
+                item["risk_score"] = risk["risk_score"]
+                item["warning_count"] = risk["warning_count"]
+            else:
+                item["risk_score"] = 0
+                item["warning_count"] = 0
+    return {"projects": projects}
 
 
 @app.post("/projects")

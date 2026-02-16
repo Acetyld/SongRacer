@@ -28,6 +28,8 @@ type ProjectRow = {
   name: string
   created_at?: string
   updated_at?: string
+  risk_score?: number
+  warning_count?: number
   config?: Record<string, unknown>
 }
 
@@ -61,7 +63,6 @@ const projects = ref<ProjectRow[]>([])
 const projectNameInput = ref('My SongRacer Project')
 const activeProjectId = ref<number | null>(null)
 const systemInfo = ref<SystemInfo>({})
-const projectRiskById = ref<Record<number, { riskScore: number; warningCount: number }>>({})
 const riskScore = ref<number | null>(null)
 const riskWarnings = ref<Array<{ level: string; code: string; message: string }>>([])
 const obstacleJson = ref(
@@ -409,22 +410,13 @@ async function loadWaveforms() {
 
 async function refreshProjects() {
   try {
-    const resp = await fetch(`${apiBase.value}/projects`)
+    const resp = await fetch(`${apiBase.value}/projects?include_analysis=true`)
     if (!resp.ok) {
       backendOnline.value = false
       return
     }
     const body = await resp.json()
     projects.value = body.projects || []
-    const existing = new Set(projects.value.map((p) => Number(p.id)))
-    const nextRisk: Record<number, { riskScore: number; warningCount: number }> = {}
-    for (const [k, v] of Object.entries(projectRiskById.value)) {
-      const id = Number(k)
-      if (existing.has(id)) {
-        nextRisk[id] = v
-      }
-    }
-    projectRiskById.value = nextRisk
     backendOnline.value = true
   } catch (_err) {
     backendOnline.value = false
@@ -523,7 +515,6 @@ async function removeProject(projectId: number) {
     if (activeProjectId.value === projectId) {
       activeProjectId.value = null
     }
-    delete projectRiskById.value[projectId]
     await refreshProjects()
     statusMessage.value = `Deleted project #${projectId}.`
     backendOnline.value = true
@@ -531,6 +522,12 @@ async function removeProject(projectId: number) {
     backendOnline.value = false
     statusMessage.value = `Delete project failed: ${String(err)}`
   }
+}
+
+function updateProjectRiskLocal(projectId: number, score: number, count: number) {
+  projects.value = projects.value.map((p) =>
+    p.id === projectId ? { ...p, risk_score: score, warning_count: count } : p,
+  )
 }
 
 async function analyzeSavedProject(projectId: number) {
@@ -542,7 +539,7 @@ async function analyzeSavedProject(projectId: number) {
     const body = await resp.json()
     const score = Number(body.risk_score ?? 0)
     const count = Number(body.warning_count ?? 0)
-    projectRiskById.value[projectId] = { riskScore: score, warningCount: count }
+    updateProjectRiskLocal(projectId, score, count)
     statusMessage.value = `Project #${projectId} risk ${score} (${count} warnings).`
     backendOnline.value = true
   } catch (err) {
@@ -984,11 +981,11 @@ onUnmounted(() => {
                 </p>
                 <p class="text-[10px] text-slate-400">#{{ p.id }} · {{ p.updated_at }}</p>
                 <p
-                  v-if="projectRiskById[p.id]"
+                  v-if="typeof p.risk_score === 'number'"
                   class="text-[10px]"
-                  :class="(projectRiskById[p.id]?.riskScore ?? 0) > 55 ? 'text-rose-300' : (projectRiskById[p.id]?.riskScore ?? 0) > 28 ? 'text-amber-300' : 'text-emerald-300'"
+                  :class="(p.risk_score ?? 0) > 55 ? 'text-rose-300' : (p.risk_score ?? 0) > 28 ? 'text-amber-300' : 'text-emerald-300'"
                 >
-                  Risk {{ projectRiskById[p.id]?.riskScore ?? 0 }} · {{ projectRiskById[p.id]?.warningCount ?? 0 }} warnings
+                  Risk {{ p.risk_score ?? 0 }} · {{ p.warning_count ?? 0 }} warnings
                 </p>
                 <div class="mt-2 flex gap-2">
                   <button
