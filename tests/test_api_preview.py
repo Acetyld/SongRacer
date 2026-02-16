@@ -44,6 +44,7 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert isinstance(body["winner_index"], int)
         assert isinstance(body["winner_frame"], int)
         assert isinstance(body["truncated"], bool)
+        assert body["cache_hit"] is False
         assert body["sample_step_frames"] >= 1
         assert body["sample_interval_seconds"] > 0
         assert body["total_sample_frames"] >= len(body["frame_indices"])
@@ -85,3 +86,20 @@ def test_preview_simulate_respects_max_frames_cap() -> None:
         assert body["truncated"] is True
         assert body["total_sample_frames"] > len(body["frame_indices"])
         assert body["sample_step_frames"] >= 1
+
+
+def test_preview_simulate_cache_hit_on_repeat_payload() -> None:
+    payload = {
+        "render": {"width": 300, "height": 540, "world_height": 1400, "duration_seconds": 2.0},
+        "racers": [{"name": "A", "x": 140, "y": 90, "radius": 24}],
+        "obstacles": [{"type": "rect", "x": 150, "y": 240, "width": 160, "height": 22}],
+        "sample_fps": 10,
+        "max_frames": 120,
+    }
+    with TestClient(app) as client:
+        first = client.post("/preview/simulate", json=payload)
+        second = client.post("/preview/simulate", json=payload)
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert first.json()["cache_hit"] is False
+        assert second.json()["cache_hit"] is True

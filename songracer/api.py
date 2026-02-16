@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from collections import OrderedDict
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 import shutil
+import threading
 from typing import Any
 
 from fastapi import File
@@ -50,6 +52,9 @@ from .sync import (
 
 
 job_manager = JobManager(max_workers=2)
+_preview_cache_lock = threading.Lock()
+_preview_cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
+_PREVIEW_CACHE_MAX_ITEMS = 8
 
 
 @asynccontextmanager
@@ -273,6 +278,28 @@ def _build_preview_cfg(payload: PreviewSimRequest) -> RaceConfig:
     )
 
 
+def _preview_cache_key(payload: PreviewSimRequest) -> str:
+    body = payload.model_dump(mode="json")
+    return json.dumps(body, sort_keys=True, separators=(",", ":"))
+
+
+def _preview_cache_get(key: str) -> dict[str, Any] | None:
+    with _preview_cache_lock:
+        cached = _preview_cache.get(key)
+        if cached is None:
+            return None
+        _preview_cache.move_to_end(key)
+        return dict(cached)
+
+
+def _preview_cache_set(key: str, value: dict[str, Any]) -> None:
+    with _preview_cache_lock:
+        _preview_cache[key] = dict(value)
+        _preview_cache.move_to_end(key)
+        while len(_preview_cache) > _PREVIEW_CACHE_MAX_ITEMS:
+            _preview_cache.popitem(last=False)
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -387,6 +414,11 @@ def analyze_config(payload: AnalyzeConfigPayload) -> dict[str, Any]:
 def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
     if not payload.racers:
         raise HTTPException(status_code=400, detail="At least one racer is required")
+    cache_key = _preview_cache_key(payload)
+    cached = _preview_cache_get(cache_key)
+    if cached is not None:
+        cached["cache_hit"] = True
+        return cached
     cfg = _build_preview_cfg(payload)
     sim = simulate_race(cfg)
     step = max(1, int(round(cfg.render.fps / max(1, payload.sample_fps))))
@@ -413,7 +445,7 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
         obstacle_visuals.append([obs.visual(sim_time) for obs in sim.obstacles])
 
     effective_sample_fps = cfg.render.fps / step
-    return {
+    result = {
         "world": {
             "width": cfg.render.width,
             "height": cfg.render.height,
@@ -435,7 +467,10 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
         "camera_y": camera_y,
         "states": states,
         "obstacle_visuals": obstacle_visuals,
+        "cache_hit": False,
     }
+    _preview_cache_set(cache_key, result)
+    return result
 
 
 @app.post("/render")

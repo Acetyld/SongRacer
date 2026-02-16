@@ -187,6 +187,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - malformed numeric obstacle fields are sanitized to safe defaults in builder import/parsing flow,
 - preset courses are loaded from backend template catalog with local fallback when offline,
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
+- preview endpoint includes lightweight cache-hit metadata for rapid repeated edits,
 - builder UI preferences (grid/snap/preview tuning) persist locally in browser storage,
 - keep raw obstacle JSON synchronized for full-control edits.
 

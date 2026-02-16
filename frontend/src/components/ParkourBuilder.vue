@@ -58,6 +58,7 @@ type PreviewData = {
   winner_frame: number
   total_sample_frames: number
   truncated: boolean
+  cache_hit: boolean
 }
 
 const props = defineProps<{
@@ -1111,6 +1112,7 @@ async function requestPreview() {
       winner_frame: Number(body.winner_frame ?? -1),
       total_sample_frames: Number(body.total_sample_frames ?? 0),
       truncated: Boolean(body.truncated),
+      cache_hit: Boolean(body.cache_hit),
     }
     previewFrame.value = 0
     if (followPreviewCamera.value && previewData.value.camera_y.length > 0) {
@@ -1686,6 +1688,12 @@ onUnmounted(() => {
           />
           <span class="text-slate-400">{{ previewStateLabel() }}</span>
           <span class="text-slate-400">{{ previewTimeText() }}</span>
+          <span
+            class="rounded border px-1.5 py-0.5 text-[10px]"
+            :class="previewData.cache_hit ? 'border-emerald-500/40 text-emerald-300' : 'border-slate-600 text-slate-400'"
+          >
+            {{ previewData.cache_hit ? 'cache hit' : 'fresh sim' }}
+          </span>
         </div>
         <p class="text-[11px] text-slate-500">
           Shortcuts: Delete=remove, Ctrl/Cmd+Z=undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y=redo, Ctrl/Cmd+D=duplicate, Ctrl/Cmd+A=select all, Ctrl/Cmd+C=copy, Ctrl/Cmd+V=paste, Esc=clear, Arrows=move (Shift=20px).
