@@ -59,6 +59,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert "templates" in templates_body
         assert set(templates_body["templates"].keys()) >= {"starter", "rings", "gates"}
         assert str(templates_body["version"]).startswith("sha256:")
+        assert templates_body["template_count"] == len(templates_body["templates"])
         assert int(templates_body["template_count"]) >= 3
         capabilities = client.get("/builder/capabilities")
         assert capabilities.status_code == 200

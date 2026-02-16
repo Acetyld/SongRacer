@@ -33,6 +33,7 @@ def test_obstacle_templates_are_parseable_configs() -> None:
 
 def test_obstacle_templates_payload_has_version_and_count() -> None:
     payload = obstacle_templates_payload()
+    assert payload["template_count"] == len(payload["templates"])
     assert payload["template_count"] >= 3
     assert str(payload["version"]).startswith("sha256:")
     assert "templates" in payload
