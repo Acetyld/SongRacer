@@ -127,3 +127,11 @@ def test_preview_simulate_cache_hit_on_repeat_payload() -> None:
         third = client.post("/preview/simulate", json=payload)
         assert third.status_code == 200
         assert third.json()["cache_hit"] is False
+        payload_variant = dict(payload)
+        payload_variant["sample_fps"] = 11
+        variant = client.post("/preview/simulate", json=payload_variant)
+        assert variant.status_code == 200
+        assert variant.json()["cache_hit"] is False
+        cache_after_variant = client.get("/preview/cache")
+        assert cache_after_variant.status_code == 200
+        assert cache_after_variant.json()["size"] >= 2

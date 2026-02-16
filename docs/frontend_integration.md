@@ -371,6 +371,7 @@ Live preview notes:
 - designed for interactive builder feedback (not final rendering),
 - sampled output is capped by `sample_fps` + `max_frames`,
 - frontend exposes sample-FPS / frame-cap controls and auto-preview toggle for responsiveness tuning,
+- cache reuse only applies for identical request payloads; changed preview knobs/layout produce fresh simulations,
 - builder can read and clear preview-cache via `/preview/cache` + `/preview/cache/clear`,
 - use full render jobs for authoritative final video/audio output.
 
