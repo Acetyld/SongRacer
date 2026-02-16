@@ -58,6 +58,7 @@ type PreviewData = {
   sample_fps: number
   sample_step_frames: number
   sample_interval_seconds: number
+  total_source_frames: number
   returned_sample_frames: number
   returned_sample_duration_seconds: number
   total_sample_duration_seconds: number
@@ -1613,6 +1614,7 @@ async function requestPreview() {
       sample_fps: Number(body.sample_fps ?? 15),
       sample_step_frames: Number(body.sample_step_frames ?? 1),
       sample_interval_seconds: Number(body.sample_interval_seconds ?? 1 / 15),
+      total_source_frames: Number(body.total_source_frames ?? 0),
       returned_sample_frames: Number(
         body.returned_sample_frames ??
           (Array.isArray(body.frame_indices) ? body.frame_indices.length : 0),
@@ -1869,6 +1871,13 @@ function previewSampleCountText(): string {
   if (!Number.isFinite(shown) || shown <= 0) return ''
   if (!Number.isFinite(total) || total <= 0) return `${Math.round(shown)} samples`
   return `samples ${Math.round(shown)}/${Math.round(total)}`
+}
+
+function previewSourceFramesText(): string {
+  if (!previewData.value) return ''
+  const sourceFrames = Number(previewData.value.total_source_frames || 0)
+  if (!Number.isFinite(sourceFrames) || sourceFrames <= 0) return ''
+  return `source ${Math.round(sourceFrames)}f`
 }
 
 function previewSampleWindowText(): string {
@@ -2374,6 +2383,7 @@ onUnmounted(() => {
           <span class="text-slate-400">{{ previewStateLabel() }}</span>
           <span class="text-slate-400">{{ previewTimeText() }}</span>
           <span class="text-slate-500">{{ previewSampleCountText() }}</span>
+          <span class="text-slate-500">{{ previewSourceFramesText() }}</span>
           <span class="text-slate-500">{{ previewSampleWindowText() }}</span>
           <span class="text-slate-500">{{ previewSamplingText() }}</span>
           <span
