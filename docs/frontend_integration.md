@@ -405,6 +405,7 @@ Live preview notes:
 - cache-hit responses keep the same payload content as fresh responses, except `cache_hit=true`,
 - this includes stable sampled-length metadata (`returned_sample_frames`, `frame_indices.length`) across fresh/cache-hit responses,
 - sampled-duration metadata (`returned_sample_duration_seconds`) is likewise stable across fresh/cache-hit responses,
+- source-duration metadata (`source_duration_seconds`) is likewise stable across fresh/cache-hit responses,
 - builder can read and clear preview-cache via `/preview/cache` + `/preview/cache/clear`,
 - builder scrub row surfaces requested→effective sampled fps plus frame-step/requested-cap metadata (`sample_fps`, `sample_step_frames`, `requested_max_frames`),
 - builder scrub row also shows sampled frame count (`returned_sample_frames/total_sample_frames`),
