@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+
 from songracer.config import ObstacleConfig
 from songracer.templates import (
     generate_obstacle_stream,
@@ -33,6 +36,16 @@ def test_obstacle_templates_payload_has_version_and_count() -> None:
     assert payload["template_count"] >= 3
     assert str(payload["version"]).startswith("sha256:")
     assert "templates" in payload
+    expected_digest = hashlib.sha256(
+        json.dumps(payload["templates"], sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    assert payload["version"] == f"sha256:{expected_digest[:16]}"
+
+
+def test_obstacle_templates_payload_is_stable_for_repeated_calls() -> None:
+    first = obstacle_templates_payload()
+    second = obstacle_templates_payload()
+    assert first == second
 
 
 def test_generate_obstacle_stream_deterministic_for_same_seed() -> None:

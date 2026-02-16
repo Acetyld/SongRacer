@@ -129,8 +129,8 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert generated_safe.status_code == 200
         generated_safe_body = generated_safe.json()
         assert generated_safe_body["count"] == 6
-        assert generated_safe_body["attempts"] >= 1
-        assert generated_safe_body["attempts"] <= 5
+        assert generated_safe_body["attempts"] == 1
+        assert generated_safe_body["seed"] == 99
         assert "risk_score" in generated_safe_body
         assert generated_safe_body["target_max_risk"] == 100
         assert generated_safe_body["accepted"] is True

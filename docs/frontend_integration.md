@@ -134,6 +134,7 @@ Response:
   "count": 8,
   "risk_score": 28,
   "warning_count": 3,
+  "warnings": [{ "level": "medium", "code": "..." }],
   "attempts": 3,
   "accepted": true,
   "target_max_risk": 35,
