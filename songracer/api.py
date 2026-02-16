@@ -3,7 +3,6 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import json
-import os
 from pathlib import Path
 import shutil
 from typing import Any
@@ -20,6 +19,7 @@ from .config import ConfigError, load_config, validate_config
 from .db import create_project, delete_project, get_project, init_db, list_projects, update_project
 from .jobs import JobManager
 from .pipeline import render_race
+from .storage import resolve_writable_dir
 from .sync import SyncError, estimate_video_sync_offsets, extract_waveform_preview
 
 
@@ -44,9 +44,11 @@ app.add_middleware(
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-STORAGE_ROOT = Path(
-    os.environ.get("SONGRACER_STORAGE_DIR", str(PROJECT_ROOT))
-).expanduser().resolve()
+STORAGE_ROOT = resolve_writable_dir(
+    env_var="SONGRACER_STORAGE_DIR",
+    preferred_dir=PROJECT_ROOT,
+    fallback_name="songracer/storage",
+)
 UPLOAD_DIR = STORAGE_ROOT / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 JOB_CONFIG_DIR = STORAGE_ROOT / "job_configs"

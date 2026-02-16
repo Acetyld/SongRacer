@@ -3,20 +3,21 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
-import os
 from pathlib import Path
 import sqlite3
 from typing import Any
 
+from .storage import resolve_writable_file
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _db_path() -> Path:
-    env = os.environ.get("SONGRACER_DB_PATH", "").strip()
-    if env:
-        return Path(env).expanduser().resolve()
-    return PROJECT_ROOT / "songracer.db"
+    return resolve_writable_file(
+        env_var="SONGRACER_DB_PATH",
+        preferred_file=PROJECT_ROOT / "songracer.db",
+        fallback_name="songracer/songracer.db",
+    )
 
 
 @dataclass(slots=True)
@@ -30,9 +31,6 @@ class ProjectRecord:
 
 def _conn() -> sqlite3.Connection:
     db_path = _db_path()
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    if not db_path.exists():
-        db_path.touch()
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn

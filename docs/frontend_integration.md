@@ -169,6 +169,7 @@ Response:
 - `DELETE /projects/{project_id}`
 
 Backed by SQLite (`songracer.db`) for persistent frontend project storage.
+Path can be overridden with `SONGRACER_DB_PATH`.
 
 Response:
 
@@ -227,6 +228,14 @@ The frontend app in `frontend/` already implements:
 - preview and final job submission,
 - live job list polling,
 - artifact preview panel.
+
+## Storage configuration
+
+Backend paths:
+- uploads/job configs/outputs root: `SONGRACER_STORAGE_DIR`
+- SQLite DB file: `SONGRACER_DB_PATH`
+
+If configured paths are not writable, backend uses writable temp fallbacks.
 
 ## Notes on countdown/victory effects
 

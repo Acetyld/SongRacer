@@ -90,6 +90,49 @@ function trimMarkerX(racer: RacerForm, width = 220): number {
   return Math.max(0, Math.min(width, (racer.syncTrimStartSeconds / duration) * width))
 }
 
+function waveformColor(idx: number): string {
+  const palette = ['#22D3EE', '#A78BFA', '#34D399', '#F472B6', '#FBBF24', '#60A5FA']
+  return palette[idx % palette.length] ?? '#22D3EE'
+}
+
+function syncOverlayWindowSeconds(): number {
+  if (syncCommonWindowSeconds.value > 0.01) {
+    return syncCommonWindowSeconds.value
+  }
+  let best = 0
+  for (const r of racers.value) {
+    const d = (r.waveformDurationSeconds || 0) - r.syncTrimStartSeconds
+    if (d > best) best = d
+  }
+  return Math.max(1, best)
+}
+
+function alignedWavePoints(racer: RacerForm, width = 320, height = 110): string {
+  const samples = racer.waveformSamples
+  if (!samples || samples.length <= 1) {
+    return `0,${height / 2} ${width},${height / 2}`
+  }
+  const duration = racer.waveformDurationSeconds || 0
+  if (duration <= 0) {
+    return `0,${height / 2} ${width},${height / 2}`
+  }
+  const winSec = syncOverlayWindowSeconds()
+  const pts: string[] = []
+  for (let idx = 0; idx < samples.length; idx++) {
+    const tRaw = (idx / (samples.length - 1)) * duration
+    const tAligned = tRaw - racer.syncTrimStartSeconds
+    if (tAligned < 0 || tAligned > winSec) continue
+    const x = (tAligned / winSec) * width
+    const sample = samples[idx] ?? 0
+    const y = height - Math.max(0, Math.min(1, sample)) * height
+    pts.push(`${x.toFixed(2)},${y.toFixed(2)}`)
+  }
+  if (pts.length < 2) {
+    return `0,${height / 2} ${width},${height / 2}`
+  }
+  return pts.join(' ')
+}
+
 function handleFiles(ev: Event) {
   const input = ev.target as HTMLInputElement
   const files = input.files
@@ -545,6 +588,33 @@ onUnmounted(() => {
                   </p>
                 </div>
               </article>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-slate-700 bg-slate-900/80 p-5">
+            <h2 class="mb-3 text-xl font-semibold text-slate-100">Sync Waveform Overlay</h2>
+            <svg viewBox="0 0 320 110" class="h-28 w-full rounded border border-slate-700 bg-slate-950/80">
+              <polyline
+                v-for="(racer, idx) in racers"
+                :key="`overlay_${racer.id}`"
+                :points="alignedWavePoints(racer)"
+                fill="none"
+                :stroke="waveformColor(idx)"
+                stroke-width="1.4"
+              />
+            </svg>
+            <p class="mt-2 text-xs text-slate-400">
+              Overlay aligned by trim-start. Window: {{ syncOverlayWindowSeconds().toFixed(2) }}s
+            </p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <span
+                v-for="(racer, idx) in racers"
+                :key="`legend_${racer.id}`"
+                class="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-[11px] text-slate-200"
+              >
+                <span class="mr-1 inline-block h-2 w-2 rounded-full" :style="{ backgroundColor: waveformColor(idx) }"></span>
+                {{ racer.name || `Singer ${idx + 1}` }} · trim {{ racer.syncTrimStartSeconds.toFixed(2) }}s
+              </span>
             </div>
           </div>
 

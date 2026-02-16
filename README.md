@@ -156,6 +156,13 @@ If frontend shows backend offline / connection refused, start API first:
 python3 -m uvicorn songracer.api:app --host 0.0.0.0 --port 8080 --reload
 ```
 
+Optional storage env vars:
+
+- `SONGRACER_STORAGE_DIR` (uploads/job configs/outputs root)
+- `SONGRACER_DB_PATH` (SQLite database file)
+
+When unset or unwritable, backend falls back to a writable temp directory.
+
 ## Testing
 
 ```bash
