@@ -1504,6 +1504,7 @@ function applyBuilderCapabilities(body: unknown) {
     Math.min(builderCaps.value.generator.safe_max_attempts.max, generateSafeAttempts.value),
   )
   invalidateSafeGenerationIfStale()
+  scheduleRiskAnalyze()
 }
 
 function applyObstacleTypeCatalog(entriesInput: unknown) {
