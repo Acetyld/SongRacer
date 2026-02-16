@@ -76,6 +76,15 @@ _BUILDER_CAPABILITIES = {
         "safe_max_attempts": {"min": 1, "max": 64, "default": 8},
     },
 }
+_PREVIEW_SAMPLE_FPS_CAPS = _BUILDER_CAPABILITIES["preview"]["sample_fps"]
+_PREVIEW_MAX_FRAMES_CAPS = _BUILDER_CAPABILITIES["preview"]["max_frames"]
+_GENERATOR_COUNT_CAPS = _BUILDER_CAPABILITIES["generator"]["count"]
+_GENERATOR_START_Y_CAPS = _BUILDER_CAPABILITIES["generator"]["start_y"]
+_GENERATOR_SPACING_CAPS = _BUILDER_CAPABILITIES["generator"]["spacing"]
+_GENERATOR_WIDTH_CAPS = _BUILDER_CAPABILITIES["generator"]["width"]
+_GENERATOR_SEED_CAPS = _BUILDER_CAPABILITIES["generator"]["seed"]
+_GENERATOR_SAFE_RISK_CAPS = _BUILDER_CAPABILITIES["generator"]["safe_target_max_risk"]
+_GENERATOR_SAFE_ATTEMPTS_CAPS = _BUILDER_CAPABILITIES["generator"]["safe_max_attempts"]
 
 
 @asynccontextmanager
@@ -222,21 +231,57 @@ class PreviewSimRequest(BaseModel):
     physics: PreviewPhysicsPayload = Field(default_factory=PreviewPhysicsPayload)
     racers: list[PreviewRacerPayload]
     obstacles: list[dict[str, Any]] = Field(default_factory=list)
-    sample_fps: int = Field(15, ge=4, le=60)
-    max_frames: int = Field(300, ge=30, le=1500)
+    sample_fps: int = Field(
+        _PREVIEW_SAMPLE_FPS_CAPS["default"],
+        ge=_PREVIEW_SAMPLE_FPS_CAPS["min"],
+        le=_PREVIEW_SAMPLE_FPS_CAPS["max"],
+    )
+    max_frames: int = Field(
+        _PREVIEW_MAX_FRAMES_CAPS["default"],
+        ge=_PREVIEW_MAX_FRAMES_CAPS["min"],
+        le=_PREVIEW_MAX_FRAMES_CAPS["max"],
+    )
 
 
 class TemplateGenerateRequest(BaseModel):
-    count: int = Field(8, ge=1, le=200)
-    start_y: float = Field(900.0, ge=0.0, le=100000.0)
-    spacing: float = Field(260.0, ge=40.0, le=4000.0)
-    width: float = Field(1080.0, ge=200.0, le=4000.0)
-    seed: int = Field(13, ge=0, le=2_000_000_000)
+    count: int = Field(
+        _GENERATOR_COUNT_CAPS["default"],
+        ge=_GENERATOR_COUNT_CAPS["min"],
+        le=_GENERATOR_COUNT_CAPS["max"],
+    )
+    start_y: float = Field(
+        _GENERATOR_START_Y_CAPS["default"],
+        ge=_GENERATOR_START_Y_CAPS["min"],
+        le=_GENERATOR_START_Y_CAPS["max"],
+    )
+    spacing: float = Field(
+        _GENERATOR_SPACING_CAPS["default"],
+        ge=_GENERATOR_SPACING_CAPS["min"],
+        le=_GENERATOR_SPACING_CAPS["max"],
+    )
+    width: float = Field(
+        _GENERATOR_WIDTH_CAPS["default"],
+        ge=_GENERATOR_WIDTH_CAPS["min"],
+        le=_GENERATOR_WIDTH_CAPS["max"],
+    )
+    seed: int = Field(
+        _GENERATOR_SEED_CAPS["default"],
+        ge=_GENERATOR_SEED_CAPS["min"],
+        le=_GENERATOR_SEED_CAPS["max"],
+    )
 
 
 class TemplateGenerateSafeRequest(TemplateGenerateRequest):
-    target_max_risk: int = Field(35, ge=0, le=100)
-    max_attempts: int = Field(8, ge=1, le=64)
+    target_max_risk: int = Field(
+        _GENERATOR_SAFE_RISK_CAPS["default"],
+        ge=_GENERATOR_SAFE_RISK_CAPS["min"],
+        le=_GENERATOR_SAFE_RISK_CAPS["max"],
+    )
+    max_attempts: int = Field(
+        _GENERATOR_SAFE_ATTEMPTS_CAPS["default"],
+        ge=_GENERATOR_SAFE_ATTEMPTS_CAPS["min"],
+        le=_GENERATOR_SAFE_ATTEMPTS_CAPS["max"],
+    )
     analysis_height: float = Field(1920.0, ge=200.0, le=8000.0)
 
 

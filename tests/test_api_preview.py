@@ -96,6 +96,44 @@ def test_preview_simulate_rejects_out_of_range_sampling_limits() -> None:
         assert "max_frames" in detail
 
 
+def test_preview_simulate_sampling_bounds_follow_capabilities_contract() -> None:
+    base = {
+        "render": {"width": 320, "height": 560, "world_height": 1400, "duration_seconds": 1.2},
+        "racers": [{"name": "A", "x": 100, "y": 90, "radius": 24}],
+        "obstacles": [],
+    }
+    with TestClient(app) as client:
+        caps_resp = client.get("/builder/capabilities")
+        assert caps_resp.status_code == 200
+        caps = caps_resp.json()["preview"]
+        min_fps = int(caps["sample_fps"]["min"])
+        max_fps = int(caps["sample_fps"]["max"])
+        min_frames = int(caps["max_frames"]["min"])
+        max_frames = int(caps["max_frames"]["max"])
+
+        valid_low = {
+            **base,
+            "sample_fps": min_fps,
+            "max_frames": max_frames,
+        }
+        valid_high = {
+            **base,
+            "sample_fps": max_fps,
+            "max_frames": min_frames,
+        }
+        assert client.post("/preview/simulate", json=valid_low).status_code == 200
+        assert client.post("/preview/simulate", json=valid_high).status_code == 200
+
+        invalid_low_fps = {**base, "sample_fps": min_fps - 1, "max_frames": min_frames}
+        invalid_high_fps = {**base, "sample_fps": max_fps + 1, "max_frames": min_frames}
+        invalid_low_frames = {**base, "sample_fps": min_fps, "max_frames": min_frames - 1}
+        invalid_high_frames = {**base, "sample_fps": min_fps, "max_frames": max_frames + 1}
+        assert client.post("/preview/simulate", json=invalid_low_fps).status_code == 422
+        assert client.post("/preview/simulate", json=invalid_high_fps).status_code == 422
+        assert client.post("/preview/simulate", json=invalid_low_frames).status_code == 422
+        assert client.post("/preview/simulate", json=invalid_high_frames).status_code == 422
+
+
 def test_preview_simulate_reports_no_winner_with_negative_fields() -> None:
     payload = {
         "seed": 22,
