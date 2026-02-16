@@ -1858,6 +1858,15 @@ function previewTruncationText(): string {
   return `Preview truncated to ${shown} / ${total} sampled frames (requested max ${cap}).`
 }
 
+function previewSampleCountText(): string {
+  if (!previewData.value) return ''
+  const shown = Number(previewData.value.returned_sample_frames || previewData.value.positions.length)
+  const total = Number(previewData.value.total_sample_frames || shown)
+  if (!Number.isFinite(shown) || shown <= 0) return ''
+  if (!Number.isFinite(total) || total <= 0) return `${Math.round(shown)} samples`
+  return `samples ${Math.round(shown)}/${Math.round(total)}`
+}
+
 function previewSamplingText(): string {
   if (!previewData.value) return ''
   const requested = Number(previewData.value.requested_sample_fps || 0)
@@ -2338,6 +2347,7 @@ onUnmounted(() => {
           />
           <span class="text-slate-400">{{ previewStateLabel() }}</span>
           <span class="text-slate-400">{{ previewTimeText() }}</span>
+          <span class="text-slate-500">{{ previewSampleCountText() }}</span>
           <span class="text-slate-500">{{ previewSamplingText() }}</span>
           <span
             class="rounded border px-1.5 py-0.5 text-[10px]"

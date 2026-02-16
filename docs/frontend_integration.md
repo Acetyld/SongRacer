@@ -400,6 +400,7 @@ Live preview notes:
 - this includes stable sampled-length metadata (`returned_sample_frames`, `frame_indices.length`) across fresh/cache-hit responses,
 - builder can read and clear preview-cache via `/preview/cache` + `/preview/cache/clear`,
 - builder scrub row surfaces requested→effective sampled fps plus frame-step/requested-cap metadata (`sample_fps`, `sample_step_frames`, `requested_max_frames`),
+- builder scrub row also shows sampled frame count (`returned_sample_frames/total_sample_frames`),
 - truncation warning includes shown/total sampled frames plus requested frame cap (`requested_max_frames`),
 - use full render jobs for authoritative final video/audio output.
 
