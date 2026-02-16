@@ -148,6 +148,19 @@ function normalizeRangeCaps(raw: unknown, fallback: RangeCaps): RangeCaps {
   }
 }
 
+function normalizeIntegerRangeCaps(raw: unknown, fallback: RangeCaps): RangeCaps {
+  const normalized = normalizeRangeCaps(raw, fallback)
+  const min = Math.round(normalized.min)
+  const max = Math.round(normalized.max)
+  const lo = Math.min(min, max)
+  const hi = Math.max(min, max)
+  return {
+    min: lo,
+    max: hi,
+    default: Math.max(lo, Math.min(hi, Math.round(normalized.default))),
+  }
+}
+
 function normalizeWorldHeight(value: number, fallback = worldHeightCaps.value.default): number {
   const base = Number.isFinite(value) ? value : fallback
   const rounded = Math.round(base)
@@ -516,7 +529,7 @@ async function refreshBuilderCapabilities() {
       return
     }
     const body = await resp.json()
-    worldHeightCaps.value = normalizeRangeCaps(
+    worldHeightCaps.value = normalizeIntegerRangeCaps(
       (body as Record<string, any>)?.preview?.world_height,
       worldHeightCaps.value,
     )

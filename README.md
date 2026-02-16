@@ -255,6 +255,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - changing API base in main render form refreshes jobs/projects/system info and capability bounds against the selected backend.
 - world-height control in main form shows capability-derived bounds/default hint for quick operator feedback.
 - world-height control includes a one-click "Default" action to restore capability-advertised default.
+- capability-derived world-height bounds/default are normalized to integer values before UI application.
 - capability-bound refresh failure does not force offline banner by itself; prior bounds are retained.
 - keep raw obstacle JSON synchronized for full-control edits.
 
