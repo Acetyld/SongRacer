@@ -116,6 +116,7 @@ Generates multiple candidate streams across sequential seeds and returns the bes
 Selection is deterministic for a fixed request: candidates are evaluated in seed order (`seed + attempt`), and the response is either the first candidate meeting `target_max_risk`, or the lowest-risk candidate across attempted seeds.
 Input bounds (`count/start_y/spacing/width/seed/target_max_risk/max_attempts`) are validated against `/builder/capabilities` generator ranges (out-of-range -> HTTP 422).
 All request fields are optional; omitted values default to `/builder/capabilities.generator.*.default`.
+Providing explicit default values is equivalent to omitting the fields.
 
 Request:
 

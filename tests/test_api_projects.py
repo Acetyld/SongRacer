@@ -228,6 +228,21 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
             gen_caps["safe_max_attempts"]["default"]
         )
         assert generated_safe_default_body["seed"] >= int(gen_caps["seed"]["default"])
+        generated_safe_default_explicit = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": int(gen_caps["count"]["default"]),
+                "start_y": float(gen_caps["start_y"]["default"]),
+                "spacing": float(gen_caps["spacing"]["default"]),
+                "width": float(gen_caps["width"]["default"]),
+                "seed": int(gen_caps["seed"]["default"]),
+                "target_max_risk": int(gen_caps["safe_target_max_risk"]["default"]),
+                "max_attempts": int(gen_caps["safe_max_attempts"]["default"]),
+                "analysis_height": 1920.0,
+            },
+        )
+        assert generated_safe_default_explicit.status_code == 200
+        assert generated_safe_default_explicit.json() == generated_safe_default_body
         generated_safe_edge_min = client.post(
             "/templates/obstacles/generate-safe",
             json={
