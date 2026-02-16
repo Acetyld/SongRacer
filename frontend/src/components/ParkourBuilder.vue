@@ -95,6 +95,7 @@ const emit = defineEmits<{
 }>()
 
 const courseWidth = 1080
+const courseViewportHeight = 1920
 const viewportHeight = 980
 const FALLBACK_PALETTE_TYPES: ObstacleType[] = [
   'rect',
@@ -1642,7 +1643,7 @@ async function requestPreview() {
         seed: 13,
         render: {
           width: courseWidth,
-          height: 1920,
+          height: courseViewportHeight,
           world_height: props.worldHeight,
           fps: 30,
           duration_seconds: Math.max(1, Math.min(20, props.duration)),
