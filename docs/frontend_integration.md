@@ -248,7 +248,7 @@ Response includes sampled arrays for:
 - `leaders`,
 - `camera_y`,
 - `obstacle_visuals`,
-- and metadata like `sample_fps`, `winner_index`, `winner_frame`, `total_sample_frames`, `truncated`.
+- and metadata like `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `winner_index`, `winner_frame`, `total_sample_frames`, `truncated`.
 
 Live preview notes:
 - designed for interactive builder feedback (not final rendering),

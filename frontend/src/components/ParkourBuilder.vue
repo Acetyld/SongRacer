@@ -47,6 +47,8 @@ type PreviewFrameObstacle = Record<string, any>
 
 type PreviewData = {
   sample_fps: number
+  sample_step_frames: number
+  sample_interval_seconds: number
   positions: number[][][]
   leaders: number[]
   camera_y: number[]
@@ -1006,6 +1008,8 @@ async function requestPreview() {
     }
     previewData.value = {
       sample_fps: Number(body.sample_fps ?? 15),
+      sample_step_frames: Number(body.sample_step_frames ?? 1),
+      sample_interval_seconds: Number(body.sample_interval_seconds ?? 1 / 15),
       positions: Array.isArray(body.positions) ? body.positions : [],
       leaders: Array.isArray(body.leaders) ? body.leaders : [],
       camera_y: Array.isArray(body.camera_y) ? body.camera_y : [],
@@ -1244,6 +1248,14 @@ function previewProgressText(): string {
   const total = previewData.value?.positions.length ?? 0
   if (total <= 0) return 'No preview yet.'
   return `Frame ${previewFrame.value + 1} / ${total}`
+}
+
+function previewTimeText(): string {
+  if (!previewData.value || previewData.value.positions.length === 0) return ''
+  const i = Math.min(previewFrame.value, previewData.value.positions.length - 1)
+  const current = i * Math.max(0, previewData.value.sample_interval_seconds || 0)
+  const total = (previewData.value.positions.length - 1) * Math.max(0, previewData.value.sample_interval_seconds || 0)
+  return `${current.toFixed(2)}s / ${total.toFixed(2)}s`
 }
 
 const previewFrameMax = computed(() => {
@@ -1550,6 +1562,7 @@ onUnmounted(() => {
             class="w-56"
           />
           <span class="text-slate-400">{{ previewStateLabel() }}</span>
+          <span class="text-slate-400">{{ previewTimeText() }}</span>
         </div>
         <p class="text-[11px] text-slate-500">
           Shortcuts: Delete=remove, Ctrl/Cmd+Z=undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y=redo, Ctrl/Cmd+D=duplicate, Ctrl/Cmd+A=select all, Ctrl/Cmd+C=copy, Ctrl/Cmd+V=paste, Esc=clear, Arrows=move (Shift=20px).

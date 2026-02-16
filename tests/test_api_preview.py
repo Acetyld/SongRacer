@@ -44,6 +44,8 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert isinstance(body["winner_index"], int)
         assert isinstance(body["winner_frame"], int)
         assert isinstance(body["truncated"], bool)
+        assert body["sample_step_frames"] >= 1
+        assert body["sample_interval_seconds"] > 0
         assert body["total_sample_frames"] >= len(body["frame_indices"])
 
 
@@ -82,3 +84,4 @@ def test_preview_simulate_respects_max_frames_cap() -> None:
         assert len(body["positions"]) == len(body["frame_indices"])
         assert body["truncated"] is True
         assert body["total_sample_frames"] > len(body["frame_indices"])
+        assert body["sample_step_frames"] >= 1

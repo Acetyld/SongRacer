@@ -415,6 +415,8 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
         },
         "fps": cfg.render.fps,
         "sample_fps": effective_sample_fps,
+        "sample_step_frames": step,
+        "sample_interval_seconds": step / cfg.render.fps,
         "frame_indices": frame_ids,
         "total_sample_frames": len(full_frame_ids),
         "truncated": truncated,
