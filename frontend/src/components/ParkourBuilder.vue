@@ -1887,6 +1887,14 @@ function previewSampleCountText(): string {
   return `samples ${Math.round(shown)}/${Math.round(total)}`
 }
 
+function previewSampleIndexSpanText(): string {
+  if (!previewData.value) return ''
+  const shown = Number(previewData.value.returned_last_sample_frame_index ?? -1)
+  const total = Number(previewData.value.total_last_sample_frame_index ?? -1)
+  if (!Number.isFinite(shown) || !Number.isFinite(total) || shown < 0 || total < shown) return ''
+  return `idx ${Math.round(shown)}/${Math.round(total)}`
+}
+
 function previewSampleCoverageText(): string {
   if (!previewData.value) return ''
   const ratio = Number(previewData.value.sampled_coverage_ratio ?? 0)
@@ -2417,6 +2425,7 @@ onUnmounted(() => {
           <span class="text-slate-400">{{ previewStateLabel() }}</span>
           <span class="text-slate-400">{{ previewTimeText() }}</span>
           <span class="text-slate-500">{{ previewSampleCountText() }}</span>
+          <span class="text-slate-500">{{ previewSampleIndexSpanText() }}</span>
           <span class="text-slate-500">{{ previewSampleCoverageText() }}</span>
           <span class="text-slate-500">{{ previewSourceCoverageText() }}</span>
           <span class="text-slate-500">{{ previewSourceFramesText() }}</span>
