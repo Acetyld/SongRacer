@@ -216,6 +216,40 @@ Request:
 }
 ```
 
+### `POST /preview/simulate`
+Run a lightweight physics simulation preview for live builder playback (no media decode / no MP4 encoding).
+
+Request:
+
+```json
+{
+  "seed": 13,
+  "render": {
+    "width": 1080,
+    "height": 1920,
+    "world_height": 7600,
+    "fps": 30,
+    "duration_seconds": 12.0,
+    "countdown_seconds": 0.0,
+    "camera_follow": true
+  },
+  "racers": [
+    { "name": "Singer 1", "x": 220, "y": 420, "radius": 96 },
+    { "name": "Singer 2", "x": 370, "y": 460, "radius": 96 }
+  ],
+  "obstacles": [{ "... obstacle objects ..." }],
+  "sample_fps": 15,
+  "max_frames": 360
+}
+```
+
+Response includes sampled arrays for:
+- `positions` (racer world coordinates),
+- `leaders`,
+- `camera_y`,
+- `obstacle_visuals`,
+- and metadata like `sample_fps`, `winner_index`, `winner_frame`.
+
 Response:
 
 ```json
@@ -285,11 +319,12 @@ Response:
 1. Upload user videos to a server-side asset folder.
 2. Build JSON config referencing those server-side paths.
 3. Optionally call `/analyze/config` and adjust obstacle JSON if warnings are high-risk.
-4. Either:
+4. For realtime parkour editing, use drag-and-drop builder + `/preview/simulate` to iterate quickly.
+5. Either:
    - write config file and call `/validate` + `/jobs`, or
    - submit inline config with optional preflight `/validate/config`, then `/jobs/from-config`.
-5. Poll `/jobs/{job_id}` until `completed` or `failed`.
-5. Download `/jobs/{job_id}/artifact` when complete.
+6. Poll `/jobs/{job_id}` until `completed` or `failed`.
+7. Download `/jobs/{job_id}/artifact` when complete.
 
 ## Frontend stack used
 
@@ -302,6 +337,7 @@ The frontend app in `frontend/` already implements:
 - per-racer crop center selection,
 - per-racer sync trims (+ one-click auto-sync via `/sync/audio`),
 - per-racer waveform preview with trim marker (`/waveform`),
+- realtime drag-and-drop parkour builder with live simulation preview (`/preview/simulate`),
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,

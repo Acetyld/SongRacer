@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import ParkourBuilder from './components/ParkourBuilder.vue'
 
 type RacerForm = {
   id: string
@@ -83,6 +84,22 @@ let pollHandle: number | null = null
 
 const uploadedReady = computed(() => racers.value.length > 0 && racers.value.every((r) => !!r.uploadedPath))
 const canRender = computed(() => uploadedReady.value && !isBusy.value)
+const builderPreviewRacers = computed(() => {
+  if (racers.value.length > 0) {
+    return racers.value.map((r, idx) => ({
+      name: r.name || `Singer ${idx + 1}`,
+      x: 220 + idx * 150,
+      y: 420 + (idx % 2) * 40,
+      radius: 96,
+    }))
+  }
+  return Array.from({ length: 5 }).map((_, idx) => ({
+    name: `Singer ${idx + 1}`,
+    x: 220 + idx * 150,
+    y: 420 + (idx % 2) * 40,
+    radius: 96,
+  }))
+})
 
 function pointsForWaveform(samples: number[] | undefined, width = 220, height = 56): string {
   if (!samples || samples.length === 0) {
@@ -922,6 +939,18 @@ onUnmounted(() => {
               >
                 Render Final
               </button>
+            </div>
+            <div class="mt-4">
+              <ParkourBuilder
+                v-model="obstacleJson"
+                :api-base="apiBase"
+                :world-height="worldHeight"
+                :duration="duration"
+                :countdown="countdown"
+                :winner-hold="winnerHold"
+                :racers="builderPreviewRacers"
+                :background-color="backgroundColor"
+              />
             </div>
             <div class="mt-4">
               <label class="mb-1 block text-sm text-slate-300">Obstacle JSON (full control)</label>

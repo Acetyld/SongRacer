@@ -35,6 +35,7 @@ The top featured circle mirrors the current leader, the camera scrolls down the 
 - Anti-stuck racer boosts to prevent deadlocks.
 - Audio-wave auto sync across racers using overlap-window trimming (`sync_trim_start_seconds`) via CLI/API/frontend.
 - Vue 3 + TypeScript + Tailwind frontend for uploads, crop-center selection, preview/final jobs.
+- Realtime frontend parkour builder with drag-and-drop obstacle editing and live simulation preview.
 
 ## Quick Start
 
@@ -138,6 +139,7 @@ Endpoints:
 - `POST /sync/preview` (sync analysis + waveform arrays in one call)
 - `POST /waveform` with `{ "video_path": "...", "sample_rate": 8000, "points": 320 }`
 - `POST /analyze/config` with `{ "config": { ... } }` to get obstacle risk warnings
+- `POST /preview/simulate` for lightweight trajectory+camera live preview (builder)
 - `POST /validate` with `{ "config_path": "..." }`
 - `POST /validate/config` with inline `{ "config": { ... } }`
 - `POST /render` with
@@ -164,6 +166,12 @@ npm run dev
 ```
 
 Open the Vite URL (usually `http://localhost:5173`), set API base to `http://localhost:8080`, upload singer videos, click each preview to set face center, then submit preview/final jobs.
+
+The Render Controls panel also includes a **Parkour Builder**:
+- drag obstacle types onto the canvas,
+- move and edit obstacles in-place,
+- play live simulation preview (racers + camera) without full MP4 rendering,
+- keep raw obstacle JSON synchronized for full-control edits.
 
 If frontend shows backend offline / connection refused, start API first:
 
