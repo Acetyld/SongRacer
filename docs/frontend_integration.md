@@ -109,6 +109,7 @@ Response:
 
 ### `POST /templates/obstacles/generate-safe`
 Generates multiple candidate streams across sequential seeds and returns the best (or accepted) stream using risk analysis.
+Selection is deterministic for a fixed request: candidates are evaluated in seed order (`seed + attempt`), and the response is either the first candidate meeting `target_max_risk`, or the lowest-risk candidate across attempted seeds.
 
 Request:
 

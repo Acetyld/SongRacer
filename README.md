@@ -139,7 +139,7 @@ Endpoints:
 - `GET /templates/obstacle-types` (obstacle type catalog + labels for builder palette)
 - `GET /templates/obstacles` (preset obstacle layouts for builder)
 - `POST /templates/obstacles/generate` (procedural obstacle stream generator)
-- `POST /templates/obstacles/generate-safe` (risk-targeted generator with retries)
+- `POST /templates/obstacles/generate-safe` (risk-targeted generator with deterministic sequential-seed retries)
 - `POST /uploads` (multipart video upload)
 - `POST /sync/audio` with `{ "video_paths": [...], "sample_rate": 16000, "max_shift_seconds": 8 }`
 - `POST /sync/preview` (sync analysis + waveform arrays in one call)

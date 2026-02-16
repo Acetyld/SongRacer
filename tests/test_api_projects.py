@@ -90,6 +90,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         )
         assert bootstrap_body["bootstrap_version"] == expected_bootstrap_version
         assert bootstrap_body["capabilities"] == cap_body
+        assert bootstrap_body["templates"] == templates_body
         assert bootstrap_body["templates"]["version"] == templates_body["version"]
         assert bootstrap_body["templates"]["template_count"] == templates_body["template_count"]
         obstacle_types = client.get("/templates/obstacle-types")
