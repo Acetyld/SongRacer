@@ -108,6 +108,7 @@ const showGrid = ref(true)
 const riskScore = ref<number | null>(null)
 const riskWarnings = ref<Array<{ level: string; code: string; message: string }>>([])
 const riskyObstacleIds = ref<Set<string>>(new Set())
+const clipboardStatus = ref('')
 const historyStack = ref<string[]>([])
 const historyIndex = ref(-1)
 const applyingHistory = ref(false)
@@ -188,6 +189,21 @@ function obstacleToSerializable(obs: BuilderObstacle): Record<string, unknown> {
     if (v !== undefined) out[k] = v
   }
   return out
+}
+
+function cloneObstacleWithOffset(source: BuilderObstacle, offsetX: number, offsetY: number): BuilderObstacle {
+  const copy: BuilderObstacle = {
+    ...JSON.parse(JSON.stringify(source)),
+    id: uid(),
+    x: source.x + offsetX,
+    y: source.y + offsetY,
+  }
+  if (copy.type === 'pendulum') {
+    copy.pivot_x = Number(source.pivot_x ?? source.x) + offsetX
+    copy.pivot_y = Number(source.pivot_y ?? source.y) + offsetY
+  }
+  moveObstacle(copy, copy.x, copy.y)
+  return copy
 }
 
 function obstaclesToCompactJson(list: BuilderObstacle[]): string {
@@ -501,6 +517,16 @@ function onWindowKeyDown(ev: KeyboardEvent) {
     selectAll()
     return
   }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'c') {
+    ev.preventDefault()
+    void copySelectionToClipboard()
+    return
+  }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'v') {
+    ev.preventDefault()
+    void pasteObstaclesFromClipboard()
+    return
+  }
   if (ev.key === 'Escape') {
     ev.preventDefault()
     clearSelection()
@@ -636,16 +662,7 @@ function stopDrag() {
 function duplicateSelected() {
   if (!selectedObstacle.value || selectedIds.value.length > 1) return
   const source = selectedObstacle.value
-  const copy: BuilderObstacle = {
-    ...JSON.parse(JSON.stringify(source)),
-    id: uid(),
-    x: source.x + 48,
-    y: source.y + 48,
-  }
-  if (copy.type === 'pendulum') {
-    copy.pivot_x = Number(copy.pivot_x ?? source.x) + 48
-    copy.pivot_y = Number(copy.pivot_y ?? source.y) + 48
-  }
+  const copy = cloneObstacleWithOffset(source, 48, 48)
   obstacles.value.push(copy)
   selectedIds.value = [copy.id]
   selectedId.value = copy.id
@@ -668,6 +685,60 @@ function selectAll() {
 function clearSelection() {
   selectedIds.value = []
   selectedId.value = null
+}
+
+async function copySelectionToClipboard() {
+  const ids = selectedIdSet()
+  if (ids.size === 0) {
+    clipboardStatus.value = 'Nothing selected to copy.'
+    return
+  }
+  const selected = obstacles.value
+    .filter((o) => ids.has(o.id))
+    .map((o) => obstacleToSerializable(o))
+  const payload = JSON.stringify(selected, null, 2)
+  try {
+    await navigator.clipboard.writeText(payload)
+    clipboardStatus.value = `Copied ${selected.length} obstacle${selected.length === 1 ? '' : 's'}.`
+  } catch (_err) {
+    clipboardStatus.value = 'Clipboard copy blocked by browser.'
+  }
+}
+
+async function pasteObstaclesFromClipboard() {
+  try {
+    const raw = await navigator.clipboard.readText()
+    if (!raw.trim()) {
+      clipboardStatus.value = 'Clipboard is empty.'
+      return
+    }
+    const parsed = JSON.parse(raw)
+    const arr = Array.isArray(parsed) ? parsed : [parsed]
+    const inserted: BuilderObstacle[] = []
+    for (const item of arr) {
+      if (!item || typeof item !== 'object') continue
+      const type = String((item as Record<string, unknown>).type || '')
+      if (!paletteTypes.includes(type as ObstacleType)) continue
+      const base = {
+        ...(item as Record<string, unknown>),
+      }
+      delete (base as Record<string, unknown>).id
+      const src = parseObstacleJson(JSON.stringify([base]))[0]
+      if (!src) continue
+      inserted.push(cloneObstacleWithOffset(src, 60, 60))
+    }
+    if (inserted.length === 0) {
+      clipboardStatus.value = 'Clipboard JSON has no supported obstacles.'
+      return
+    }
+    obstacles.value.push(...inserted)
+    const ids = inserted.map((o) => o.id)
+    selectedIds.value = ids
+    selectedId.value = ids[0] ?? null
+    clipboardStatus.value = `Pasted ${inserted.length} obstacle${inserted.length === 1 ? '' : 's'}.`
+  } catch (_err) {
+    clipboardStatus.value = 'Clipboard paste failed.'
+  }
 }
 
 function toggleHiddenForSelection() {
@@ -1112,6 +1183,19 @@ onUnmounted(() => {
       </button>
       <button
         class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
+        :disabled="selectedIds.length === 0 && !selectedObstacle"
+        @click="copySelectionToClipboard"
+      >
+        Copy
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700"
+        @click="pasteObstaclesFromClipboard"
+      >
+        Paste
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
         :disabled="!canUndo()"
         @click="undoHistory"
       >
@@ -1291,8 +1375,9 @@ onUnmounted(() => {
           <span class="text-slate-400">{{ previewStateLabel() }}</span>
         </div>
         <p class="text-[11px] text-slate-500">
-          Shortcuts: Delete=remove, Ctrl/Cmd+Z=undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y=redo, Ctrl/Cmd+D=duplicate, Ctrl/Cmd+A=select all, Esc=clear, Arrows=move (Shift=20px).
+          Shortcuts: Delete=remove, Ctrl/Cmd+Z=undo, Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y=redo, Ctrl/Cmd+D=duplicate, Ctrl/Cmd+A=select all, Ctrl/Cmd+C=copy, Ctrl/Cmd+V=paste, Esc=clear, Arrows=move (Shift=20px).
         </p>
+        <p v-if="clipboardStatus" class="text-[11px] text-cyan-300">{{ clipboardStatus }}</p>
 
         <div
           data-builder-canvas

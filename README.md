@@ -177,6 +177,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - drag one selected handle to move the entire selected group,
 - keyboard shortcuts for fast editing (delete/duplicate/select all/nudge),
 - undo/redo history controls with keyboard shortcuts,
+- copy/paste obstacle groups from clipboard (toolbar and keyboard),
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - keep raw obstacle JSON synchronized for full-control edits.
 
@@ -189,6 +190,8 @@ Builder keyboard shortcuts:
 - `Ctrl/Cmd + Shift + Z` (or `Ctrl/Cmd + Y`): redo
 - `Ctrl/Cmd + D`: duplicate selected obstacle
 - `Ctrl/Cmd + A`: select all obstacles
+- `Ctrl/Cmd + C`: copy selected obstacles as JSON
+- `Ctrl/Cmd + V`: paste obstacles from clipboard
 - `Esc`: clear selection
 - `Arrow keys`: nudge selection (`Shift` for larger nudge)
 

@@ -358,6 +358,7 @@ The frontend app in `frontend/` already implements:
 - builder productivity controls: presets, lock/hide toggles, layer ordering, shift-select bulk delete, and keyboard shortcuts,
 - multi-select group drag (drag one selected handle to move full selection),
 - builder history support (undo/redo buttons + keyboard shortcuts),
+- clipboard copy/paste for obstacle groups,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,
