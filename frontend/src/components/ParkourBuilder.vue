@@ -1641,7 +1641,7 @@ async function requestPreview() {
       body: JSON.stringify({
         seed: 13,
         render: {
-          width: 1080,
+          width: courseWidth,
           height: 1920,
           world_height: props.worldHeight,
           fps: 30,
@@ -1735,7 +1735,7 @@ async function analyzeRisk() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         config: {
-          render: { width: 1080, height: analysisHeight },
+          render: { width: courseWidth, height: analysisHeight },
           obstacles: visibleObstacles.value.map((o) => obstacleToSerializable(o)),
         },
       }),
