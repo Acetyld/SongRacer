@@ -58,6 +58,7 @@ type PreviewData = {
   sample_fps: number
   sample_step_frames: number
   sample_interval_seconds: number
+  returned_sample_frames: number
   positions: number[][][]
   leaders: number[]
   camera_y: number[]
@@ -1610,6 +1611,10 @@ async function requestPreview() {
       sample_fps: Number(body.sample_fps ?? 15),
       sample_step_frames: Number(body.sample_step_frames ?? 1),
       sample_interval_seconds: Number(body.sample_interval_seconds ?? 1 / 15),
+      returned_sample_frames: Number(
+        body.returned_sample_frames ??
+          (Array.isArray(body.frame_indices) ? body.frame_indices.length : 0),
+      ),
       positions: Array.isArray(body.positions) ? body.positions : [],
       leaders: Array.isArray(body.leaders) ? body.leaders : [],
       camera_y: Array.isArray(body.camera_y) ? body.camera_y : [],
@@ -1847,7 +1852,7 @@ function previewTimeText(): string {
 
 function previewTruncationText(): string {
   if (!previewData.value) return ''
-  const shown = previewData.value.positions.length
+  const shown = Number(previewData.value.returned_sample_frames || previewData.value.positions.length)
   const total = Number(previewData.value.total_sample_frames || shown)
   const cap = Number(previewData.value.requested_max_frames || shown)
   return `Preview truncated to ${shown} / ${total} sampled frames (requested max ${cap}).`

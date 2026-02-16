@@ -370,7 +370,7 @@ Response includes sampled arrays for:
 - `leaders`,
 - `camera_y`,
 - `obstacle_visuals`,
-- and metadata like `requested_sample_fps`, `requested_max_frames`, `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `winner_index`, `winner_frame`, `total_sample_frames`, `truncated`, `cache_hit`.
+- and metadata like `requested_sample_fps`, `requested_max_frames`, `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `winner_index`, `winner_frame`, `returned_sample_frames`, `total_sample_frames`, `truncated`, `cache_hit`.
 - winner fields use `-1`/`-1` when no winner is reached within simulated frames.
 
 Sampling metadata note:
@@ -380,6 +380,7 @@ Sampling metadata note:
 - returned `sample_fps` is the **effective** sampled rate (`render_fps / sample_step_frames`), so it can differ slightly but will not exceed requested `sample_fps`.
 - when requested sample fps is above render fps, effective `sample_fps` equals render fps (`sample_step_frames = 1`).
 - `frame_indices` are monotonically increasing sampled frame numbers starting at `0`, spaced by `sample_step_frames`.
+- `returned_sample_frames = frame_indices.length`.
 - `truncated=false` means all sampled frames are returned (`total_sample_frames == frame_indices.length`).
 
 Live preview notes:
