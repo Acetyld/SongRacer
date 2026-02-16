@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any
 
 
@@ -162,4 +164,16 @@ def obstacle_templates() -> dict[str, list[dict[str, Any]]]:
                 "fill_color": "#182037",
             },
         ],
+    }
+
+
+def obstacle_templates_payload() -> dict[str, Any]:
+    templates = obstacle_templates()
+    digest = hashlib.sha256(
+        json.dumps(templates, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return {
+        "templates": templates,
+        "version": f"sha256:{digest[:16]}",
+        "template_count": len(templates),
     }

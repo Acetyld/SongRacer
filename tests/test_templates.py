@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from songracer.config import ObstacleConfig
-from songracer.templates import obstacle_templates
+from songracer.templates import obstacle_templates, obstacle_templates_payload
 
 
 def test_obstacle_templates_are_parseable_configs() -> None:
@@ -21,3 +21,10 @@ def test_obstacle_templates_are_parseable_configs() -> None:
                 "one_way_gate",
                 "spinner",
             }, f"{name}[{idx}] invalid type {parsed.type}"
+
+
+def test_obstacle_templates_payload_has_version_and_count() -> None:
+    payload = obstacle_templates_payload()
+    assert payload["template_count"] >= 3
+    assert str(payload["version"]).startswith("sha256:")
+    assert "templates" in payload

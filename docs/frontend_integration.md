@@ -32,6 +32,8 @@ Response:
 
 ```json
 {
+  "version": "sha256:...",
+  "template_count": 3,
   "templates": {
     "starter": [{ "... obstacle ..." }],
     "rings": [{ "... obstacle ..." }],

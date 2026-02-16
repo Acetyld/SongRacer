@@ -124,6 +124,7 @@ const riskyObstacleIds = ref<Set<string>>(new Set())
 const clipboardStatus = ref('')
 const templateCatalog = ref<Record<string, Array<Record<string, unknown>>>>({})
 const templateSource = ref<'fallback' | 'api'>('fallback')
+const templateVersion = ref('')
 const historyStack = ref<string[]>([])
 const historyIndex = ref(-1)
 const applyingHistory = ref(false)
@@ -1049,10 +1050,12 @@ async function loadPresetTemplates() {
     if (Object.keys(next).length > 0) {
       templateCatalog.value = next
       templateSource.value = 'api'
+      templateVersion.value = String(body?.version || '')
     }
   } catch (_err) {
     // ignore template fetch failures and keep local fallback templates
     templateSource.value = 'fallback'
+    templateVersion.value = ''
   }
 }
 
@@ -1563,8 +1566,9 @@ onUnmounted(() => {
       <span
         class="rounded border px-2 py-1 text-[10px]"
         :class="templateSource === 'api' ? 'border-emerald-500/50 text-emerald-300' : 'border-slate-600 text-slate-400'"
+        :title="templateVersion || 'local fallback presets'"
       >
-        Presets: {{ templateSource === 'api' ? 'API catalog' : 'local fallback' }}
+        Presets: {{ templateSource === 'api' ? `API catalog ${templateVersion}` : 'local fallback' }}
       </span>
       <button
         class="rounded border border-rose-600/50 bg-rose-900/30 px-2 py-1 text-[11px] text-rose-200 hover:bg-rose-800/40 disabled:opacity-40"
