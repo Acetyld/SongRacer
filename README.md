@@ -236,7 +236,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - preview endpoint includes lightweight cache-hit metadata for rapid repeated edits,
 - preview winner metadata uses `winner_index=-1` and `winner_frame=-1` when no finisher is reached,
 - builder UI preferences (grid/snap/preview tuning) persist locally in browser storage,
-- builder UI surfaces capability limits fetched from backend contract.
+- builder UI surfaces capability limits fetched from backend contract (preview fps/frames, generator count, safe risk/attempts, safe analysis height).
 - keep raw obstacle JSON synchronized for full-control edits.
 
 Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.

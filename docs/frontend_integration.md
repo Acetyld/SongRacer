@@ -568,7 +568,7 @@ The frontend app in `frontend/` already implements:
 - UI includes one-click random seed for quick stream iteration,
 - risk warning rows are clickable and focus linked obstacle(s) in the builder (with linked obstacle index hints),
 - safe generation status badge summarizes returned risk/attempts/acceptance and is invalidated after subsequent layout/visibility edits,
-- UI can display live min/max limits from `/builder/capabilities` for user guidance,
+- UI displays live min/max limits from `/builder/capabilities` for preview and safe-generation controls (sample fps, frame cap, generator count, safe risk/attempts/analysis-height),
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,

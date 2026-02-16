@@ -1975,6 +1975,18 @@ function previewSamplingText(): string {
   return `req ${requestedText} → ${effective.toFixed(2)} fps (step ${step}f${maxText})`
 }
 
+function builderLimitsText(): string {
+  const caps = builderCaps.value
+  return [
+    `limits: preview fps ${caps.preview.sample_fps.min}-${caps.preview.sample_fps.max}`,
+    `frames ${caps.preview.max_frames.min}-${caps.preview.max_frames.max}`,
+    `gen count ${caps.generator.count.min}-${caps.generator.count.max}`,
+    `safe risk ${caps.generator.safe_target_max_risk.min}-${caps.generator.safe_target_max_risk.max}`,
+    `safe tries ${caps.generator.safe_max_attempts.min}-${caps.generator.safe_max_attempts.max}`,
+    `safe h ${caps.generator.safe_analysis_height.min}-${caps.generator.safe_analysis_height.max}`,
+  ].join(', ')
+}
+
 const previewFrameMax = computed(() => {
   const total = previewData.value?.positions.length ?? 0
   return Math.max(0, total - 1)
@@ -2340,10 +2352,7 @@ onUnmounted(() => {
         Generate Safe Replace
       </button>
       <span class="text-slate-500">
-        limits: preview fps {{ builderCaps.preview.sample_fps.min }}-{{ builderCaps.preview.sample_fps.max }},
-        frames {{ builderCaps.preview.max_frames.min }}-{{ builderCaps.preview.max_frames.max }},
-        gen count {{ builderCaps.generator.count.min }}-{{ builderCaps.generator.count.max }},
-        safe risk {{ builderCaps.generator.safe_target_max_risk.min }}-{{ builderCaps.generator.safe_target_max_risk.max }}
+        {{ builderLimitsText() }}
       </span>
       <span
         v-if="lastSafeGeneration"
