@@ -144,22 +144,50 @@ const templateCatalog = ref<Record<string, Array<Record<string, unknown>>>>({})
 const templateSource = ref<'fallback' | 'api'>('fallback')
 const templateVersion = ref('')
 const bootstrapVersion = ref('')
-const builderCaps = ref({
-  preview: {
-    sample_fps: { min: 4, max: 60, default: 15 },
-    max_frames: { min: 30, max: 1500, default: 300 },
-  },
-  generator: {
-    count: { min: 1, max: 200, default: 8 },
-    start_y: { min: 0, max: 100000, default: 900 },
-    spacing: { min: 40, max: 4000, default: 260 },
-    width: { min: 200, max: 4000, default: 1080 },
-    seed: { min: 0, max: 2000000000, default: 13 },
-    safe_target_max_risk: { min: 0, max: 100, default: 35 },
-    safe_max_attempts: { min: 1, max: 64, default: 8 },
-    safe_analysis_height: { min: 200, max: 8000, default: 1920 },
-  },
-})
+
+function defaultBuilderCaps() {
+  return {
+    preview: {
+      sample_fps: { min: 4, max: 60, default: 15 },
+      max_frames: { min: 30, max: 1500, default: 300 },
+    },
+    generator: {
+      count: { min: 1, max: 200, default: 8 },
+      start_y: { min: 0, max: 100000, default: 900 },
+      spacing: { min: 40, max: 4000, default: 260 },
+      width: { min: 200, max: 4000, default: 1080 },
+      seed: { min: 0, max: 2000000000, default: 13 },
+      safe_target_max_risk: { min: 0, max: 100, default: 35 },
+      safe_max_attempts: { min: 1, max: 64, default: 8 },
+      safe_analysis_height: { min: 200, max: 8000, default: 1920 },
+    },
+  }
+}
+
+type CapRange = { min: number; max: number; default: number }
+
+function normalizeCapRange(raw: unknown, fallback: CapRange): CapRange {
+  const obj = raw as Record<string, unknown> | null
+  const parsedMin = Number(obj?.min)
+  const parsedMax = Number(obj?.max)
+  const parsedDefault = Number(obj?.default)
+  let min = Number.isFinite(parsedMin) ? parsedMin : fallback.min
+  let max = Number.isFinite(parsedMax) ? parsedMax : fallback.max
+  if (max < min) {
+    const swap = min
+    min = max
+    max = swap
+  }
+  const fallbackDefaultClamped = Math.max(min, Math.min(max, fallback.default))
+  const normalizedDefault = Number.isFinite(parsedDefault) ? parsedDefault : fallbackDefaultClamped
+  return {
+    min,
+    max,
+    default: Math.max(min, Math.min(max, normalizedDefault)),
+  }
+}
+
+const builderCaps = ref(defaultBuilderCaps())
 const historyStack = ref<string[]>([])
 const historyIndex = ref(-1)
 const applyingHistory = ref(false)
@@ -1360,60 +1388,30 @@ function applyBuilderCapabilities(body: unknown) {
   const p = obj?.preview
   const g = obj?.generator
   if (!p || !g) return
+  const fallback = defaultBuilderCaps()
   builderCaps.value = {
     preview: {
-      sample_fps: {
-        min: Number(p.sample_fps?.min ?? 4),
-        max: Number(p.sample_fps?.max ?? 60),
-        default: Number(p.sample_fps?.default ?? 15),
-      },
-      max_frames: {
-        min: Number(p.max_frames?.min ?? 30),
-        max: Number(p.max_frames?.max ?? 1500),
-        default: Number(p.max_frames?.default ?? 300),
-      },
+      sample_fps: normalizeCapRange(p.sample_fps, fallback.preview.sample_fps),
+      max_frames: normalizeCapRange(p.max_frames, fallback.preview.max_frames),
     },
     generator: {
-      count: {
-        min: Number(g.count?.min ?? 1),
-        max: Number(g.count?.max ?? 200),
-        default: Number(g.count?.default ?? 8),
-      },
-      start_y: {
-        min: Number(g.start_y?.min ?? 0),
-        max: Number(g.start_y?.max ?? 100000),
-        default: Number(g.start_y?.default ?? 900),
-      },
-      spacing: {
-        min: Number(g.spacing?.min ?? 40),
-        max: Number(g.spacing?.max ?? 4000),
-        default: Number(g.spacing?.default ?? 260),
-      },
-      width: {
-        min: Number(g.width?.min ?? 200),
-        max: Number(g.width?.max ?? 4000),
-        default: Number(g.width?.default ?? 1080),
-      },
-      seed: {
-        min: Number(g.seed?.min ?? 0),
-        max: Number(g.seed?.max ?? 2000000000),
-        default: Number(g.seed?.default ?? 13),
-      },
-      safe_target_max_risk: {
-        min: Number(g.safe_target_max_risk?.min ?? 0),
-        max: Number(g.safe_target_max_risk?.max ?? 100),
-        default: Number(g.safe_target_max_risk?.default ?? 35),
-      },
-      safe_max_attempts: {
-        min: Number(g.safe_max_attempts?.min ?? 1),
-        max: Number(g.safe_max_attempts?.max ?? 64),
-        default: Number(g.safe_max_attempts?.default ?? 8),
-      },
-      safe_analysis_height: {
-        min: Number(g.safe_analysis_height?.min ?? 200),
-        max: Number(g.safe_analysis_height?.max ?? 8000),
-        default: Number(g.safe_analysis_height?.default ?? 1920),
-      },
+      count: normalizeCapRange(g.count, fallback.generator.count),
+      start_y: normalizeCapRange(g.start_y, fallback.generator.start_y),
+      spacing: normalizeCapRange(g.spacing, fallback.generator.spacing),
+      width: normalizeCapRange(g.width, fallback.generator.width),
+      seed: normalizeCapRange(g.seed, fallback.generator.seed),
+      safe_target_max_risk: normalizeCapRange(
+        g.safe_target_max_risk,
+        fallback.generator.safe_target_max_risk,
+      ),
+      safe_max_attempts: normalizeCapRange(
+        g.safe_max_attempts,
+        fallback.generator.safe_max_attempts,
+      ),
+      safe_analysis_height: normalizeCapRange(
+        g.safe_analysis_height,
+        fallback.generator.safe_analysis_height,
+      ),
     },
   }
   previewSampleFps.value = Math.max(

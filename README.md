@@ -238,6 +238,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - builder UI preferences (grid/snap/preview tuning) persist locally in browser storage,
 - builder UI surfaces capability limits fetched from backend contract (preview fps/frames, generator count, safe risk/attempts, safe analysis height).
 - safe procedural generation in builder derives `analysis_height` from current world-height and clamps it to capability bounds before request submission.
+- frontend normalizes malformed capability ranges defensively before applying control limits.
 - keep raw obstacle JSON synchronized for full-control edits.
 
 Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.
