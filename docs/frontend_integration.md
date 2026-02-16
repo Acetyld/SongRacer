@@ -593,6 +593,7 @@ The frontend app in `frontend/` already implements:
 - capability-derived world-height bounds/default are normalized to integers before being applied in App form controls,
 - App initializes world-height from capability fallback default and then refreshes from backend capability payload,
 - capability refresh is nonce-guarded so out-of-order API-base responses do not overwrite newer bounds,
+- App jobs/projects/system-info refreshes are likewise nonce-guarded to prevent stale API-base responses from overriding current data,
 - if capability refresh fails, App keeps prior bounds and does not mark backend offline based on this enhancement call alone,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,

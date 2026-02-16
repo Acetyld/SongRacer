@@ -95,6 +95,9 @@ const obstacleJson = ref(
 
 let pollHandle: number | null = null
 let builderCapsRequestNonce = 0
+let jobsRequestNonce = 0
+let projectsRequestNonce = 0
+let systemInfoRequestNonce = 0
 
 const uploadedReady = computed(() => racers.value.length > 0 && racers.value.every((r) => !!r.uploadedPath))
 const canRender = computed(() => uploadedReady.value && !isBusy.value)
@@ -360,17 +363,22 @@ async function createJob(isPreview: boolean) {
 }
 
 async function refreshJobs() {
+  const req = ++jobsRequestNonce
   try {
     const resp = await fetch(`${apiBase.value}/jobs`)
+    if (req !== jobsRequestNonce) return
     if (!resp.ok) {
       backendOnline.value = false
       return
     }
     const data = await resp.json()
+    if (req !== jobsRequestNonce) return
     jobs.value = (data.jobs || []).slice().reverse()
     backendOnline.value = true
   } catch (_err) {
-    backendOnline.value = false
+    if (req === jobsRequestNonce) {
+      backendOnline.value = false
+    }
   }
 }
 
@@ -501,31 +509,42 @@ async function loadWaveforms() {
 }
 
 async function refreshProjects() {
+  const req = ++projectsRequestNonce
   try {
     const resp = await fetch(`${apiBase.value}/projects?include_analysis=true`)
+    if (req !== projectsRequestNonce) return
     if (!resp.ok) {
       backendOnline.value = false
       return
     }
     const body = await resp.json()
+    if (req !== projectsRequestNonce) return
     projects.value = body.projects || []
     backendOnline.value = true
   } catch (_err) {
-    backendOnline.value = false
+    if (req === projectsRequestNonce) {
+      backendOnline.value = false
+    }
   }
 }
 
 async function refreshSystemInfo() {
+  const req = ++systemInfoRequestNonce
   try {
     const resp = await fetch(`${apiBase.value}/system/info`)
+    if (req !== systemInfoRequestNonce) return
     if (!resp.ok) {
       backendOnline.value = false
       return
     }
-    systemInfo.value = await resp.json()
+    const body = await resp.json()
+    if (req !== systemInfoRequestNonce) return
+    systemInfo.value = body
     backendOnline.value = true
   } catch (_err) {
-    backendOnline.value = false
+    if (req === systemInfoRequestNonce) {
+      backendOnline.value = false
+    }
   }
 }
 
