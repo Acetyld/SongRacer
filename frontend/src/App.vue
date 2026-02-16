@@ -314,6 +314,7 @@ function buildInlineConfig() {
     throw new Error(`Invalid obstacle JSON: ${String(err)}`)
   }
   return {
+    title: title.value || 'SongRacer Job',
     seed: 13,
     sync_common_window_seconds: normalizeNonNegativeSeconds(syncCommonWindowSeconds.value, 0),
     render: {
