@@ -2021,6 +2021,17 @@ function randomizeGenerateSeed() {
   )
 }
 
+function resetBuilderKnobsToDefaults() {
+  previewSampleFps.value = Math.round(builderCaps.value.preview.sample_fps.default)
+  previewMaxFrames.value = Math.round(builderCaps.value.preview.max_frames.default)
+  generateCount.value = Math.round(builderCaps.value.generator.count.default)
+  generateSpacing.value = Math.round(builderCaps.value.generator.spacing.default)
+  generateSeed.value = Math.round(builderCaps.value.generator.seed.default)
+  generateSafeTarget.value = Math.round(builderCaps.value.generator.safe_target_max_risk.default)
+  generateSafeAttempts.value = Math.round(builderCaps.value.generator.safe_max_attempts.default)
+  clipboardStatus.value = 'Builder knobs reset to capability defaults.'
+}
+
 onMounted(() => {
   loadPrefs()
   tryLoadBuilderShareFromUrl()
@@ -2351,6 +2362,12 @@ onUnmounted(() => {
         @click="generateSafeObstacleStream('replace')"
       >
         Generate Safe Replace
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-900/50 px-2 py-1 text-[11px] text-slate-200 hover:bg-slate-800/60"
+        @click="resetBuilderKnobsToDefaults"
+      >
+        Reset Knobs to Defaults
       </button>
       <span class="text-slate-500">
         {{ builderLimitsText() }}
