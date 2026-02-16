@@ -1843,11 +1843,15 @@ function previewTimeText(): string {
 
 function previewSamplingText(): string {
   if (!previewData.value) return ''
+  const requested = Math.max(
+    builderCaps.value.preview.sample_fps.min,
+    Math.min(builderCaps.value.preview.sample_fps.max, Math.round(previewSampleFps.value)),
+  )
   const effective = Number(previewData.value.sample_fps || 0)
   const step = Number(previewData.value.sample_step_frames || 0)
   if (!Number.isFinite(effective) || effective <= 0) return ''
-  if (!Number.isFinite(step) || step <= 0) return `${effective.toFixed(2)} fps`
-  return `${effective.toFixed(2)} fps (step ${step}f)`
+  if (!Number.isFinite(step) || step <= 0) return `req ${requested} → ${effective.toFixed(2)} fps`
+  return `req ${requested} → ${effective.toFixed(2)} fps (step ${step}f)`
 }
 
 const previewFrameMax = computed(() => {
