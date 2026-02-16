@@ -227,6 +227,10 @@ function obstaclesToCompactJson(list: BuilderObstacle[]): string {
 }
 
 function parseObstacleJson(raw: string): BuilderObstacle[] {
+  const num = (v: unknown, fallback: number): number => {
+    const n = Number(v)
+    return Number.isFinite(n) ? n : fallback
+  }
   if (!raw.trim()) return []
   const parsed = JSON.parse(raw)
   if (!Array.isArray(parsed)) throw new Error('Obstacle JSON must be an array')
@@ -241,28 +245,28 @@ function parseObstacleJson(raw: string): BuilderObstacle[] {
     return {
       id: uid(),
       type: String(o.type) as ObstacleType,
-      x: Number(o.x ?? 0),
-      y: Number(o.y ?? 0),
-      width: o.width !== undefined ? Number(o.width) : undefined,
-      height: o.height !== undefined ? Number(o.height) : undefined,
-      radius: o.radius !== undefined ? Number(o.radius) : undefined,
-      angle_deg: o.angle_deg !== undefined ? Number(o.angle_deg) : undefined,
-      thickness: o.thickness !== undefined ? Number(o.thickness) : undefined,
+      x: num(o.x, 0),
+      y: num(o.y, 0),
+      width: o.width !== undefined ? num(o.width, 260) : undefined,
+      height: o.height !== undefined ? num(o.height, 30) : undefined,
+      radius: o.radius !== undefined ? num(o.radius, 60) : undefined,
+      angle_deg: o.angle_deg !== undefined ? num(o.angle_deg, 0) : undefined,
+      thickness: o.thickness !== undefined ? num(o.thickness, 22) : undefined,
       rotation_speed_deg:
-        o.rotation_speed_deg !== undefined ? Number(o.rotation_speed_deg) : undefined,
-      gap_center_deg: o.gap_center_deg !== undefined ? Number(o.gap_center_deg) : undefined,
-      gap_size_deg: o.gap_size_deg !== undefined ? Number(o.gap_size_deg) : undefined,
-      amplitude: o.amplitude !== undefined ? Number(o.amplitude) : undefined,
-      frequency_hz: o.frequency_hz !== undefined ? Number(o.frequency_hz) : undefined,
+        o.rotation_speed_deg !== undefined ? num(o.rotation_speed_deg, 0) : undefined,
+      gap_center_deg: o.gap_center_deg !== undefined ? num(o.gap_center_deg, 270) : undefined,
+      gap_size_deg: o.gap_size_deg !== undefined ? num(o.gap_size_deg, 58) : undefined,
+      amplitude: o.amplitude !== undefined ? num(o.amplitude, 80) : undefined,
+      frequency_hz: o.frequency_hz !== undefined ? num(o.frequency_hz, 0.2) : undefined,
       axis: o.axis === 'y' ? 'y' : 'x',
-      length: o.length !== undefined ? Number(o.length) : undefined,
-      pivot_x: o.pivot_x !== undefined ? Number(o.pivot_x) : undefined,
-      pivot_y: o.pivot_y !== undefined ? Number(o.pivot_y) : undefined,
+      length: o.length !== undefined ? num(o.length, 240) : undefined,
+      pivot_x: o.pivot_x !== undefined ? num(o.pivot_x, num(o.x, 0)) : undefined,
+      pivot_y: o.pivot_y !== undefined ? num(o.pivot_y, num(o.y, 0)) : undefined,
       one_way: o.one_way === 'up' ? 'up' : 'down',
-      spin_speed_deg: o.spin_speed_deg !== undefined ? Number(o.spin_speed_deg) : undefined,
+      spin_speed_deg: o.spin_speed_deg !== undefined ? num(o.spin_speed_deg, 120) : undefined,
       fill_color: o.fill_color ? String(o.fill_color) : '#182037',
       stroke_color: o.stroke_color ? String(o.stroke_color) : '#000000',
-      opacity: o.opacity !== undefined ? Number(o.opacity) : 0.95,
+      opacity: o.opacity !== undefined ? num(o.opacity, 0.95) : 0.95,
     }
   })
 }
