@@ -751,6 +751,40 @@ async function pasteObstaclesFromClipboard() {
   }
 }
 
+function exportObstaclesFile() {
+  const payload = JSON.stringify(
+    obstacles.value.map((o) => obstacleToSerializable(o)),
+    null,
+    2,
+  )
+  const blob = new Blob([payload], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `songracer_obstacles_${Date.now()}.json`
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+
+async function importObstaclesFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  try {
+    const raw = await file.text()
+    const parsed = parseObstacleJson(raw)
+    obstacles.value = parsed
+    const first = parsed[0]?.id ?? null
+    selectedId.value = first
+    selectedIds.value = first ? [first] : []
+    clipboardStatus.value = `Imported ${parsed.length} obstacle${parsed.length === 1 ? '' : 's'}.`
+  } catch (_err) {
+    clipboardStatus.value = 'Obstacle file import failed.'
+  } finally {
+    input.value = ''
+  }
+}
+
 function toggleHiddenForSelection() {
   const ids = selectedIdSet()
   if (ids.size === 0) return
@@ -1233,6 +1267,16 @@ onUnmounted(() => {
       >
         Paste
       </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700"
+        @click="exportObstaclesFile"
+      >
+        Export Obstacles
+      </button>
+      <label class="cursor-pointer rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700">
+        Import Obstacles
+        <input type="file" accept="application/json" class="hidden" @change="importObstaclesFile" />
+      </label>
       <button
         class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700 disabled:opacity-40"
         :disabled="!canUndo()"
