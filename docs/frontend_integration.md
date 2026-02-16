@@ -378,6 +378,7 @@ Sampling metadata note:
 - `sample_step_frames` is integer frame-step size used internally.
 - `sample_step_frames = ceil(render_fps / requested_sample_fps)`.
 - returned `sample_fps` is the **effective** sampled rate (`render_fps / sample_step_frames`), so it can differ slightly but will not exceed requested `sample_fps`.
+- when requested sample fps is above render fps, effective `sample_fps` equals render fps (`sample_step_frames = 1`).
 - `frame_indices` are monotonically increasing sampled frame numbers starting at `0`, spaced by `sample_step_frames`.
 
 Live preview notes:
