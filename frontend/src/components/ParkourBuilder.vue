@@ -128,6 +128,7 @@ let playbackHandle: number | null = null
 let riskDebounce: number | null = null
 let historyDebounce: number | null = null
 let previewRequestNonce = 0
+const PREF_KEY = 'songracer_parkour_builder_prefs_v1'
 
 function obstacleLabel(t: ObstacleType): string {
   return t.replace(/_/g, ' ')
@@ -415,6 +416,13 @@ watch(autoPreview, (enabled) => {
   }
 })
 
+watch(
+  [autoPreview, previewSampleFps, previewMaxFrames, snapEnabled, snapSize, showGrid, followPreviewCamera],
+  () => {
+    savePrefs()
+  },
+)
+
 const selectedObstacle = computed(() =>
   obstacles.value.find((o) => o.id === selectedId.value) ?? null,
 )
@@ -560,6 +568,48 @@ function onWindowKeyDown(ev: KeyboardEvent) {
   if (ev.key === 'ArrowDown') {
     ev.preventDefault()
     nudgeSelection(0, step)
+  }
+}
+
+function loadPrefs() {
+  try {
+    const raw = window.localStorage.getItem(PREF_KEY)
+    if (!raw) return
+    const obj = JSON.parse(raw) as Record<string, unknown>
+    if (typeof obj.autoPreview === 'boolean') autoPreview.value = obj.autoPreview
+    if (typeof obj.previewSampleFps === 'number') {
+      previewSampleFps.value = Math.max(4, Math.min(60, Math.round(obj.previewSampleFps)))
+    }
+    if (typeof obj.previewMaxFrames === 'number') {
+      previewMaxFrames.value = Math.max(40, Math.min(1200, Math.round(obj.previewMaxFrames)))
+    }
+    if (typeof obj.snapEnabled === 'boolean') snapEnabled.value = obj.snapEnabled
+    if (typeof obj.snapSize === 'number') {
+      snapSize.value = Math.max(1, Math.min(200, Math.round(obj.snapSize)))
+    }
+    if (typeof obj.showGrid === 'boolean') showGrid.value = obj.showGrid
+    if (typeof obj.followPreviewCamera === 'boolean') {
+      followPreviewCamera.value = obj.followPreviewCamera
+    }
+  } catch (_err) {
+    // ignore corrupt local prefs
+  }
+}
+
+function savePrefs() {
+  try {
+    const payload = {
+      autoPreview: autoPreview.value,
+      previewSampleFps: previewSampleFps.value,
+      previewMaxFrames: previewMaxFrames.value,
+      snapEnabled: snapEnabled.value,
+      snapSize: snapSize.value,
+      showGrid: showGrid.value,
+      followPreviewCamera: followPreviewCamera.value,
+    }
+    window.localStorage.setItem(PREF_KEY, JSON.stringify(payload))
+  } catch (_err) {
+    // ignore storage failures
   }
 }
 
@@ -1202,6 +1252,7 @@ function focusSelectedObstacle() {
 }
 
 onMounted(() => {
+  loadPrefs()
   void requestPreview()
   void analyzeRisk()
   window.addEventListener('keydown', onWindowKeyDown)
