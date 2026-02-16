@@ -96,6 +96,8 @@ const emit = defineEmits<{
 
 const courseWidth = 1080
 const courseViewportHeight = 1920
+const previewWorldHeightMin = 256
+const previewWorldHeightMax = 20000
 const viewportHeight = 980
 const FALLBACK_PALETTE_TYPES: ObstacleType[] = [
   'rect',
@@ -1648,7 +1650,7 @@ async function requestPreview() {
         render: {
           width: courseWidth,
           height: courseViewportHeight,
-          world_height: props.worldHeight,
+          world_height: previewWorldHeightForRequest(),
           fps: 30,
           duration_seconds: Math.max(1, Math.min(20, props.duration)),
           countdown_seconds: props.countdown,
@@ -2059,8 +2061,14 @@ function builderLimitsText(): string {
 function safeAnalysisHeightForRequest(): number {
   const caps = builderCaps.value.generator.safe_analysis_height
   const requested = Number(props.worldHeight || caps.default)
-  if (!Number.isFinite(requested) || requested <= 0) return Math.round(caps.default)
-  return Math.round(Math.max(caps.min, Math.min(caps.max, requested)))
+  if (!Number.isFinite(requested) || requested <= 0) {
+    return clampRounded(caps.default, caps.min, caps.max)
+  }
+  return clampRounded(requested, caps.min, caps.max)
+}
+
+function previewWorldHeightForRequest(): number {
+  return clampRounded(props.worldHeight, previewWorldHeightMin, previewWorldHeightMax)
 }
 
 const previewFrameMax = computed(() => {

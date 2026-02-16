@@ -249,6 +249,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - builder risk analysis uses the same effective clamped analysis-height context as safe-generation scoring.
 - switching builder API base now refreshes bootstrap metadata and re-runs preview/risk requests against the new backend.
 - switching builder API base also clears prior safe-generation result badge to avoid cross-backend stale status.
+- builder preview requests clamp world-height to backend-supported bounds before simulation calls.
 - keep raw obstacle JSON synchronized for full-control edits.
 
 Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.
