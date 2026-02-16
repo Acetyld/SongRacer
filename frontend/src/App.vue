@@ -514,7 +514,6 @@ async function refreshProjects() {
     const resp = await fetch(`${apiBase.value}/projects?include_analysis=true`)
     if (req !== projectsRequestNonce) return
     if (!resp.ok) {
-      backendOnline.value = false
       return
     }
     const body = await resp.json()
@@ -522,9 +521,7 @@ async function refreshProjects() {
     projects.value = body.projects || []
     backendOnline.value = true
   } catch (_err) {
-    if (req === projectsRequestNonce) {
-      backendOnline.value = false
-    }
+    // keep current online status; jobs polling is the primary liveness signal
   }
 }
 
@@ -534,7 +531,6 @@ async function refreshSystemInfo() {
     const resp = await fetch(`${apiBase.value}/system/info`)
     if (req !== systemInfoRequestNonce) return
     if (!resp.ok) {
-      backendOnline.value = false
       return
     }
     const body = await resp.json()
@@ -542,9 +538,7 @@ async function refreshSystemInfo() {
     systemInfo.value = body
     backendOnline.value = true
   } catch (_err) {
-    if (req === systemInfoRequestNonce) {
-      backendOnline.value = false
-    }
+    // keep current online status; jobs polling is the primary liveness signal
   }
 }
 

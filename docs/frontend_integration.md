@@ -595,6 +595,7 @@ The frontend app in `frontend/` already implements:
 - App initializes world-height from capability fallback default and then refreshes from backend capability payload,
 - capability refresh is nonce-guarded so out-of-order API-base responses do not overwrite newer bounds,
 - App jobs/projects/system-info refreshes are likewise nonce-guarded to prevent stale API-base responses from overriding current data,
+- projects/system-info refresh failures do not independently set offline state; jobs refresh remains the primary liveness signal,
 - if capability refresh fails, App keeps prior bounds and does not mark backend offline based on this enhancement call alone,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
