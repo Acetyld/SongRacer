@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -73,6 +74,18 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert "obstacle_types" in bootstrap_body
         assert "templates" in bootstrap_body
         assert str(bootstrap_body["bootstrap_version"]).startswith("sha256:")
+        bootstrap_payload = {
+            "capabilities": bootstrap_body["capabilities"],
+            "obstacle_types": bootstrap_body["obstacle_types"],
+            "templates": bootstrap_body["templates"],
+        }
+        bootstrap_payload_raw = json.dumps(
+            bootstrap_payload, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+        expected_bootstrap_version = (
+            f"sha256:{hashlib.sha256(bootstrap_payload_raw).hexdigest()[:16]}"
+        )
+        assert bootstrap_body["bootstrap_version"] == expected_bootstrap_version
         assert bootstrap_body["capabilities"] == cap_body
         assert bootstrap_body["templates"]["version"] == templates_body["version"]
         assert bootstrap_body["templates"]["template_count"] == templates_body["template_count"]
