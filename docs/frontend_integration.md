@@ -580,6 +580,7 @@ The frontend app in `frontend/` already implements:
 - safe-generation requests derive `analysis_height` from the active builder world height and clamp it to `/builder/capabilities.generator.safe_analysis_height`,
 - live preview auto-refreshes when race timing controls (`duration/countdown/winner_hold`), racer lineup, or world-height inputs change,
 - risk analysis requests use the same effective clamped analysis height as safe-generation scoring,
+- changing the configured API base triggers bootstrap reload plus preview/risk refresh against the new backend,
 - capability ranges from backend are normalized client-side (finite values, `min <= max`, default clamped into range) before being applied to controls,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,

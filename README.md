@@ -247,6 +247,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - frontend normalizes malformed capability ranges defensively before applying control limits.
 - builder live preview auto-refreshes when race timing (duration/countdown/winner hold), racers, or world-height settings change.
 - builder risk analysis uses the same effective clamped analysis-height context as safe-generation scoring.
+- switching builder API base now refreshes bootstrap metadata and re-runs preview/risk requests against the new backend.
 - keep raw obstacle JSON synchronized for full-control edits.
 
 Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.

@@ -617,6 +617,8 @@ watch(
         await Promise.all([loadBuilderCapabilities(), loadObstacleTypeCatalog(), loadPresetTemplates()])
       }
       await refreshPreviewCacheInfo()
+      schedulePreview()
+      scheduleRiskAnalyze()
     })()
   },
 )
