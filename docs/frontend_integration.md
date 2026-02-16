@@ -361,6 +361,8 @@ Request:
 }
 ```
 
+`sample_fps` and `max_frames` are optional; omitted values use backend defaults (also exposed via `/builder/capabilities`).
+
 Response includes sampled arrays for:
 - `positions` (racer world coordinates),
 - `leaders`,

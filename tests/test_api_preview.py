@@ -64,6 +64,35 @@ def test_preview_simulate_rejects_invalid_obstacle_type() -> None:
         assert "Invalid obstacle type" in str(resp.json().get("detail"))
 
 
+def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
+    payload = {
+        "render": {
+            "width": 320,
+            "height": 560,
+            "world_height": 1600,
+            "fps": 30,
+            "duration_seconds": 6.0,
+            "countdown_seconds": 0.0,
+        },
+        "racers": [{"name": "A", "x": 140, "y": 90, "radius": 24}],
+        "obstacles": [{"type": "rect", "x": 160, "y": 300, "width": 180, "height": 24}],
+    }
+    with TestClient(app) as client:
+        capabilities = client.get("/builder/capabilities")
+        assert capabilities.status_code == 200
+        caps = capabilities.json()
+        default_sample_fps = int(caps["preview"]["sample_fps"]["default"])
+        default_max_frames = int(caps["preview"]["max_frames"]["default"])
+
+        resp = client.post("/preview/simulate", json=payload)
+        assert resp.status_code == 200
+        body = resp.json()
+        expected_step = max(1, int(round(payload["render"]["fps"] / default_sample_fps)))
+        assert body["sample_step_frames"] == expected_step
+        assert abs(body["sample_fps"] - (payload["render"]["fps"] / expected_step)) < 1e-9
+        assert len(body["frame_indices"]) <= default_max_frames
+
+
 def test_preview_simulate_respects_max_frames_cap() -> None:
     payload = {
         "render": {
