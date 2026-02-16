@@ -64,6 +64,17 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         capabilities = client.get("/builder/capabilities")
         assert capabilities.status_code == 200
         cap_body = capabilities.json()
+        assert set(cap_body["preview"].keys()) == {"sample_fps", "max_frames"}
+        assert set(cap_body["generator"].keys()) == {
+            "count",
+            "start_y",
+            "spacing",
+            "width",
+            "seed",
+            "safe_target_max_risk",
+            "safe_max_attempts",
+            "safe_analysis_height",
+        }
         assert cap_body["preview"]["sample_fps"]["min"] == 4
         assert cap_body["generator"]["count"]["max"] >= 100
         assert cap_body["generator"]["safe_target_max_risk"]["max"] == 100

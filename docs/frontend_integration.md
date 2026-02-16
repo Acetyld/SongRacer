@@ -38,6 +38,10 @@ Response:
   },
   "generator": {
     "count": { "min": 1, "max": 200, "default": 8 },
+    "start_y": { "min": 0, "max": 100000, "default": 900 },
+    "spacing": { "min": 40, "max": 4000, "default": 260 },
+    "width": { "min": 200, "max": 4000, "default": 1080 },
+    "seed": { "min": 0, "max": 2000000000, "default": 13 },
     "safe_target_max_risk": { "min": 0, "max": 100, "default": 35 },
     "safe_max_attempts": { "min": 1, "max": 64, "default": 8 },
     "safe_analysis_height": { "min": 200, "max": 8000, "default": 1920 }
