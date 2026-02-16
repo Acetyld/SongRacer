@@ -2034,17 +2034,23 @@ function previewSamplingText(): string {
   return `req ${requestedText} → ${effective.toFixed(2)} fps (step ${step}f${maxText})`
 }
 
+function formatCapNumber(value: number): string {
+  if (!Number.isFinite(value)) return '?'
+  if (Math.abs(value - Math.round(value)) < 1e-9) return `${Math.round(value)}`
+  return `${Number(value.toFixed(2))}`
+}
+
 function builderLimitsText(): string {
   const caps = builderCaps.value
   const effectiveSafeHeight = safeAnalysisHeightForRequest()
   return [
-    `limits: preview fps ${caps.preview.sample_fps.min}-${caps.preview.sample_fps.max}`,
-    `frames ${caps.preview.max_frames.min}-${caps.preview.max_frames.max}`,
-    `gen count ${caps.generator.count.min}-${caps.generator.count.max}`,
-    `safe risk ${caps.generator.safe_target_max_risk.min}-${caps.generator.safe_target_max_risk.max}`,
-    `safe tries ${caps.generator.safe_max_attempts.min}-${caps.generator.safe_max_attempts.max}`,
-    `safe height ${caps.generator.safe_analysis_height.min}-${caps.generator.safe_analysis_height.max}`,
-    `using ${effectiveSafeHeight}`,
+    `limits: preview fps ${formatCapNumber(caps.preview.sample_fps.min)}-${formatCapNumber(caps.preview.sample_fps.max)}`,
+    `frames ${formatCapNumber(caps.preview.max_frames.min)}-${formatCapNumber(caps.preview.max_frames.max)}`,
+    `gen count ${formatCapNumber(caps.generator.count.min)}-${formatCapNumber(caps.generator.count.max)}`,
+    `safe risk ${formatCapNumber(caps.generator.safe_target_max_risk.min)}-${formatCapNumber(caps.generator.safe_target_max_risk.max)}`,
+    `safe tries ${formatCapNumber(caps.generator.safe_max_attempts.min)}-${formatCapNumber(caps.generator.safe_max_attempts.max)}`,
+    `safe height ${formatCapNumber(caps.generator.safe_analysis_height.min)}-${formatCapNumber(caps.generator.safe_analysis_height.max)}`,
+    `using ${formatCapNumber(effectiveSafeHeight)}`,
   ].join(', ')
 }
 
