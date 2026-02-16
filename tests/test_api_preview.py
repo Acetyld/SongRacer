@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 from fastapi.testclient import TestClient
 
 from songracer.api import app
@@ -45,10 +47,11 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert isinstance(body["winner_frame"], int)
         assert isinstance(body["truncated"], bool)
         assert body["cache_hit"] is False
-        expected_step = max(1, int(round(payload["render"]["fps"] / payload["sample_fps"])))
+        expected_step = max(1, int(math.ceil(payload["render"]["fps"] / payload["sample_fps"])))
         assert body["sample_step_frames"] == expected_step
         assert abs(body["sample_fps"] - (payload["render"]["fps"] / expected_step)) < 1e-9
         assert abs(body["sample_interval_seconds"] - (expected_step / payload["render"]["fps"])) < 1e-9
+        assert body["sample_fps"] <= payload["sample_fps"]
         assert body["total_sample_frames"] >= len(body["frame_indices"])
 
 
@@ -87,9 +90,10 @@ def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
         resp = client.post("/preview/simulate", json=payload)
         assert resp.status_code == 200
         body = resp.json()
-        expected_step = max(1, int(round(payload["render"]["fps"] / default_sample_fps)))
+        expected_step = max(1, int(math.ceil(payload["render"]["fps"] / default_sample_fps)))
         assert body["sample_step_frames"] == expected_step
         assert abs(body["sample_fps"] - (payload["render"]["fps"] / expected_step)) < 1e-9
+        assert body["sample_fps"] <= default_sample_fps
         assert len(body["frame_indices"]) <= default_max_frames
 
 

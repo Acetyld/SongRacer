@@ -5,6 +5,7 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 from pathlib import Path
 import shutil
 import threading
@@ -542,7 +543,7 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
         return cached
     cfg = _build_preview_cfg(payload)
     sim = simulate_race(cfg)
-    step = max(1, int(round(cfg.render.fps / max(1, payload.sample_fps))))
+    step = max(1, int(math.ceil(cfg.render.fps / max(1, payload.sample_fps))))
     full_frame_ids = list(range(0, sim.positions.shape[0], step))
     frame_ids = full_frame_ids
     if len(frame_ids) > payload.max_frames:

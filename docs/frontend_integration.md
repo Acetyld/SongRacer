@@ -374,7 +374,8 @@ Response includes sampled arrays for:
 
 Sampling metadata note:
 - `sample_step_frames` is integer frame-step size used internally.
-- returned `sample_fps` is the **effective** sampled rate (`render_fps / sample_step_frames`) and can differ slightly from requested `sample_fps`.
+- `sample_step_frames = ceil(render_fps / requested_sample_fps)`.
+- returned `sample_fps` is the **effective** sampled rate (`render_fps / sample_step_frames`), so it can differ slightly but will not exceed requested `sample_fps`.
 
 Live preview notes:
 - designed for interactive builder feedback (not final rendering),
