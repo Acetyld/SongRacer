@@ -2014,6 +2014,7 @@ function previewSamplingText(): string {
 
 function builderLimitsText(): string {
   const caps = builderCaps.value
+  const effectiveSafeHeight = safeAnalysisHeightForRequest()
   return [
     `limits: preview fps ${caps.preview.sample_fps.min}-${caps.preview.sample_fps.max}`,
     `frames ${caps.preview.max_frames.min}-${caps.preview.max_frames.max}`,
@@ -2021,6 +2022,7 @@ function builderLimitsText(): string {
     `safe risk ${caps.generator.safe_target_max_risk.min}-${caps.generator.safe_target_max_risk.max}`,
     `safe tries ${caps.generator.safe_max_attempts.min}-${caps.generator.safe_max_attempts.max}`,
     `safe height ${caps.generator.safe_analysis_height.min}-${caps.generator.safe_analysis_height.max}`,
+    `using ${effectiveSafeHeight}`,
   ].join(', ')
 }
 
