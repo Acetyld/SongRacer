@@ -63,6 +63,8 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         )
         assert abs(body["sample_fps"] - (payload["render"]["fps"] / expected_step)) < 1e-9
         assert abs(body["sample_interval_seconds"] - (expected_step / payload["render"]["fps"])) < 1e-9
+        expected_duration = max(0.0, (len(body["frame_indices"]) - 1) * body["sample_interval_seconds"])
+        assert abs(body["returned_sample_duration_seconds"] - expected_duration) < 1e-9
         assert body["sample_fps"] <= payload["sample_fps"]
         assert body["total_sample_frames"] >= len(body["frame_indices"])
         assert body["total_sample_frames"] == len(body["frame_indices"])
@@ -190,6 +192,8 @@ def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
         assert body["sample_step_frames"] == expected_step
         assert abs(body["sample_fps"] - (payload["render"]["fps"] / expected_step)) < 1e-9
         assert body["sample_fps"] <= default_sample_fps
+        expected_duration = max(0.0, (len(body["frame_indices"]) - 1) * body["sample_interval_seconds"])
+        assert abs(body["returned_sample_duration_seconds"] - expected_duration) < 1e-9
         assert len(body["frame_indices"]) <= default_max_frames
         assert body["returned_sample_frames"] == len(body["frame_indices"])
         assert body["returned_sample_frames"] <= body["requested_max_frames"]
@@ -300,6 +304,8 @@ def test_preview_simulate_respects_max_frames_cap() -> None:
         assert body["total_sample_frames"] > len(body["frame_indices"])
         assert body["sample_step_frames"] == 2
         assert body["frame_indices"][-1] == 78
+        expected_duration = max(0.0, (len(body["frame_indices"]) - 1) * body["sample_interval_seconds"])
+        assert abs(body["returned_sample_duration_seconds"] - expected_duration) < 1e-9
 
 
 def test_preview_simulate_effective_fps_never_exceeds_request() -> None:

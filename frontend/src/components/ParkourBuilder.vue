@@ -59,6 +59,7 @@ type PreviewData = {
   sample_step_frames: number
   sample_interval_seconds: number
   returned_sample_frames: number
+  returned_sample_duration_seconds: number
   positions: number[][][]
   leaders: number[]
   camera_y: number[]
@@ -1615,6 +1616,7 @@ async function requestPreview() {
         body.returned_sample_frames ??
           (Array.isArray(body.frame_indices) ? body.frame_indices.length : 0),
       ),
+      returned_sample_duration_seconds: Number(body.returned_sample_duration_seconds ?? 0),
       positions: Array.isArray(body.positions) ? body.positions : [],
       leaders: Array.isArray(body.leaders) ? body.leaders : [],
       camera_y: Array.isArray(body.camera_y) ? body.camera_y : [],
@@ -1865,6 +1867,13 @@ function previewSampleCountText(): string {
   if (!Number.isFinite(shown) || shown <= 0) return ''
   if (!Number.isFinite(total) || total <= 0) return `${Math.round(shown)} samples`
   return `samples ${Math.round(shown)}/${Math.round(total)}`
+}
+
+function previewSampleWindowText(): string {
+  if (!previewData.value) return ''
+  const seconds = Number(previewData.value.returned_sample_duration_seconds || 0)
+  if (!Number.isFinite(seconds) || seconds <= 0) return ''
+  return `window ${seconds.toFixed(2)}s`
 }
 
 function previewSamplingText(): string {
@@ -2348,6 +2357,7 @@ onUnmounted(() => {
           <span class="text-slate-400">{{ previewStateLabel() }}</span>
           <span class="text-slate-400">{{ previewTimeText() }}</span>
           <span class="text-slate-500">{{ previewSampleCountText() }}</span>
+          <span class="text-slate-500">{{ previewSampleWindowText() }}</span>
           <span class="text-slate-500">{{ previewSamplingText() }}</span>
           <span
             class="rounded border px-1.5 py-0.5 text-[10px]"
