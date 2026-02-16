@@ -173,6 +173,35 @@ function isObstacleType(value: string): value is ObstacleType {
   return FALLBACK_PALETTE_TYPES.includes(value as ObstacleType)
 }
 
+function applyRiskPayload(
+  risk: number | null,
+  warnings: Array<{
+    level: string
+    code: string
+    message: string
+    obstacle_index?: number
+    obstacle_indices?: number[]
+  }>,
+) {
+  riskScore.value = risk
+  riskWarnings.value = warnings
+  const idSet = new Set<string>()
+  for (const w of warnings) {
+    if (typeof w.obstacle_index === 'number') {
+      const id = visibleObstacles.value[w.obstacle_index]?.id
+      if (id) idSet.add(id)
+    }
+    if (Array.isArray(w.obstacle_indices)) {
+      for (const idx of w.obstacle_indices) {
+        if (typeof idx !== 'number') continue
+        const id = visibleObstacles.value[idx]?.id
+        if (id) idSet.add(id)
+      }
+    }
+  }
+  riskyObstacleIds.value = idSet
+}
+
 function uid(): string {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`
 }
@@ -1179,6 +1208,8 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
     selectedIds.value = first ? [first] : []
     generateSeed.value = Math.max(0, Math.round(Number(body?.seed ?? generateSeed.value) + 1))
     const risk = Number(body?.risk_score ?? 0)
+    const warnings = Array.isArray(body?.warnings) ? body.warnings : []
+    applyRiskPayload(risk, warnings)
     const attempts = Number(body?.attempts ?? 1)
     const accepted = Boolean(body?.accepted)
     clipboardStatus.value = `Generated ${generated.length} safe obstacle${generated.length === 1 ? '' : 's'} (${mode}) · risk ${risk} · attempts ${attempts}${accepted ? '' : ' (best effort)'}.`
@@ -1543,27 +1574,12 @@ async function analyzeRisk() {
       throw new Error(await resp.text())
     }
     const body = await resp.json()
-    riskScore.value = Number(body.risk_score ?? 0)
-    riskWarnings.value = Array.isArray(body.warnings) ? body.warnings : []
-    const idSet = new Set<string>()
-    for (const w of riskWarnings.value) {
-      if (typeof w.obstacle_index === 'number') {
-        const id = visibleObstacles.value[w.obstacle_index]?.id
-        if (id) idSet.add(id)
-      }
-      if (Array.isArray(w.obstacle_indices)) {
-        for (const idx of w.obstacle_indices) {
-          if (typeof idx !== 'number') continue
-          const id = visibleObstacles.value[idx]?.id
-          if (id) idSet.add(id)
-        }
-      }
-    }
-    riskyObstacleIds.value = idSet
+    applyRiskPayload(
+      Number(body.risk_score ?? 0),
+      Array.isArray(body.warnings) ? body.warnings : [],
+    )
   } catch (_err) {
-    riskScore.value = null
-    riskWarnings.value = []
-    riskyObstacleIds.value = new Set()
+    applyRiskPayload(null, [])
   }
 }
 
