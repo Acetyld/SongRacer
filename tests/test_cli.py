@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import subprocess
 
-from songracer.cli import _scaled_config
+from songracer.cli import _scaled_config, main
 from songracer.config import RaceConfig, RacerConfig
 
 
@@ -46,3 +47,24 @@ def test_scaled_config_forces_even_video_dimensions(tmp_path: Path) -> None:
     scaled = _scaled_config(cfg, 0.16)
     assert scaled.render.width % 2 == 0
     assert scaled.render.height % 2 == 0
+
+
+def test_analyze_command_reports_warnings(tmp_path: Path, capsys) -> None:
+    cfg_path = tmp_path / "course.json"
+    cfg_path.write_text(
+        json.dumps(
+            {
+                "render": {"width": 1080, "height": 1920},
+                "obstacles": [
+                    {"type": "rect", "x": 540, "y": 800, "width": 900},
+                    {"type": "rect", "x": 540, "y": 860, "width": 900},
+                ],
+            }
+        )
+    )
+    main(["analyze", "--config", str(cfg_path)])
+    out = capsys.readouterr().out
+    body = json.loads(out)
+    assert body["warning_count"] >= 1
+    codes = {item["code"] for item in body["warnings"]}
+    assert "rows_too_close" in codes

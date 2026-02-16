@@ -5,6 +5,7 @@ import copy
 import json
 from pathlib import Path
 
+from .analyze import analyze_config_risk
 from .config import RaceConfig, load_config, validate_config
 from .pipeline import render_race
 from .sync import apply_offsets_to_config_json, estimate_video_sync_offsets
@@ -60,6 +61,19 @@ def _scaled_config(cfg: RaceConfig, scale: float) -> RaceConfig:
     return out
 
 
+def _read_json_file(path: str | Path) -> dict[str, object]:
+    p = Path(path).expanduser().resolve()
+    if not p.exists():
+        raise SystemExit(f"Config file not found: {p}")
+    try:
+        data = json.loads(p.read_text())
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"Config JSON parse error in {p}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise SystemExit(f"Config root must be an object: {p}")
+    return data
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="songracer", description="Generate autonomous singer race MP4s."
@@ -78,6 +92,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     val_p = sub.add_parser("validate", help="Validate config file")
     val_p.add_argument("--config", required=True, help="Path to JSON config")
+
+    analyze_p = sub.add_parser("analyze", help="Analyze obstacle layout risk from config")
+    analyze_p.add_argument("--config", required=True, help="Path to JSON config")
 
     sync_p = sub.add_parser("sync", help="Estimate sync offsets from racer audio waveforms")
     sync_p.add_argument("--config", required=True, help="Path to JSON config")
@@ -129,6 +146,12 @@ def main(argv: list[str] | None = None) -> None:
                 indent=2,
             )
         )
+        return
+
+    if args.cmd == "analyze":
+        raw = _read_json_file(args.config)
+        result = analyze_config_risk(raw)
+        print(json.dumps(result, indent=2))
         return
 
     if args.cmd == "sync":

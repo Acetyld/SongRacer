@@ -79,6 +79,14 @@ This estimates:
 
 With `--write`, it updates the config and caps `render.duration_seconds` to the common overlap by default.
 
+### 6) Analyze obstacle layout risk (optional)
+
+```bash
+python3 -m songracer analyze --config configs/demo_5_racers.json
+```
+
+Returns a heuristic risk score and warnings for trap-prone obstacle patterns (for example tight blocker rows or tiny ring gaps).
+
 Preview faster at reduced scale:
 
 ```bash
@@ -129,6 +137,7 @@ Endpoints:
 - `POST /sync/audio` with `{ "video_paths": [...], "sample_rate": 16000, "max_shift_seconds": 8 }`
 - `POST /sync/preview` (sync analysis + waveform arrays in one call)
 - `POST /waveform` with `{ "video_path": "...", "sample_rate": 8000, "points": 320 }`
+- `POST /analyze/config` with `{ "config": { ... } }` to get obstacle risk warnings
 - `POST /validate` with `{ "config_path": "..." }`
 - `POST /render` with
   `{ "config_path": "...", "output_path": "...", "preview_scale": 1.0 }`
