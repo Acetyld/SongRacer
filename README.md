@@ -196,7 +196,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - safe procedural stream generation mode (target risk + retry attempts),
 - stream generator now mixes additional obstacle variants (including circles and pendulums),
 - quick random-seed action available for procedural stream exploration,
-- safe generation result badge shows seed/risk/warnings/attempts + accepted/best-effort outcome,
+- safe generation result badge shows seed/risk/warnings/attempts + accepted/best-effort outcome, and auto-clears when layout visibility/geometry changes,
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - preview cache diagnostics/clear controls available via API and builder toolbar,
 - preview endpoint includes lightweight cache-hit metadata for rapid repeated edits,

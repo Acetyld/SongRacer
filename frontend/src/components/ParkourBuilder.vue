@@ -163,6 +163,7 @@ const lastSafeGeneration = ref<{
   accepted: boolean
   warnings: number
 } | null>(null)
+const lastSafeGenerationSignature = ref<string | null>(null)
 
 let suppressEmit = false
 let previewDebounce: number | null = null
@@ -294,6 +295,13 @@ function cloneObstacleWithOffset(source: BuilderObstacle, offsetX: number, offse
 
 function obstaclesToCompactJson(list: BuilderObstacle[]): string {
   return JSON.stringify(list.map((o) => obstacleToSerializable(o)))
+}
+
+function safeGenerationSignature(): string {
+  return JSON.stringify({
+    obstacles: obstacles.value.map((o) => obstacleToSerializable(o)),
+    hidden_ids: [...hiddenIds.value].sort(),
+  })
 }
 
 function parseObstacleJson(raw: string): BuilderObstacle[] {
@@ -481,9 +489,28 @@ watch(
     emit('update:modelValue', payload)
     schedulePreview()
     scheduleRiskAnalyze()
+    if (
+      lastSafeGeneration.value &&
+      lastSafeGenerationSignature.value &&
+      lastSafeGenerationSignature.value !== safeGenerationSignature()
+    ) {
+      lastSafeGeneration.value = null
+      lastSafeGenerationSignature.value = null
+    }
   },
   { deep: true },
 )
+
+watch(hiddenIds, () => {
+  if (
+    lastSafeGeneration.value &&
+    lastSafeGenerationSignature.value &&
+    lastSafeGenerationSignature.value !== safeGenerationSignature()
+  ) {
+    lastSafeGeneration.value = null
+    lastSafeGenerationSignature.value = null
+  }
+})
 
 watch([previewSampleFps, previewMaxFrames], () => {
   schedulePreview()
@@ -1144,9 +1171,11 @@ async function generateObstacleStream(mode: 'replace' | 'append') {
     selectedIds.value = first ? [first] : []
     generateSeed.value = Math.max(0, Math.round(Number(body?.seed ?? generateSeed.value) + 1))
     lastSafeGeneration.value = null
+    lastSafeGenerationSignature.value = null
     clipboardStatus.value = `Generated ${generated.length} obstacle${generated.length === 1 ? '' : 's'} (${mode}).`
   } catch (_err) {
     lastSafeGeneration.value = null
+    lastSafeGenerationSignature.value = null
     clipboardStatus.value = 'Failed to generate obstacle stream.'
   }
 }
@@ -1228,9 +1257,11 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
       accepted,
       warnings: Number(body?.warning_count ?? warnings.length),
     }
+    lastSafeGenerationSignature.value = safeGenerationSignature()
     clipboardStatus.value = `Generated ${generated.length} safe obstacle${generated.length === 1 ? '' : 's'} (${mode}) · risk ${risk} · attempts ${attempts}${accepted ? '' : ' (best effort)'}.`
   } catch (_err) {
     lastSafeGeneration.value = null
+    lastSafeGenerationSignature.value = null
     clipboardStatus.value = 'Failed to generate safe obstacle stream.'
   }
 }
