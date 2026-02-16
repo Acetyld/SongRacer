@@ -256,6 +256,17 @@ Live preview notes:
 - frontend exposes sample-FPS / frame-cap controls and auto-preview toggle for responsiveness tuning,
 - use full render jobs for authoritative final video/audio output.
 
+### Realtime Parkour Builder workflow
+
+1. Drag obstacle types from palette onto the builder canvas.
+2. Move obstacles by dragging handles; shift-click for multi-select.
+3. Use layer panel to lock/hide entries and adjust ordering.
+4. Use presets (`Starter`, `Rings`, `Gates`) for quick bootstrap.
+5. Let auto-preview run (or click refresh manually) to inspect sampled simulation timeline.
+6. Check integrated risk warnings and adjust layout.
+7. Keep/inspect raw obstacle JSON (always synchronized).
+8. Submit preview/final render jobs once satisfied.
+
 Response:
 
 ```json

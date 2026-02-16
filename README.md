@@ -181,6 +181,13 @@ The Render Controls panel also includes a **Parkour Builder**:
 Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.
 Use render jobs for final authoritative output.
 
+Builder keyboard shortcuts:
+- `Delete/Backspace`: delete selection
+- `Ctrl/Cmd + D`: duplicate selected obstacle
+- `Ctrl/Cmd + A`: select all obstacles
+- `Esc`: clear selection
+- `Arrow keys`: nudge selection (`Shift` for larger nudge)
+
 If frontend shows backend offline / connection refused, start API first:
 
 ```bash

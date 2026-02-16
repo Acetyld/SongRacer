@@ -38,8 +38,11 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert len(body["positions"]) == len(body["frame_indices"])
         assert len(body["leaders"]) == len(body["frame_indices"])
         assert len(body["camera_y"]) == len(body["frame_indices"])
+        assert len(body["states"]) == len(body["frame_indices"])
         assert len(body["obstacle_visuals"]) == len(body["frame_indices"])
         assert len(body["positions"][0]) == 2
+        assert isinstance(body["winner_index"], int)
+        assert isinstance(body["winner_frame"], int)
 
 
 def test_preview_simulate_rejects_invalid_obstacle_type() -> None:
