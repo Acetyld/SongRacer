@@ -183,6 +183,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - obstacle-only JSON import/export directly from builder toolbar,
 - copy a shareable builder URL embedding obstacle JSON (`Copy Builder Link`),
 - quick clear/reset action for current obstacle layout,
+- focus helpers (`Focus Selected`, `Fit Camera`) for large courses,
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - builder UI preferences (grid/snap/preview tuning) persist locally in browser storage,
 - keep raw obstacle JSON synchronized for full-control edits.

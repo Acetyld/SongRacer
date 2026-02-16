@@ -379,6 +379,7 @@ The frontend app in `frontend/` already implements:
 - obstacle JSON import/export actions scoped to builder layout,
 - URL share action for builder layouts (obstacles encoded in query param),
 - one-click clear/reset action for obstacle layout,
+- camera focus helpers for selected obstacle and full-content fit,
 - local browser persistence for builder tuning preferences (grid/snap/preview knobs),
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,

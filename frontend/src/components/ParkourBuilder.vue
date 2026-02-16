@@ -1357,6 +1357,16 @@ function focusSelectedObstacle() {
   focusOnObstacle(selectedObstacle.value)
 }
 
+function fitCameraToContent() {
+  if (obstacles.value.length === 0) {
+    cameraY.value = 0
+    return
+  }
+  const ys = obstacles.value.map((o) => obstaclePosition(o).y)
+  const top = Math.min(...ys)
+  cameraY.value = clampCamera(top - 140)
+}
+
 onMounted(() => {
   loadPrefs()
   tryLoadBuilderShareFromUrl()
@@ -1569,6 +1579,12 @@ onUnmounted(() => {
         @click="focusSelectedObstacle"
       >
         Focus Selected
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700"
+        @click="fitCameraToContent"
+      >
+        Fit Camera
       </button>
     </div>
 
