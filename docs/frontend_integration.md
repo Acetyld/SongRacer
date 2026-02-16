@@ -581,6 +581,7 @@ The frontend app in `frontend/` already implements:
 - live preview auto-refreshes when race timing controls (`duration/countdown/winner_hold`), racer lineup, or world-height inputs change,
 - risk analysis requests use the same effective clamped analysis height as safe-generation scoring,
 - changing the configured API base triggers bootstrap reload plus preview/risk refresh against the new backend,
+- changing API base also clears the previously shown safe-generation result badge to avoid stale cross-backend status,
 - capability ranges from backend are normalized client-side (finite values, `min <= max`, default clamped into range) before being applied to controls,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,

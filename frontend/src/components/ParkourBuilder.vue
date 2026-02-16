@@ -376,6 +376,11 @@ function invalidateSafeGenerationIfStale() {
   }
 }
 
+function clearSafeGenerationStatus() {
+  lastSafeGeneration.value = null
+  lastSafeGenerationSignature.value = null
+}
+
 function parseObstacleJson(raw: string): BuilderObstacle[] {
   const num = (v: unknown, fallback: number): number => {
     const n = Number(v)
@@ -611,6 +616,7 @@ watch(
 watch(
   () => props.apiBase,
   () => {
+    clearSafeGenerationStatus()
     void (async () => {
       const ok = await loadBuilderBootstrap()
       if (!ok) {
