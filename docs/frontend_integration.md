@@ -389,6 +389,7 @@ Live preview notes:
 - frontend exposes sample-FPS / frame-cap controls and auto-preview toggle for responsiveness tuning,
 - cache reuse applies to semantically identical request JSON (key ordering does not matter); changed preview knobs/layout produce fresh simulations,
 - cache-hit responses keep the same payload content as fresh responses, except `cache_hit=true`,
+- this includes stable sampled-length metadata (`returned_sample_frames`, `frame_indices.length`) across fresh/cache-hit responses,
 - builder can read and clear preview-cache via `/preview/cache` + `/preview/cache/clear`,
 - builder scrub row surfaces requested→effective sampled fps plus frame-step/requested-cap metadata (`sample_fps`, `sample_step_frames`, `requested_max_frames`),
 - truncation warning includes shown/total sampled frames plus requested frame cap (`requested_max_frames`),

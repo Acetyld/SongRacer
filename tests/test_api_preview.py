@@ -287,6 +287,8 @@ def test_preview_simulate_cache_hit_on_repeat_payload() -> None:
         assert second_body["requested_sample_fps"] == payload["sample_fps"]
         assert first_body["requested_max_frames"] == payload["max_frames"]
         assert second_body["requested_max_frames"] == payload["max_frames"]
+        assert first_body["returned_sample_frames"] == len(first_body["frame_indices"])
+        assert second_body["returned_sample_frames"] == len(second_body["frame_indices"])
         normalized_first = {k: v for k, v in first_body.items() if k != "cache_hit"}
         normalized_second = {k: v for k, v in second_body.items() if k != "cache_hit"}
         assert normalized_first == normalized_second
@@ -360,6 +362,8 @@ def test_preview_cache_key_is_order_insensitive_for_json_payload() -> None:
         assert second_body["requested_sample_fps"] == payload["sample_fps"]
         assert first_body["requested_max_frames"] == payload["max_frames"]
         assert second_body["requested_max_frames"] == payload["max_frames"]
+        assert first_body["returned_sample_frames"] == len(first_body["frame_indices"])
+        assert second_body["returned_sample_frames"] == len(second_body["frame_indices"])
         normalized_first = {k: v for k, v in first_body.items() if k != "cache_hit"}
         normalized_second = {k: v for k, v in second_body.items() if k != "cache_hit"}
         assert normalized_first == normalized_second
