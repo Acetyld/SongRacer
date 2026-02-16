@@ -300,6 +300,18 @@ def _preview_cache_set(key: str, value: dict[str, Any]) -> None:
             _preview_cache.popitem(last=False)
 
 
+def _preview_cache_info() -> dict[str, int]:
+    with _preview_cache_lock:
+        return {"size": len(_preview_cache), "max_size": _PREVIEW_CACHE_MAX_ITEMS}
+
+
+def _preview_cache_clear() -> int:
+    with _preview_cache_lock:
+        size = len(_preview_cache)
+        _preview_cache.clear()
+        return size
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -471,6 +483,18 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
     }
     _preview_cache_set(cache_key, result)
     return result
+
+
+@app.get("/preview/cache")
+def preview_cache_info() -> dict[str, int]:
+    return _preview_cache_info()
+
+
+@app.post("/preview/cache/clear")
+def preview_cache_clear() -> dict[str, int]:
+    cleared = _preview_cache_clear()
+    info = _preview_cache_info()
+    return {"cleared": cleared, **info}
 
 
 @app.post("/render")

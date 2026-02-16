@@ -273,6 +273,27 @@ Live preview notes:
 - frontend exposes sample-FPS / frame-cap controls and auto-preview toggle for responsiveness tuning,
 - use full render jobs for authoritative final video/audio output.
 
+### `GET /preview/cache`
+Returns current preview-cache usage:
+
+```json
+{
+  "size": 3,
+  "max_size": 8
+}
+```
+
+### `POST /preview/cache/clear`
+Clears preview-cache entries and returns counts:
+
+```json
+{
+  "cleared": 3,
+  "size": 0,
+  "max_size": 8
+}
+```
+
 ### Realtime Parkour Builder workflow
 
 1. Drag obstacle types from palette onto the builder canvas.

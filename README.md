@@ -141,6 +141,7 @@ Endpoints:
 - `POST /waveform` with `{ "video_path": "...", "sample_rate": 8000, "points": 320 }`
 - `POST /analyze/config` with `{ "config": { ... } }` to get obstacle risk warnings
 - `POST /preview/simulate` for lightweight trajectory+camera live preview (builder)
+- `GET /preview/cache` and `POST /preview/cache/clear` for preview-cache diagnostics
 - `POST /validate` with `{ "config_path": "..." }`
 - `POST /validate/config` with inline `{ "config": { ... } }`
 - `POST /render` with

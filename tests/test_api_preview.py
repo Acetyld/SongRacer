@@ -97,9 +97,18 @@ def test_preview_simulate_cache_hit_on_repeat_payload() -> None:
         "max_frames": 120,
     }
     with TestClient(app) as client:
+        before = client.get("/preview/cache")
+        assert before.status_code == 200
         first = client.post("/preview/simulate", json=payload)
         second = client.post("/preview/simulate", json=payload)
         assert first.status_code == 200
         assert second.status_code == 200
         assert first.json()["cache_hit"] is False
         assert second.json()["cache_hit"] is True
+        after = client.get("/preview/cache")
+        assert after.status_code == 200
+        assert after.json()["size"] >= before.json()["size"]
+        clear = client.post("/preview/cache/clear")
+        assert clear.status_code == 200
+        assert clear.json()["size"] == 0
+        assert clear.json()["max_size"] >= 1
