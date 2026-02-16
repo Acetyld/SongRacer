@@ -179,7 +179,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - move and edit obstacles in-place,
 - play live simulation preview (racers + camera) without full MP4 rendering,
 - apply starter presets,
-- lock/hide obstacles and reorder layers while editing,
+- lock/hide obstacles and reorder layers while editing (hidden obstacles are immediately excluded from preview/risk requests),
 - shift-click multi-select + bulk delete,
 - drag one selected handle to move the entire selected group,
 - keyboard shortcuts for fast editing (delete/duplicate/select all/nudge),

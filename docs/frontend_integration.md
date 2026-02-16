@@ -500,6 +500,7 @@ The frontend app in `frontend/` already implements:
 - per-racer waveform preview with trim marker (`/waveform`),
 - realtime drag-and-drop parkour builder with live simulation preview (`/preview/simulate`),
 - builder productivity controls: presets, lock/hide toggles, layer ordering, shift-select bulk delete, and keyboard shortcuts,
+- hide toggles immediately refresh preview/risk using only currently visible obstacles,
 - multi-select group drag (drag one selected handle to move full selection),
 - builder history support (undo/redo buttons + keyboard shortcuts),
 - clipboard copy/paste for obstacle groups,

@@ -127,6 +127,7 @@ const showGrid = ref(true)
 const riskScore = ref<number | null>(null)
 const riskWarnings = ref<RiskWarningEntry[]>([])
 const riskyObstacleIds = ref<Set<string>>(new Set())
+const riskWarningTargetIds = ref<string[][]>([])
 const clipboardStatus = ref('')
 const templateCatalog = ref<Record<string, Array<Record<string, unknown>>>>({})
 const templateSource = ref<'fallback' | 'api'>('fallback')
@@ -187,39 +188,27 @@ function applyRiskPayload(
   riskScore.value = risk
   riskWarnings.value = warnings
   const idSet = new Set<string>()
+  const targetIds: string[][] = []
   for (const w of warnings) {
+    const ids: string[] = []
     if (typeof w.obstacle_index === 'number') {
       const id = visibleObstacles.value[w.obstacle_index]?.id
-      if (id) idSet.add(id)
+      if (id) ids.push(id)
     }
     if (Array.isArray(w.obstacle_indices)) {
       for (const idx of w.obstacle_indices) {
         if (typeof idx !== 'number') continue
         const id = visibleObstacles.value[idx]?.id
-        if (id) idSet.add(id)
+        if (id) ids.push(id)
       }
     }
+    const uniq = [...new Set(ids)]
+    for (const id of uniq) idSet.add(id)
+    targetIds.push(uniq)
   }
   riskyObstacleIds.value = idSet
+  riskWarningTargetIds.value = targetIds
 }
-
-function warningObstacleIds(warning: RiskWarningEntry): string[] {
-  const ids: string[] = []
-  if (typeof warning.obstacle_index === 'number') {
-    const id = visibleObstacles.value[warning.obstacle_index]?.id
-    if (id) ids.push(id)
-  }
-  if (Array.isArray(warning.obstacle_indices)) {
-    for (const idx of warning.obstacle_indices) {
-      if (typeof idx !== 'number') continue
-      const id = visibleObstacles.value[idx]?.id
-      if (id) ids.push(id)
-    }
-  }
-  return [...new Set(ids)]
-}
-
-const riskWarningTargetIds = computed(() => riskWarnings.value.map((warning) => warningObstacleIds(warning)))
 
 function focusRiskWarningByIndex(index: number) {
   const ids = riskWarningTargetIds.value[index] ?? []
@@ -507,6 +496,7 @@ watch(
       2,
     )
     emit('update:modelValue', payload)
+    applyRiskPayload(null, [])
     schedulePreview()
     scheduleRiskAnalyze()
     if (
@@ -522,6 +512,9 @@ watch(
 )
 
 watch(hiddenIds, () => {
+  applyRiskPayload(null, [])
+  schedulePreview()
+  scheduleRiskAnalyze()
   if (
     lastSafeGeneration.value &&
     lastSafeGenerationSignature.value &&
