@@ -52,6 +52,9 @@ const previewScale = ref(0.32)
 const finalScale = ref(1.0)
 const outputPathInput = ref('')
 const worldHeight = ref(7600)
+const previewWorldHeightMin = 256
+const previewWorldHeightMax = 20000
+const previewWorldHeightDefault = 6200
 const syncCommonWindowSeconds = ref(0)
 const isBusy = ref(false)
 const racers = ref<RacerForm[]>([])
@@ -118,6 +121,12 @@ function trimMarkerX(racer: RacerForm, width = 220): number {
   const duration = racer.waveformDurationSeconds || 0
   if (duration <= 0) return 0
   return Math.max(0, Math.min(width, (racer.syncTrimStartSeconds / duration) * width))
+}
+
+function normalizeWorldHeight(value: number, fallback = previewWorldHeightDefault): number {
+  const base = Number.isFinite(value) ? value : fallback
+  const rounded = Math.round(base)
+  return Math.max(previewWorldHeightMin, Math.min(previewWorldHeightMax, rounded))
 }
 
 function waveformColor(idx: number): string {
@@ -236,7 +245,7 @@ function buildInlineConfig() {
     render: {
       width: 1080,
       height: 1920,
-      world_height: worldHeight.value,
+      world_height: normalizeWorldHeight(worldHeight.value),
       fps: 30,
       duration_seconds: duration.value,
       countdown_seconds: countdown.value,
@@ -507,7 +516,7 @@ function applyConfigToForm(cfg: Record<string, any>) {
   duration.value = Number(render.duration_seconds ?? duration.value)
   countdown.value = Number(render.countdown_seconds ?? countdown.value)
   winnerHold.value = Number(render.winner_hold_seconds ?? winnerHold.value)
-  worldHeight.value = Number(render.world_height ?? worldHeight.value)
+  worldHeight.value = normalizeWorldHeight(Number(render.world_height ?? worldHeight.value))
   backgroundColor.value = String(bg.solid_color ?? backgroundColor.value)
   syncCommonWindowSeconds.value = Number(cfg.sync_common_window_seconds ?? 0)
   obstacleJson.value = JSON.stringify(cfg.obstacles || [], null, 2)
@@ -865,7 +874,14 @@ onUnmounted(() => {
               </label>
               <label class="text-sm text-slate-300">
                 World Height
-                <input v-model.number="worldHeight" type="number" min="1920" class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100" />
+                <input
+                  v-model.number="worldHeight"
+                  type="number"
+                  :min="previewWorldHeightMin"
+                  :max="previewWorldHeightMax"
+                  class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
+                  @blur="worldHeight = normalizeWorldHeight(worldHeight)"
+                />
               </label>
               <label class="text-sm text-slate-300">
                 Countdown (seconds)

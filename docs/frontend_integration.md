@@ -586,6 +586,7 @@ The frontend app in `frontend/` already implements:
 - changing the configured API base triggers bootstrap reload plus preview/risk refresh against the new backend,
 - changing API base also clears the previously shown safe-generation result badge to avoid stale cross-backend status,
 - capability ranges from backend are normalized client-side (finite values, `min <= max`, default clamped into range) before being applied to controls,
+- App-level render form also clamps world-height input (`render.world_height`) into preview bounds before submitting inline job configs,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
 - preview and final job submission,
