@@ -219,8 +219,10 @@ function warningObstacleIds(warning: RiskWarningEntry): string[] {
   return [...new Set(ids)]
 }
 
-function focusRiskWarning(warning: RiskWarningEntry) {
-  const ids = warningObstacleIds(warning)
+const riskWarningTargetIds = computed(() => riskWarnings.value.map((warning) => warningObstacleIds(warning)))
+
+function focusRiskWarningByIndex(index: number) {
+  const ids = riskWarningTargetIds.value[index] ?? []
   if (ids.length === 0) return
   selectedIds.value = ids
   selectedId.value = ids[0] ?? null
@@ -2584,8 +2586,8 @@ onUnmounted(() => {
           <button
             type="button"
             class="w-full rounded border border-transparent px-1 py-0.5 text-left hover:border-slate-700 hover:bg-slate-900/60 disabled:cursor-default disabled:hover:border-transparent disabled:hover:bg-transparent"
-            :disabled="warningObstacleIds(w).length === 0"
-            @click="focusRiskWarning(w)"
+            :disabled="(riskWarningTargetIds[idx]?.length ?? 0) === 0"
+            @click="focusRiskWarningByIndex(idx)"
           >
             <span
               class="uppercase"
@@ -2594,8 +2596,8 @@ onUnmounted(() => {
               {{ w.level }}
             </span>
             · {{ w.message }}
-            <span v-if="warningObstacleIds(w).length > 0" class="text-cyan-300">
-              (focus {{ warningObstacleIds(w).length }})
+            <span v-if="(riskWarningTargetIds[idx]?.length ?? 0) > 0" class="text-cyan-300">
+              (focus {{ riskWarningTargetIds[idx]?.length ?? 0 }})
             </span>
           </button>
         </li>
