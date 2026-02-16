@@ -154,6 +154,10 @@ function normalizeWorldHeight(value: number, fallback = worldHeightCaps.value.de
   return Math.max(worldHeightCaps.value.min, Math.min(worldHeightCaps.value.max, rounded))
 }
 
+function resetWorldHeightToDefault() {
+  worldHeight.value = normalizeWorldHeight(worldHeightCaps.value.default)
+}
+
 function waveformColor(idx: number): string {
   const palette = ['#22D3EE', '#A78BFA', '#34D399', '#F472B6', '#FBBF24', '#60A5FA']
   return palette[idx % palette.length] ?? '#22D3EE'
@@ -928,14 +932,23 @@ onUnmounted(() => {
               </label>
               <label class="text-sm text-slate-300">
                 World Height
-                <input
-                  v-model.number="worldHeight"
-                  type="number"
-                  :min="worldHeightCaps.min"
-                  :max="worldHeightCaps.max"
-                  class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
-                  @blur="worldHeight = normalizeWorldHeight(worldHeight)"
-                />
+                <div class="mt-1 flex gap-2">
+                  <input
+                    v-model.number="worldHeight"
+                    type="number"
+                    :min="worldHeightCaps.min"
+                    :max="worldHeightCaps.max"
+                    class="w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
+                    @blur="worldHeight = normalizeWorldHeight(worldHeight)"
+                  />
+                  <button
+                    type="button"
+                    class="rounded-md border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-200 hover:bg-slate-800"
+                    @click="resetWorldHeightToDefault"
+                  >
+                    Default
+                  </button>
+                </div>
                 <span class="mt-1 block text-[11px] text-slate-500">
                   bounds {{ worldHeightCaps.min }}-{{ worldHeightCaps.max }}, default {{ worldHeightCaps.default }}
                 </span>

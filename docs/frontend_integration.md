@@ -589,6 +589,7 @@ The frontend app in `frontend/` already implements:
 - App-level render form fetches preview world-height bounds from `/builder/capabilities` and clamps `render.world_height` before submitting inline job configs,
 - changing API base in App triggers refresh of jobs/projects/system-info plus builder capability bounds from the selected backend,
 - world-height input displays capability-derived min/max/default hint values in the main render form,
+- world-height input has a one-click reset-to-default action sourced from capability default,
 - if capability refresh fails, App keeps prior bounds and does not mark backend offline based on this enhancement call alone,
 - project save/load/update/delete against backend DB CRUD,
 - direct preview/final render submission from saved projects,
