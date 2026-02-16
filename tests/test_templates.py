@@ -3,6 +3,7 @@ from __future__ import annotations
 from songracer.config import ObstacleConfig
 from songracer.templates import (
     generate_obstacle_stream,
+    obstacle_type_catalog,
     obstacle_templates,
     obstacle_templates_payload,
 )
@@ -40,3 +41,9 @@ def test_generate_obstacle_stream_deterministic_for_same_seed() -> None:
     c = generate_obstacle_stream(count=6, start_y=900, spacing=240, width=1080, seed=43)
     assert a == b
     assert a != c
+
+
+def test_obstacle_type_catalog_has_known_labels() -> None:
+    catalog = obstacle_type_catalog()
+    assert any(item["type"] == "rect" for item in catalog)
+    assert any(item["label"] == "Ring Gap" for item in catalog)

@@ -180,6 +180,18 @@ def obstacle_templates_payload() -> dict[str, Any]:
     }
 
 
+def obstacle_type_catalog() -> list[dict[str, str]]:
+    return [
+        {"type": "rect", "label": "Rect"},
+        {"type": "moving_rect", "label": "Moving Rect"},
+        {"type": "circle", "label": "Circle"},
+        {"type": "ring_gap", "label": "Ring Gap"},
+        {"type": "spinner", "label": "Spinner"},
+        {"type": "pendulum", "label": "Pendulum"},
+        {"type": "one_way_gate", "label": "One-way Gate"},
+    ]
+
+
 def generate_obstacle_stream(
     *,
     count: int,

@@ -25,6 +25,20 @@ Response:
 ### `GET /system/info`
 Resolved runtime storage locations (useful when writable fallback paths are selected).
 
+### `GET /templates/obstacle-types`
+Returns obstacle type catalog for builder palette rendering.
+
+Response:
+
+```json
+{
+  "types": [
+    { "type": "rect", "label": "Rect" },
+    { "type": "ring_gap", "label": "Ring Gap" }
+  ]
+}
+```
+
 ### `GET /templates/obstacles`
 Returns preset obstacle layouts for the realtime parkour builder.
 
@@ -430,6 +444,7 @@ The frontend app in `frontend/` already implements:
 - one-click clear/reset action for obstacle layout,
 - camera focus helpers for selected obstacle and full-content fit,
 - local browser persistence for builder tuning preferences (grid/snap/preview knobs),
+- palette labels/types can be sourced from `/templates/obstacle-types`,
 - preset buttons resolve from `/templates/obstacles` and gracefully fallback to local defaults,
 - procedural stream generation is available via `/templates/obstacles/generate` (append/replace in UI),
 - UI includes one-click random seed for quick stream iteration,

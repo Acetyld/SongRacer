@@ -78,7 +78,7 @@ const emit = defineEmits<{
 
 const courseWidth = 1080
 const viewportHeight = 980
-const paletteTypes: ObstacleType[] = [
+const FALLBACK_PALETTE_TYPES: ObstacleType[] = [
   'rect',
   'moving_rect',
   'circle',
@@ -87,6 +87,10 @@ const paletteTypes: ObstacleType[] = [
   'pendulum',
   'one_way_gate',
 ]
+const paletteTypes = ref<ObstacleType[]>([...FALLBACK_PALETTE_TYPES])
+const paletteLabelByType = ref<Record<string, string>>(
+  Object.fromEntries(FALLBACK_PALETTE_TYPES.map((t) => [t, t.replace(/_/g, ' ')])),
+)
 
 const obstacles = ref<BuilderObstacle[]>([])
 const parseError = ref('')
@@ -144,7 +148,11 @@ let previewRequestNonce = 0
 const PREF_KEY = 'songracer_parkour_builder_prefs_v1'
 
 function obstacleLabel(t: ObstacleType): string {
-  return t.replace(/_/g, ' ')
+  return paletteLabelByType.value[t] || t.replace(/_/g, ' ')
+}
+
+function isObstacleType(value: string): value is ObstacleType {
+  return FALLBACK_PALETTE_TYPES.includes(value as ObstacleType)
 }
 
 function uid(): string {
@@ -247,7 +255,7 @@ function parseObstacleJson(raw: string): BuilderObstacle[] {
       throw new Error(`Obstacle #${idx} must be an object`)
     }
     const o = it as Record<string, any>
-    if (!paletteTypes.includes(String(o.type) as ObstacleType)) {
+    if (!isObstacleType(String(o.type))) {
       throw new Error(`Obstacle #${idx} type is not supported in builder`)
     }
     return {
@@ -443,7 +451,9 @@ watch(
 watch(
   () => props.apiBase,
   () => {
+    void loadObstacleTypeCatalog()
     void loadPresetTemplates()
+    void refreshPreviewCacheInfo()
   },
 )
 
@@ -655,8 +665,10 @@ function onPaletteDragStart(ev: DragEvent, type: ObstacleType) {
 
 function onCanvasDrop(ev: DragEvent) {
   if (!ev.dataTransfer) return
-  const type = ev.dataTransfer.getData('text/songracer-obstacle-type') as ObstacleType
-  if (!paletteTypes.includes(type)) return
+  const rawType = ev.dataTransfer.getData('text/songracer-obstacle-type')
+  if (!isObstacleType(rawType)) return
+  const type = rawType as ObstacleType
+  if (!paletteTypes.value.includes(type)) return
   const container = ev.currentTarget as HTMLElement
   const pt = toCanvasXY(ev.clientX, ev.clientY, container)
   const obs = defaultObstacle(type, snap(pt.x), snap(pt.y))
@@ -802,7 +814,7 @@ async function pasteObstaclesFromClipboard() {
     for (const item of arr) {
       if (!item || typeof item !== 'object') continue
       const type = String((item as Record<string, unknown>).type || '')
-      if (!paletteTypes.includes(type as ObstacleType)) continue
+      if (!isObstacleType(type)) continue
       const base = {
         ...(item as Record<string, unknown>),
       }
@@ -1074,6 +1086,38 @@ function previewRacersPayload(): PreviewRacer[] {
     y: 420 + (idx % 2) * 42,
     radius: 96,
   }))
+}
+
+async function loadObstacleTypeCatalog() {
+  try {
+    const resp = await fetch(`${props.apiBase}/templates/obstacle-types`)
+    if (!resp.ok) return
+    const body = await resp.json()
+    const entries = Array.isArray(body?.types) ? body.types : []
+    const nextTypes: ObstacleType[] = []
+    const labelMap: Record<string, string> = {}
+    for (const item of entries) {
+      if (!item || typeof item !== 'object') continue
+      const t = String((item as Record<string, unknown>).type || '')
+      if (!isObstacleType(t)) continue
+      if (!nextTypes.includes(t)) {
+        nextTypes.push(t)
+      }
+      const label = String((item as Record<string, unknown>).label || '').trim()
+      if (label) {
+        labelMap[t] = label
+      }
+    }
+    if (nextTypes.length > 0) {
+      paletteTypes.value = nextTypes
+      paletteLabelByType.value = {
+        ...Object.fromEntries(FALLBACK_PALETTE_TYPES.map((t) => [t, t.replace(/_/g, ' ')])),
+        ...labelMap,
+      }
+    }
+  } catch (_err) {
+    // ignore catalog load failure and keep fallback palette
+  }
 }
 
 async function loadPresetTemplates() {
@@ -1455,6 +1499,7 @@ function randomizeGenerateSeed() {
 onMounted(() => {
   loadPrefs()
   tryLoadBuilderShareFromUrl()
+  void loadObstacleTypeCatalog()
   void loadPresetTemplates()
   void refreshPreviewCacheInfo()
   void requestPreview()

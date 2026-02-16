@@ -42,7 +42,11 @@ from .jobs import JobManager
 from .pipeline import render_race
 from .simulation import simulate_race
 from .storage import resolve_writable_dir
-from .templates import generate_obstacle_stream, obstacle_templates_payload
+from .templates import (
+    generate_obstacle_stream,
+    obstacle_templates_payload,
+    obstacle_type_catalog,
+)
 from .sync import (
     SyncError,
     apply_analysis_to_config_obj,
@@ -340,6 +344,11 @@ def system_info() -> dict[str, Any]:
 @app.get("/templates/obstacles")
 def templates_obstacles() -> dict[str, Any]:
     return obstacle_templates_payload()
+
+
+@app.get("/templates/obstacle-types")
+def templates_obstacle_types() -> dict[str, Any]:
+    return {"types": obstacle_type_catalog()}
 
 
 @app.post("/templates/obstacles/generate")

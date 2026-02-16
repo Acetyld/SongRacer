@@ -134,6 +134,7 @@ Endpoints:
 
 - `GET /health`
 - `GET /system/info` (resolved writable storage + DB paths)
+- `GET /templates/obstacle-types` (obstacle type catalog + labels for builder palette)
 - `GET /templates/obstacles` (preset obstacle layouts for builder)
 - `POST /templates/obstacles/generate` (procedural obstacle stream generator)
 - `POST /uploads` (multipart video upload)
