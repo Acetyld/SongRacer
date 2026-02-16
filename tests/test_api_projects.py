@@ -116,7 +116,35 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert "risk_score" in generated_safe_body
         assert generated_safe_body["target_max_risk"] == 100
         assert generated_safe_body["accepted"] is True
+        assert generated_safe_body["warning_count"] == len(generated_safe_body["warnings"])
         assert isinstance(generated_safe_body["warnings"], list)
+        assert generated_safe_body["accepted"] == (
+            generated_safe_body["risk_score"] <= generated_safe_body["target_max_risk"]
+        )
+
+        generated_safe_strict = client.post(
+            "/templates/obstacles/generate-safe",
+            json={
+                "count": 6,
+                "start_y": 950,
+                "spacing": 240,
+                "width": 1080,
+                "seed": 99,
+                "target_max_risk": 0,
+                "max_attempts": 3,
+            },
+        )
+        assert generated_safe_strict.status_code == 200
+        generated_safe_strict_body = generated_safe_strict.json()
+        assert generated_safe_strict_body["count"] == 6
+        assert 1 <= generated_safe_strict_body["attempts"] <= 3
+        assert generated_safe_strict_body["target_max_risk"] == 0
+        assert generated_safe_strict_body["warning_count"] == len(
+            generated_safe_strict_body["warnings"]
+        )
+        assert generated_safe_strict_body["accepted"] == (
+            generated_safe_strict_body["risk_score"] <= generated_safe_strict_body["target_max_risk"]
+        )
 
         inline_valid = client.post("/validate/config", json={"config": payload_config})
         assert inline_valid.status_code == 200
