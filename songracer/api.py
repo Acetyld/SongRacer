@@ -631,6 +631,9 @@ def preview_simulate(payload: PreviewSimRequest) -> dict[str, Any]:
         "sampling_coverage_ratio": (
             float(len(frame_ids) / sim.positions.shape[0]) if sim.positions.shape[0] > 0 else 0.0
         ),
+        "sampled_coverage_ratio": (
+            float(len(frame_ids) / len(full_frame_ids)) if len(full_frame_ids) > 0 else 0.0
+        ),
         "returned_sample_duration_seconds": max(
             0.0, (len(frame_ids) - 1) * (step / cfg.render.fps)
         ),

@@ -41,6 +41,13 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert body["requested_sample_fps"] == payload["sample_fps"]
         assert body["requested_max_frames"] == payload["max_frames"]
         assert body["returned_sample_frames"] <= body["requested_max_frames"]
+        expected_source_cov = body["returned_sample_frames"] / body["total_source_frames"]
+        expected_sampled_cov = body["returned_sample_frames"] / body["total_sample_frames"]
+        assert 0.0 <= body["sampling_coverage_ratio"] <= 1.0
+        assert 0.0 <= body["sampled_coverage_ratio"] <= 1.0
+        assert abs(body["sampling_coverage_ratio"] - expected_source_cov) < 1e-9
+        assert abs(body["sampled_coverage_ratio"] - expected_sampled_cov) < 1e-9
+        assert body["sampled_coverage_ratio"] >= body["sampling_coverage_ratio"]
         assert isinstance(body["goal_y"], float)
         assert 0.0 <= body["goal_y"] <= body["world"]["world_height"]
         assert len(body["positions"]) == len(body["frame_indices"])
@@ -240,6 +247,7 @@ def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
         )
         assert abs(body["total_sample_duration_seconds"] - expected_total_duration) < 1e-9
         assert body["total_sample_duration_seconds"] == body["returned_sample_duration_seconds"]
+        assert body["sampled_coverage_ratio"] == 1.0
         assert body["total_sample_duration_seconds"] <= (body["total_source_frames"] - 1) / body["fps"]
         assert body["total_sample_duration_seconds"] <= body["source_duration_seconds"]
         assert len(body["frame_indices"]) <= default_max_frames
@@ -367,6 +375,8 @@ def test_preview_simulate_respects_max_frames_cap() -> None:
         )
         assert abs(body["total_sample_duration_seconds"] - expected_total_duration) < 1e-9
         assert body["total_sample_duration_seconds"] > body["returned_sample_duration_seconds"]
+        assert body["sampled_coverage_ratio"] < 1.0
+        assert body["sampling_coverage_ratio"] <= body["sampled_coverage_ratio"]
         assert body["total_sample_duration_seconds"] <= (body["total_source_frames"] - 1) / body["fps"]
         assert body["total_sample_duration_seconds"] <= body["source_duration_seconds"]
         assert body["source_duration_seconds"] >= body["total_sample_duration_seconds"]

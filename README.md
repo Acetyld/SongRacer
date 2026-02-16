@@ -210,6 +210,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - live preview scrub row shows sampled-window span (`returned_sample_duration_seconds/total_sample_duration_seconds`),
 - preview API response includes both requested and effective sampling metadata for diagnostics,
 - preview API includes explicit `returned_sample_frames` for quick sampled-length checks,
+- preview API includes sampling coverage ratios against source and sampled timelines,
 - preview API includes returned/total sampled-window durations for timeline diagnostics,
 - preview API includes `total_source_frames` so sampled timelines can be related back to full simulated frame count,
 - preview API includes `source_duration_seconds` for full simulated timeline span diagnostics,

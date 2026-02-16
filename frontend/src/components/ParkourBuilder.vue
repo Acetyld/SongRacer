@@ -61,6 +61,8 @@ type PreviewData = {
   total_source_frames: number
   source_duration_seconds: number
   returned_sample_frames: number
+  sampling_coverage_ratio: number
+  sampled_coverage_ratio: number
   returned_sample_duration_seconds: number
   total_sample_duration_seconds: number
   positions: number[][][]
@@ -1621,6 +1623,8 @@ async function requestPreview() {
         body.returned_sample_frames ??
           (Array.isArray(body.frame_indices) ? body.frame_indices.length : 0),
       ),
+      sampling_coverage_ratio: Number(body.sampling_coverage_ratio ?? 0),
+      sampled_coverage_ratio: Number(body.sampled_coverage_ratio ?? 0),
       returned_sample_duration_seconds: Number(body.returned_sample_duration_seconds ?? 0),
       total_sample_duration_seconds: Number(body.total_sample_duration_seconds ?? 0),
       positions: Array.isArray(body.positions) ? body.positions : [],
@@ -1877,10 +1881,9 @@ function previewSampleCountText(): string {
 
 function previewSampleCoverageText(): string {
   if (!previewData.value) return ''
-  const shown = Number(previewData.value.returned_sample_frames || 0)
-  const total = Number(previewData.value.total_sample_frames || 0)
-  if (!Number.isFinite(shown) || !Number.isFinite(total) || total <= 0) return ''
-  const pct = Math.max(0, Math.min(100, (shown / total) * 100))
+  const ratio = Number(previewData.value.sampled_coverage_ratio ?? 0)
+  if (!Number.isFinite(ratio) || ratio < 0) return ''
+  const pct = Math.max(0, Math.min(100, ratio * 100))
   return `coverage ${pct.toFixed(1)}%`
 }
 
