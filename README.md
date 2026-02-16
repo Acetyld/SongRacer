@@ -204,7 +204,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - tune live preview sampling (sample FPS + frame cap) and optionally disable auto-preview,
 - live preview scrub row shows requested→effective sampled fps, frame-step, and requested frame-cap metadata from backend,
 - live preview scrub row also shows sampled frame count (`returned_sample_frames/total_sample_frames`),
-- live preview scrub row shows sampled-window span from backend (`returned_sample_duration_seconds`),
+- live preview scrub row shows sampled-window span (`shown/total` seconds) from backend metadata,
 - preview API response includes both requested and effective sampling metadata for diagnostics,
 - preview API includes explicit `returned_sample_frames` for quick sampled-length checks,
 - preview response guarantees `returned_sample_frames <= requested_max_frames`,

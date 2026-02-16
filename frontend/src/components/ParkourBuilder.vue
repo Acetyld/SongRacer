@@ -1871,9 +1871,15 @@ function previewSampleCountText(): string {
 
 function previewSampleWindowText(): string {
   if (!previewData.value) return ''
-  const seconds = Number(previewData.value.returned_sample_duration_seconds || 0)
-  if (!Number.isFinite(seconds) || seconds <= 0) return ''
-  return `window ${seconds.toFixed(2)}s`
+  const shown = Number(previewData.value.returned_sample_duration_seconds || 0)
+  const totalFrames = Number(previewData.value.total_sample_frames || 0)
+  const interval = Number(previewData.value.sample_interval_seconds || 0)
+  if (!Number.isFinite(shown) || shown < 0) return ''
+  if (!Number.isFinite(totalFrames) || totalFrames <= 0 || !Number.isFinite(interval) || interval <= 0) {
+    return `window ${shown.toFixed(2)}s`
+  }
+  const total = Math.max(0, (totalFrames - 1) * interval)
+  return `window ${shown.toFixed(2)}s / ${total.toFixed(2)}s`
 }
 
 function previewSamplingText(): string {
