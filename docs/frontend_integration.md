@@ -368,6 +368,10 @@ Response includes sampled arrays for:
 - `obstacle_visuals`,
 - and metadata like `sample_fps`, `sample_step_frames`, `sample_interval_seconds`, `winner_index`, `winner_frame`, `total_sample_frames`, `truncated`, `cache_hit`.
 
+Sampling metadata note:
+- `sample_step_frames` is integer frame-step size used internally.
+- returned `sample_fps` is the **effective** sampled rate (`render_fps / sample_step_frames`) and can differ slightly from requested `sample_fps`.
+
 Live preview notes:
 - designed for interactive builder feedback (not final rendering),
 - sampled output is capped by `sample_fps` + `max_frames`,

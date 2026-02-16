@@ -45,8 +45,10 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert isinstance(body["winner_frame"], int)
         assert isinstance(body["truncated"], bool)
         assert body["cache_hit"] is False
-        assert body["sample_step_frames"] >= 1
-        assert body["sample_interval_seconds"] > 0
+        expected_step = max(1, int(round(payload["render"]["fps"] / payload["sample_fps"])))
+        assert body["sample_step_frames"] == expected_step
+        assert abs(body["sample_fps"] - (payload["render"]["fps"] / expected_step)) < 1e-9
+        assert abs(body["sample_interval_seconds"] - (expected_step / payload["render"]["fps"])) < 1e-9
         assert body["total_sample_frames"] >= len(body["frame_indices"])
 
 
