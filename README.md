@@ -251,7 +251,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - switching builder API base also clears prior safe-generation result badge to avoid cross-backend stale status.
 - builder preview requests clamp world-height to capability-advertised bounds before simulation calls.
 - preview API defaults `render.world_height` from capability-advertised preview bounds when omitted.
-- main render form clamps world-height input to backend preview bounds before building inline job configs.
+- main render form fetches preview world-height bounds from `/builder/capabilities` and clamps world-height input before building inline job configs.
 - keep raw obstacle JSON synchronized for full-control edits.
 
 Live preview in builder is simulation-only and intentionally sampled/capped for responsiveness.

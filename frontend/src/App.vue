@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import ParkourBuilder from './components/ParkourBuilder.vue'
 
 type RacerForm = {
@@ -42,6 +42,12 @@ type SystemInfo = {
   db_path?: string
 }
 
+type RangeCaps = {
+  min: number
+  max: number
+  default: number
+}
+
 const apiBase = ref('http://localhost:8080')
 const title = ref('SongRacer Job')
 const duration = ref(24)
@@ -52,9 +58,7 @@ const previewScale = ref(0.32)
 const finalScale = ref(1.0)
 const outputPathInput = ref('')
 const worldHeight = ref(7600)
-const previewWorldHeightMin = 256
-const previewWorldHeightMax = 20000
-const previewWorldHeightDefault = 6200
+const worldHeightCaps = ref<RangeCaps>({ min: 256, max: 20000, default: 6200 })
 const syncCommonWindowSeconds = ref(0)
 const isBusy = ref(false)
 const racers = ref<RacerForm[]>([])
@@ -123,10 +127,31 @@ function trimMarkerX(racer: RacerForm, width = 220): number {
   return Math.max(0, Math.min(width, (racer.syncTrimStartSeconds / duration) * width))
 }
 
-function normalizeWorldHeight(value: number, fallback = previewWorldHeightDefault): number {
+function normalizeRangeCaps(raw: unknown, fallback: RangeCaps): RangeCaps {
+  const obj = raw as Record<string, unknown> | null
+  const minCandidate = Number(obj?.min)
+  const maxCandidate = Number(obj?.max)
+  const defaultCandidate = Number(obj?.default)
+  let min = Number.isFinite(minCandidate) ? minCandidate : fallback.min
+  let max = Number.isFinite(maxCandidate) ? maxCandidate : fallback.max
+  if (max < min) {
+    const swap = min
+    min = max
+    max = swap
+  }
+  const fallbackDefault = Math.max(min, Math.min(max, fallback.default))
+  const safeDefault = Number.isFinite(defaultCandidate) ? defaultCandidate : fallbackDefault
+  return {
+    min,
+    max,
+    default: Math.max(min, Math.min(max, safeDefault)),
+  }
+}
+
+function normalizeWorldHeight(value: number, fallback = worldHeightCaps.value.default): number {
   const base = Number.isFinite(value) ? value : fallback
   const rounded = Math.round(base)
-  return Math.max(previewWorldHeightMin, Math.min(previewWorldHeightMax, rounded))
+  return Math.max(worldHeightCaps.value.min, Math.min(worldHeightCaps.value.max, rounded))
 }
 
 function waveformColor(idx: number): string {
@@ -480,6 +505,25 @@ async function refreshSystemInfo() {
   }
 }
 
+async function refreshBuilderCapabilities() {
+  try {
+    const resp = await fetch(`${apiBase.value}/builder/capabilities`)
+    if (!resp.ok) {
+      backendOnline.value = false
+      return
+    }
+    const body = await resp.json()
+    worldHeightCaps.value = normalizeRangeCaps(
+      (body as Record<string, any>)?.preview?.world_height,
+      worldHeightCaps.value,
+    )
+    worldHeight.value = normalizeWorldHeight(worldHeight.value)
+    backendOnline.value = true
+  } catch (_err) {
+    backendOnline.value = false
+  }
+}
+
 async function saveProject() {
   isBusy.value = true
   try {
@@ -704,8 +748,16 @@ onMounted(() => {
   refreshJobs()
   refreshProjects()
   refreshSystemInfo()
+  refreshBuilderCapabilities()
   pollHandle = window.setInterval(refreshJobs, 2000)
 })
+
+watch(
+  () => apiBase.value,
+  () => {
+    refreshBuilderCapabilities()
+  },
+)
 
 onUnmounted(() => {
   if (pollHandle) {
@@ -877,8 +929,8 @@ onUnmounted(() => {
                 <input
                   v-model.number="worldHeight"
                   type="number"
-                  :min="previewWorldHeightMin"
-                  :max="previewWorldHeightMax"
+                  :min="worldHeightCaps.min"
+                  :max="worldHeightCaps.max"
                   class="mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
                   @blur="worldHeight = normalizeWorldHeight(worldHeight)"
                 />
