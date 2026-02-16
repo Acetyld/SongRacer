@@ -94,10 +94,14 @@ const previewLoading = ref(false)
 const previewError = ref('')
 const followPreviewCamera = ref(true)
 const showGrid = ref(true)
+const riskScore = ref<number | null>(null)
+const riskWarnings = ref<Array<{ level: string; code: string; message: string }>>([])
+const riskyObstacleIdx = ref<Set<number>>(new Set())
 
 let suppressEmit = false
 let previewDebounce: number | null = null
 let playbackHandle: number | null = null
+let riskDebounce: number | null = null
 
 function obstacleLabel(t: ObstacleType): string {
   return t.replace(/_/g, ' ')
@@ -245,6 +249,7 @@ watch(
     )
     emit('update:modelValue', payload)
     schedulePreview()
+    scheduleRiskAnalyze()
   },
   { deep: true },
 )
@@ -343,6 +348,36 @@ function deleteSelected() {
   selectedId.value = null
 }
 
+function applyPreset(preset: 'starter' | 'rings' | 'gates') {
+  const make = (type: ObstacleType, x: number, y: number) => defaultObstacle(type, x, y)
+  if (preset === 'starter') {
+    obstacles.value = [
+      { ...make('rect', 280, 980), angle_deg: -22, width: 300 },
+      { ...make('moving_rect', 760, 1120), angle_deg: 18, width: 290, amplitude: 120 },
+      { ...make('ring_gap', 540, 1380), radius: 160, gap_size_deg: 64 },
+      { ...make('spinner', 540, 1680), length: 340, spin_speed_deg: 160 },
+      { ...make('one_way_gate', 540, 1940), width: 620, one_way: 'down' },
+    ]
+  } else if (preset === 'rings') {
+    obstacles.value = [
+      { ...make('ring_gap', 350, 980), radius: 126, gap_center_deg: 250, gap_size_deg: 62 },
+      { ...make('ring_gap', 730, 1210), radius: 130, gap_center_deg: 200, gap_size_deg: 58 },
+      { ...make('ring_gap', 420, 1460), radius: 142, gap_center_deg: 280, gap_size_deg: 60 },
+      { ...make('ring_gap', 700, 1730), radius: 132, gap_center_deg: 245, gap_size_deg: 58 },
+      { ...make('spinner', 540, 2060), length: 320, spin_speed_deg: 150 },
+    ]
+  } else {
+    obstacles.value = [
+      { ...make('rect', 260, 940), angle_deg: -18, width: 320 },
+      { ...make('one_way_gate', 540, 1120), width: 640, one_way: 'down' },
+      { ...make('one_way_gate', 540, 1270), width: 640, one_way: 'up' },
+      { ...make('moving_rect', 740, 1510), angle_deg: 14, width: 320, axis: 'x' },
+      { ...make('pendulum', 540, 1820), length: 290, angle_deg: 15, amplitude: 56 },
+    ]
+  }
+  selectedId.value = obstacles.value[0]?.id ?? null
+}
+
 const cameraMax = computed(() => Math.max(0, props.worldHeight - viewportHeight))
 
 watch(
@@ -415,6 +450,37 @@ async function requestPreview() {
   }
 }
 
+async function analyzeRisk() {
+  try {
+    const resp = await fetch(`${props.apiBase}/analyze/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        config: {
+          render: { width: 1080, height: 1920 },
+          obstacles: obstacles.value.map((o) => obstacleToSerializable(o)),
+        },
+      }),
+    })
+    if (!resp.ok) {
+      throw new Error(await resp.text())
+    }
+    const body = await resp.json()
+    riskScore.value = Number(body.risk_score ?? 0)
+    riskWarnings.value = Array.isArray(body.warnings) ? body.warnings : []
+    const idxSet = new Set<number>()
+    for (const w of riskWarnings.value) {
+      const m = /Obstacle\s+#(\d+)/i.exec(String(w.message || ''))
+      if (m) idxSet.add(Number(m[1]))
+    }
+    riskyObstacleIdx.value = idxSet
+  } catch (_err) {
+    riskScore.value = null
+    riskWarnings.value = []
+    riskyObstacleIdx.value = new Set()
+  }
+}
+
 function schedulePreview() {
   if (previewDebounce) {
     window.clearTimeout(previewDebounce)
@@ -423,6 +489,16 @@ function schedulePreview() {
   previewDebounce = window.setTimeout(() => {
     void requestPreview()
   }, 360)
+}
+
+function scheduleRiskAnalyze() {
+  if (riskDebounce) {
+    window.clearTimeout(riskDebounce)
+    riskDebounce = null
+  }
+  riskDebounce = window.setTimeout(() => {
+    void analyzeRisk()
+  }, 450)
 }
 
 function togglePlayPreview() {
@@ -562,6 +638,7 @@ function previewProgressText(): string {
 
 onMounted(() => {
   void requestPreview()
+  void analyzeRisk()
 })
 
 onUnmounted(() => {
@@ -572,6 +649,10 @@ onUnmounted(() => {
   if (playbackHandle) {
     clearInterval(playbackHandle)
     playbackHandle = null
+  }
+  if (riskDebounce) {
+    window.clearTimeout(riskDebounce)
+    riskDebounce = null
   }
 })
 </script>
@@ -609,6 +690,30 @@ onUnmounted(() => {
         @click="requestPreview"
       >
         {{ previewLoading ? 'Refreshing...' : 'Refresh Live Preview' }}
+      </button>
+      <button
+        class="rounded border border-amber-600/50 bg-amber-900/30 px-2 py-1 text-[11px] text-amber-200 hover:bg-amber-800/40"
+        @click="analyzeRisk"
+      >
+        Analyze Risk
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700"
+        @click="applyPreset('starter')"
+      >
+        Preset: Starter
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700"
+        @click="applyPreset('rings')"
+      >
+        Preset: Rings
+      </button>
+      <button
+        class="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-[11px] text-slate-100 hover:bg-slate-700"
+        @click="applyPreset('gates')"
+      >
+        Preset: Gates
       </button>
       <button
         class="rounded border border-violet-600/50 bg-violet-900/30 px-2 py-1 text-[11px] text-violet-200 hover:bg-violet-800/40 disabled:opacity-40"
@@ -652,6 +757,13 @@ onUnmounted(() => {
             Follow preview camera
           </label>
           <span class="text-slate-400">{{ previewProgressText() }}</span>
+          <span
+            v-if="riskScore !== null"
+            class="rounded border px-2 py-0.5"
+            :class="(riskScore ?? 0) > 55 ? 'border-rose-500/50 text-rose-300' : (riskScore ?? 0) > 28 ? 'border-amber-500/50 text-amber-300' : 'border-emerald-500/50 text-emerald-300'"
+          >
+            Risk {{ riskScore }}
+          </span>
         </div>
 
         <div
@@ -757,7 +869,7 @@ onUnmounted(() => {
                 :cy="obstacleScreenY(obstaclePosition(o).y)"
                 r="12"
                 fill="#0f172a"
-                stroke="#e2e8f0"
+                :stroke="riskyObstacleIdx.has(idx) ? '#fb7185' : '#e2e8f0'"
                 stroke-width="2"
                 class="cursor-move"
                 @pointerdown.stop.prevent="startDragObstacle(o, $event)"
@@ -878,6 +990,22 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
+    </div>
+    <div v-if="riskWarnings.length > 0" class="rounded border border-slate-700 bg-slate-950/60 p-2">
+      <p class="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">
+        Risk Warnings
+      </p>
+      <ul class="max-h-24 space-y-1 overflow-auto text-[11px] text-slate-400">
+        <li v-for="(w, idx) in riskWarnings" :key="`${w.code}_${idx}`">
+          <span
+            class="uppercase"
+            :class="w.level === 'high' ? 'text-rose-300' : w.level === 'medium' ? 'text-amber-300' : 'text-sky-300'"
+          >
+            {{ w.level }}
+          </span>
+          · {{ w.message }}
+        </li>
+      </ul>
     </div>
     <p v-if="parseError" class="text-xs text-rose-300">{{ parseError }}</p>
   </div>
