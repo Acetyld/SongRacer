@@ -40,6 +40,7 @@ def test_preview_simulate_returns_timeline_payload() -> None:
         assert body["returned_sample_frames"] == len(body["frame_indices"])
         assert body["requested_sample_fps"] == payload["sample_fps"]
         assert body["requested_max_frames"] == payload["max_frames"]
+        assert body["returned_sample_frames"] <= body["requested_max_frames"]
         assert len(body["positions"]) == len(body["frame_indices"])
         assert len(body["leaders"]) == len(body["frame_indices"])
         assert len(body["camera_y"]) == len(body["frame_indices"])
@@ -137,6 +138,7 @@ def test_preview_simulate_defaults_align_with_builder_capabilities() -> None:
         assert body["sample_fps"] <= default_sample_fps
         assert len(body["frame_indices"]) <= default_max_frames
         assert body["returned_sample_frames"] == len(body["frame_indices"])
+        assert body["returned_sample_frames"] <= body["requested_max_frames"]
         assert body["truncated"] is False
         assert body["total_sample_frames"] == len(body["frame_indices"])
 
@@ -202,6 +204,7 @@ def test_preview_simulate_respects_max_frames_cap() -> None:
         assert body["requested_max_frames"] == payload["max_frames"]
         assert len(body["frame_indices"]) <= 40
         assert body["returned_sample_frames"] == len(body["frame_indices"])
+        assert body["returned_sample_frames"] == body["requested_max_frames"]
         assert len(body["frame_indices"]) == 40
         assert len(body["positions"]) == len(body["frame_indices"])
         assert body["truncated"] is True
