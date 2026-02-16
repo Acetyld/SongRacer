@@ -376,11 +376,14 @@ def builder_capabilities() -> dict[str, Any]:
 
 @app.get("/builder/bootstrap")
 def builder_bootstrap() -> dict[str, Any]:
-    return {
+    payload = {
         "capabilities": _BUILDER_CAPABILITIES,
         "obstacle_types": obstacle_type_catalog(),
         "templates": obstacle_templates_payload(),
     }
+    payload_raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    payload["bootstrap_version"] = f"sha256:{hashlib.sha256(payload_raw).hexdigest()[:16]}"
+    return payload
 
 
 @app.get("/templates/obstacle-types")

@@ -72,6 +72,7 @@ def test_projects_crud_and_waveform_endpoint(tmp_path: Path) -> None:
         assert "capabilities" in bootstrap_body
         assert "obstacle_types" in bootstrap_body
         assert "templates" in bootstrap_body
+        assert str(bootstrap_body["bootstrap_version"]).startswith("sha256:")
         obstacle_types = client.get("/templates/obstacle-types")
         assert obstacle_types.status_code == 200
         types_body = obstacle_types.json()

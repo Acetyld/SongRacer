@@ -132,6 +132,7 @@ const clipboardStatus = ref('')
 const templateCatalog = ref<Record<string, Array<Record<string, unknown>>>>({})
 const templateSource = ref<'fallback' | 'api'>('fallback')
 const templateVersion = ref('')
+const bootstrapVersion = ref('')
 const builderCaps = ref({
   preview: {
     sample_fps: { min: 4, max: 60, default: 15 },
@@ -1367,13 +1368,18 @@ function applyTemplateCatalog(body: unknown) {
 async function loadBuilderBootstrap() {
   try {
     const resp = await fetch(`${props.apiBase}/builder/bootstrap`)
-    if (!resp.ok) return false
+    if (!resp.ok) {
+      bootstrapVersion.value = ''
+      return false
+    }
     const body = await resp.json()
     applyBuilderCapabilities((body as Record<string, unknown>).capabilities)
     applyObstacleTypeCatalog((body as Record<string, unknown>).obstacle_types)
     applyTemplateCatalog((body as Record<string, unknown>).templates)
+    bootstrapVersion.value = String((body as Record<string, unknown>).bootstrap_version || '')
     return true
   } catch (_err) {
+    bootstrapVersion.value = ''
     return false
   }
 }
@@ -1983,6 +1989,12 @@ onUnmounted(() => {
         :title="templateVersion || 'local fallback presets'"
       >
         Presets: {{ templateSource === 'api' ? `API catalog ${templateVersion}` : 'local fallback' }}
+      </span>
+      <span
+        v-if="bootstrapVersion"
+        class="rounded border border-slate-700 px-2 py-1 text-[10px] text-slate-400"
+      >
+        bootstrap {{ bootstrapVersion }}
       </span>
       <button
         class="rounded border border-rose-600/50 bg-rose-900/30 px-2 py-1 text-[11px] text-rose-200 hover:bg-rose-800/40 disabled:opacity-40"
