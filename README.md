@@ -241,6 +241,7 @@ The Render Controls panel also includes a **Parkour Builder**:
 - builder UI surfaces capability limits fetched from backend contract (preview fps/frames, generator count, safe risk/attempts, safe analysis height).
 - builder includes a one-click action to reset preview/generator knobs to capability defaults.
 - safe procedural generation in builder derives `analysis_height` from current world-height and clamps it to capability bounds before request submission.
+- safe-generation status badge includes resolved analysis height used by backend scoring.
 - frontend normalizes malformed capability ranges defensively before applying control limits.
 - keep raw obstacle JSON synchronized for full-control edits.
 

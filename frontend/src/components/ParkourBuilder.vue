@@ -202,6 +202,7 @@ const lastSafeGeneration = ref<{
   attempts: number
   accepted: boolean
   warnings: number
+  analysisHeight: number
 } | null>(null)
 const lastSafeGenerationSignature = ref<string | null>(null)
 
@@ -1363,6 +1364,7 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
       attempts,
       accepted,
       warnings: Number(body?.warning_count ?? warnings.length),
+      analysisHeight: resolvedAnalysisHeight,
     }
     lastSafeGenerationSignature.value = safeGenerationSignature()
     clipboardStatus.value = `Generated ${generated.length} safe obstacle${generated.length === 1 ? '' : 's'} (${mode}) · risk ${risk} · attempts ${attempts} · analysis height ${resolvedAnalysisHeight}${accepted ? '' : ' (best effort)'}.`
@@ -2415,6 +2417,7 @@ onUnmounted(() => {
       >
         safe result: seed {{ lastSafeGeneration.seed }} · risk {{ lastSafeGeneration.risk }} ·
         warnings {{ lastSafeGeneration.warnings }} · tries {{ lastSafeGeneration.attempts }} ·
+        height {{ lastSafeGeneration.analysisHeight }} ·
         {{ lastSafeGeneration.accepted ? 'accepted' : 'best effort' }}
       </span>
     </div>

@@ -571,6 +571,7 @@ The frontend app in `frontend/` already implements:
 - UI includes one-click random seed for quick stream iteration,
 - risk warning rows are clickable and focus linked obstacle(s) in the builder (with linked obstacle index hints),
 - safe generation status badge summarizes returned risk/attempts/acceptance and is invalidated after subsequent layout/visibility edits,
+- safe generation status badge also surfaces the resolved analysis height used by backend scoring,
 - UI displays live min/max limits from `/builder/capabilities` for preview and safe-generation controls (sample fps, frame cap, generator count, safe risk/attempts/analysis-height),
 - builder has a one-click reset action to restore preview/generation knobs to capability defaults,
 - restored persisted numeric knobs (sample fps/frame cap/generator controls) are clamped to capability ranges before being applied,
