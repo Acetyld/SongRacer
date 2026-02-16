@@ -9,6 +9,7 @@ type RacerForm = {
   uploadedPath?: string
   cropCenterX: number
   cropCenterY: number
+  syncTrimStartSeconds: number
   syncOffsetSeconds: number
 }
 
@@ -29,6 +30,7 @@ const backgroundColor = ref('#6EC6FF')
 const previewScale = ref(0.32)
 const finalScale = ref(1.0)
 const worldHeight = ref(7600)
+const syncCommonWindowSeconds = ref(0)
 const isBusy = ref(false)
 const racers = ref<RacerForm[]>([])
 const jobs = ref<JobRow[]>([])
@@ -67,6 +69,7 @@ function handleFiles(ev: Event) {
       localPreviewUrl: URL.createObjectURL(file),
       cropCenterX: 0.5,
       cropCenterY: 0.45,
+      syncTrimStartSeconds: 0,
       syncOffsetSeconds: 0,
     })
   }
@@ -122,6 +125,7 @@ function buildInlineConfig() {
   }
   return {
     seed: 13,
+    sync_common_window_seconds: syncCommonWindowSeconds.value,
     render: {
       width: 1080,
       height: 1920,
@@ -151,6 +155,7 @@ function buildInlineConfig() {
       crop_center_x: r.cropCenterX,
       crop_center_y: r.cropCenterY,
       sync_offset_seconds: r.syncOffsetSeconds,
+      sync_trim_start_seconds: r.syncTrimStartSeconds,
     })),
     obstacles,
   }
@@ -231,11 +236,18 @@ async function autoSyncAudio() {
     }
     const payload = await resp.json()
     const offsets: number[] = payload.offsets_seconds || []
+    const trims: number[] = payload.trim_start_seconds || []
+    const commonWindow = Number(payload.common_window_seconds || 0)
     racers.value.forEach((racer, idx) => {
       racer.syncOffsetSeconds = Number(offsets[idx] ?? 0)
+      racer.syncTrimStartSeconds = Number(trims[idx] ?? 0)
     })
+    syncCommonWindowSeconds.value = commonWindow
+    if (commonWindow > 0) {
+      duration.value = Math.min(duration.value, commonWindow)
+    }
     backendOnline.value = true
-    statusMessage.value = 'Auto sync offsets applied.'
+    statusMessage.value = `Auto sync applied. Common overlap ${commonWindow.toFixed(2)}s.`
   } catch (err) {
     backendOnline.value = false
     statusMessage.value = `Auto sync failed: ${String(err)}`
@@ -325,14 +337,17 @@ onUnmounted(() => {
                   Click preview to set face center ({{ racer.cropCenterX.toFixed(2) }}, {{ racer.cropCenterY.toFixed(2) }})
                 </p>
                 <label class="mt-2 block text-[11px] text-slate-300">
-                  Sync offset (sec)
+                  Sync trim start (sec)
                   <input
-                    v-model.number="racer.syncOffsetSeconds"
+                    v-model.number="racer.syncTrimStartSeconds"
                     type="number"
                     step="0.01"
                     class="mt-1 w-full rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-100"
                   />
                 </label>
+                <p class="mt-1 text-[10px] text-slate-500">
+                  Relative offset: {{ racer.syncOffsetSeconds.toFixed(2) }}s
+                </p>
               </article>
             </div>
           </div>

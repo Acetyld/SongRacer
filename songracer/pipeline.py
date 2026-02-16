@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import copy
 import math
 import subprocess
 import tempfile
@@ -68,7 +69,9 @@ def _compose_audio(
             prev_active = active
             continue
 
-        playhead = float(sim.playheads[frame, active] + cfg.racers[active].sync_offset_seconds)
+        playhead = float(
+            sim.playheads[frame, active] + cfg.racers[active].sync_trim_start_seconds
+        )
         src_start = int(round(playhead * sr))
         seg = (
             sources[active].audio_slice_samples(src_start, count).astype(np.float32)
@@ -302,7 +305,7 @@ def _render_video_with_audio(
             frame_playheads = sim.playheads[frame]
             racer_frames = [
                 sources[idx].frame_at(
-                    float(frame_playheads[idx] + cfg.racers[idx].sync_offset_seconds)
+                    float(frame_playheads[idx] + cfg.racers[idx].sync_trim_start_seconds)
                 )
                 for idx in range(len(cfg.racers))
             ]
@@ -337,6 +340,12 @@ def _render_video_with_audio(
 
 def render_race(config: RaceConfig | str | Path, output_path: str | Path) -> RenderStats:
     cfg = load_config(config) if not isinstance(config, RaceConfig) else config
+    if cfg.sync_common_window_seconds > 0:
+        cfg = copy.deepcopy(cfg)
+        cfg.render.duration_seconds = min(
+            cfg.render.duration_seconds,
+            cfg.sync_common_window_seconds,
+        )
     output = Path(output_path).expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
 

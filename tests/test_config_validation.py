@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import subprocess
 
@@ -11,6 +12,7 @@ from songracer.config import (
     ObstacleConfig,
     RaceConfig,
     RacerConfig,
+    load_config,
     validate_config,
 )
 
@@ -78,3 +80,26 @@ def test_audio_sfx_path_must_exist(tmp_path: Path) -> None:
     cfg.audio.countdown_sfx_path = str(tmp_path / "missing_countdown.wav")
     with pytest.raises(ConfigError):
         validate_config(cfg)
+
+
+def test_legacy_sync_offsets_are_normalized_to_trim_starts(tmp_path: Path) -> None:
+    v1 = tmp_path / "a.mp4"
+    v2 = tmp_path / "b.mp4"
+    _make_video(v1)
+    _make_video(v2)
+    cfg_path = tmp_path / "sync_cfg.json"
+    cfg_path.write_text(
+        json.dumps(
+            {
+                "render": {"width": 240, "height": 426, "duration_seconds": 1.0, "countdown_seconds": 0},
+                "racers": [
+                    {"name": "A", "video_path": str(v1), "x": 80, "y": 80, "radius": 30, "sync_offset_seconds": 0.0},
+                    {"name": "B", "video_path": str(v2), "x": 150, "y": 82, "radius": 30, "sync_offset_seconds": -0.5},
+                ],
+                "obstacles": [],
+            }
+        )
+    )
+    cfg = load_config(cfg_path)
+    assert cfg.racers[0].sync_trim_start_seconds == pytest.approx(0.0)
+    assert cfg.racers[1].sync_trim_start_seconds == pytest.approx(0.5)

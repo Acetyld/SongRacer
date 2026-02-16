@@ -5,7 +5,7 @@
     "height": 1920,
     "world_height": 9800,
     "fps": 30,
-    "duration_seconds": 32.0,
+    "duration_seconds": 30.246938999999998,
     "countdown_seconds": 3.0,
     "goal_margin": 160.0,
     "camera_follow": true,
@@ -79,7 +79,8 @@
       "crop_center_y": 0.5,
       "border_color": "#101317",
       "border_width": 4,
-      "sync_offset_seconds": 0.0
+      "sync_offset_seconds": 0.0,
+      "sync_trim_start_seconds": 0.0
     },
     {
       "name": "Racer 2",
@@ -91,7 +92,8 @@
       "crop_center_y": 0.5,
       "border_color": "#101317",
       "border_width": 4,
-      "sync_offset_seconds": -1.1
+      "sync_offset_seconds": -1.1,
+      "sync_trim_start_seconds": 1.1
     }
   ],
   "obstacles": [
@@ -192,5 +194,6 @@
       "stroke_color": "#090B16",
       "opacity": 0.95
     }
-  ]
+  ],
+  "sync_common_window_seconds": 30.24694
 }

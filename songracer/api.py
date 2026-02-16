@@ -40,10 +40,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = Path("/workspace/uploads")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+UPLOAD_DIR = PROJECT_ROOT / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-JOB_CONFIG_DIR = Path("/workspace/job_configs")
+JOB_CONFIG_DIR = PROJECT_ROOT / "job_configs"
 JOB_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR = PROJECT_ROOT / "outputs"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class ValidateRequest(BaseModel):
@@ -91,14 +94,18 @@ def upload_video(file: UploadFile = File(...)) -> dict[str, str]:
 @app.post("/sync/audio")
 def sync_audio(payload: AudioSyncRequest) -> dict[str, Any]:
     try:
-        offsets = estimate_video_sync_offsets(
+        analysis = estimate_video_sync_offsets(
             payload.video_paths,
             sample_rate=payload.sample_rate,
             max_shift_seconds=payload.max_shift_seconds,
         )
     except SyncError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return {"offsets_seconds": offsets}
+    return {
+        "offsets_seconds": analysis.offsets_seconds,
+        "trim_start_seconds": analysis.trim_start_seconds,
+        "common_window_seconds": analysis.common_window_seconds,
+    }
 
 
 @app.post("/validate")
@@ -148,7 +155,7 @@ def create_job_from_config(payload: InlineJobRequest) -> JobSubmitResponse:
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
     config_path = JOB_CONFIG_DIR / f"job_{ts}.json"
     config_path.write_text(json.dumps(payload.config, indent=2))
-    output_path = payload.output_path or f"/workspace/outputs/job_{ts}.mp4"
+    output_path = payload.output_path or str(OUTPUT_DIR / f"job_{ts}.mp4")
     try:
         # upfront validation for immediate error feedback
         cfg = load_config(config_path)

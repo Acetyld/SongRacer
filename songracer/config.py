@@ -104,6 +104,7 @@ class RacerConfig:
     y: float
     radius: float
     sync_offset_seconds: float = 0.0
+    sync_trim_start_seconds: float = 0.0
     crop_center_x: float = 0.5
     crop_center_y: float = 0.5
     border_color: Color = "#101318"
@@ -139,6 +140,7 @@ class ObstacleConfig:
 @dataclass(slots=True)
 class RaceConfig:
     seed: int = 7
+    sync_common_window_seconds: float = 0.0
     render: RenderConfig = field(default_factory=RenderConfig)
     physics: PhysicsConfig = field(default_factory=PhysicsConfig)
     audio: AudioConfig = field(default_factory=AudioConfig)
@@ -189,6 +191,18 @@ def _require_positive(value: float, name: str) -> None:
         raise ConfigError(f"{name} must be > 0, got {value}")
 
 
+def _normalize_sync_trims(cfg: RaceConfig) -> None:
+    if not cfg.racers:
+        return
+    any_trim = any(abs(r.sync_trim_start_seconds) > 1e-9 for r in cfg.racers)
+    any_offset = any(abs(r.sync_offset_seconds) > 1e-9 for r in cfg.racers)
+    if any_trim or not any_offset:
+        return
+    common_anchor = max(r.sync_offset_seconds for r in cfg.racers)
+    for racer in cfg.racers:
+        racer.sync_trim_start_seconds = common_anchor - racer.sync_offset_seconds
+
+
 def load_config(path: str | Path) -> RaceConfig:
     config_path = Path(path).expanduser().resolve()
     if not config_path.exists():
@@ -197,6 +211,9 @@ def load_config(path: str | Path) -> RaceConfig:
     obj = _load_obj(config_path)
     cfg = RaceConfig()
     cfg.seed = int(obj.get("seed", cfg.seed))
+    cfg.sync_common_window_seconds = float(
+        obj.get("sync_common_window_seconds", cfg.sync_common_window_seconds)
+    )
 
     cfg.render = _merge_dataclass(cfg.render, obj.get("render", {}))
     cfg.physics = _merge_dataclass(cfg.physics, obj.get("physics", {}))
@@ -233,6 +250,8 @@ def load_config(path: str | Path) -> RaceConfig:
         r.video_path = str(video_path)
         cfg.racers.append(r)
 
+    _normalize_sync_trims(cfg)
+
     cfg.obstacles = []
     for idx, obstacle in enumerate(obj.get("obstacles", [])):
         try:
@@ -256,6 +275,8 @@ def validate_config(cfg: RaceConfig) -> None:
         raise ConfigError("render.countdown_seconds must be >= 0")
     if not 0 < cfg.render.preview_scale <= 1.0:
         raise ConfigError("render.preview_scale must be in (0, 1]")
+    if cfg.sync_common_window_seconds < 0:
+        raise ConfigError("sync_common_window_seconds must be >= 0")
     if cfg.render.goal_margin < 0:
         raise ConfigError("render.goal_margin must be >= 0")
     if cfg.render.winner_hold_seconds < 0:
@@ -316,6 +337,8 @@ def validate_config(cfg: RaceConfig) -> None:
             raise ConfigError(f"Racer #{idx} crop_center_y must be in [0,1]")
         if abs(racer.sync_offset_seconds) > 30:
             raise ConfigError(f"Racer #{idx} sync_offset_seconds out of bounds [-30,30]")
+        if not 0 <= racer.sync_trim_start_seconds <= 30:
+            raise ConfigError(f"Racer #{idx} sync_trim_start_seconds out of bounds [0,30]")
         if not Path(racer.video_path).exists():
             raise ConfigError(f"Racer #{idx} video does not exist: {racer.video_path}")
 

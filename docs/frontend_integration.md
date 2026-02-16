@@ -142,7 +142,9 @@ Response:
 
 ```json
 {
-  "offsets_seconds": [0.0, -1.1]
+  "offsets_seconds": [0.0, -1.1],
+  "trim_start_seconds": [0.0, 1.1],
+  "common_window_seconds": 30.24
 }
 ```
 
@@ -187,7 +189,7 @@ Response:
 The frontend app in `frontend/` already implements:
 - video upload flow,
 - per-racer crop center selection,
-- per-racer audio sync offsets (+ one-click auto-sync via `/sync/audio`),
+- per-racer sync trims (+ one-click auto-sync via `/sync/audio`),
 - preview and final job submission,
 - live job list polling,
 - artifact preview panel.

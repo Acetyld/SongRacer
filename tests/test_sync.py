@@ -5,7 +5,11 @@ from pathlib import Path
 
 import numpy as np
 
-from songracer.sync import apply_offsets_to_config_json, estimate_offset_seconds_from_signals
+from songracer.sync import (
+    SyncAnalysis,
+    apply_offsets_to_config_json,
+    estimate_offset_seconds_from_signals,
+)
 
 
 def test_estimate_offset_seconds_from_signals_bidirectional() -> None:
@@ -36,7 +40,15 @@ def test_apply_offsets_to_config_json(tmp_path: Path) -> None:
             }
         )
     )
-    out = apply_offsets_to_config_json(cfg_path, [0.0, -0.123456], output_path=None)
+    analysis = SyncAnalysis(
+        offsets_seconds=[0.0, -0.123456],
+        trim_start_seconds=[0.0, 0.123456],
+        common_window_seconds=4.2,
+        durations_seconds=[5.0, 4.5],
+    )
+    out = apply_offsets_to_config_json(cfg_path, analysis, output_path=None)
     obj = json.loads(out.read_text())
     assert obj["racers"][0]["sync_offset_seconds"] == 0.0
     assert obj["racers"][1]["sync_offset_seconds"] == -0.12346
+    assert obj["racers"][1]["sync_trim_start_seconds"] == 0.12346
+    assert obj["sync_common_window_seconds"] == 4.2

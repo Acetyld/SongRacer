@@ -86,6 +86,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help="Optional output config path (used with --write).",
     )
+    sync_p.add_argument(
+        "--no-duration-cap",
+        action="store_true",
+        help="Do not cap render.duration_seconds to common sync overlap window.",
+    )
     return p
 
 
@@ -121,23 +126,30 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.cmd == "sync":
         cfg = load_config(args.config)
-        offsets = estimate_video_sync_offsets(
+        analysis = estimate_video_sync_offsets(
             [r.video_path for r in cfg.racers],
             sample_rate=args.sample_rate,
             max_shift_seconds=args.max_shift_seconds,
         )
         payload = {
-            "offsets_seconds": offsets,
+            "offsets_seconds": analysis.offsets_seconds,
+            "trim_start_seconds": analysis.trim_start_seconds,
+            "common_window_seconds": analysis.common_window_seconds,
             "racers": [
-                {"name": cfg.racers[idx].name, "offset_seconds": offsets[idx]}
+                {
+                    "name": cfg.racers[idx].name,
+                    "offset_seconds": analysis.offsets_seconds[idx],
+                    "trim_start_seconds": analysis.trim_start_seconds[idx],
+                }
                 for idx in range(len(cfg.racers))
             ],
         }
         if args.write:
             out_path = apply_offsets_to_config_json(
                 args.config,
-                offsets,
+                analysis,
                 output_path=args.output_config or None,
+                apply_duration_cap=not args.no_duration_cap,
             )
             payload["written_config"] = str(out_path)
         print(json.dumps(payload, indent=2))

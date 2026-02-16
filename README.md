@@ -33,7 +33,7 @@ The top featured circle mirrors the current leader, the camera scrolls down the 
 - Single active audio source with configurable micro crossfade on leader switches.
 - Countdown and victory SFX mixed into output audio.
 - Anti-stuck racer boosts to prevent deadlocks.
-- Audio-wave auto sync across racers (`sync_offset_seconds`) via CLI/API/frontend.
+- Audio-wave auto sync across racers using overlap-window trimming (`sync_trim_start_seconds`) via CLI/API/frontend.
 - Vue 3 + TypeScript + Tailwind frontend for uploads, crop-center selection, preview/final jobs.
 
 ## Quick Start
@@ -72,7 +72,12 @@ python3 -m songracer render \
 python3 -m songracer sync --config configs/snaptik_2_racers.json --write
 ```
 
-This estimates per-racer `sync_offset_seconds` and writes them into the config.
+This estimates:
+- relative `sync_offset_seconds` (diagnostic),
+- per-racer `sync_trim_start_seconds` (used at render time),
+- `sync_common_window_seconds` (common overlap duration).
+
+With `--write`, it updates the config and caps `render.duration_seconds` to the common overlap by default.
 
 Preview faster at reduced scale:
 
@@ -93,7 +98,8 @@ python3 -m songracer render \
   - per-obstacle `fill_color`, `stroke_color`, `opacity`
 - Audio:
   - `switch_crossfade_ms` smooths audio on leader changes.
-  - `sync_offset_seconds` on each racer shifts source playback to align singers.
+  - `sync_trim_start_seconds` on each racer trims to a shared aligned start.
+  - `sync_common_window_seconds` can cap race duration to the shared overlap window.
   - optional file-based SFX:
     - `audio.countdown_sfx_path`
     - `audio.victory_sfx_path`
