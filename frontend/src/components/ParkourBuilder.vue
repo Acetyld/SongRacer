@@ -156,6 +156,13 @@ const generateSpacing = ref(260)
 const generateSeed = ref(13)
 const generateSafeTarget = ref(35)
 const generateSafeAttempts = ref(8)
+const lastSafeGeneration = ref<{
+  seed: number
+  risk: number
+  attempts: number
+  accepted: boolean
+  warnings: number
+} | null>(null)
 
 let suppressEmit = false
 let previewDebounce: number | null = null
@@ -1136,8 +1143,10 @@ async function generateObstacleStream(mode: 'replace' | 'append') {
     selectedId.value = first
     selectedIds.value = first ? [first] : []
     generateSeed.value = Math.max(0, Math.round(Number(body?.seed ?? generateSeed.value) + 1))
+    lastSafeGeneration.value = null
     clipboardStatus.value = `Generated ${generated.length} obstacle${generated.length === 1 ? '' : 's'} (${mode}).`
   } catch (_err) {
+    lastSafeGeneration.value = null
     clipboardStatus.value = 'Failed to generate obstacle stream.'
   }
 }
@@ -1212,8 +1221,16 @@ async function generateSafeObstacleStream(mode: 'replace' | 'append') {
     applyRiskPayload(risk, warnings)
     const attempts = Number(body?.attempts ?? 1)
     const accepted = Boolean(body?.accepted)
+    lastSafeGeneration.value = {
+      seed: Number(body?.seed ?? generateSeed.value),
+      risk,
+      attempts,
+      accepted,
+      warnings: Number(body?.warning_count ?? warnings.length),
+    }
     clipboardStatus.value = `Generated ${generated.length} safe obstacle${generated.length === 1 ? '' : 's'} (${mode}) · risk ${risk} · attempts ${attempts}${accepted ? '' : ' (best effort)'}.`
   } catch (_err) {
+    lastSafeGeneration.value = null
     clipboardStatus.value = 'Failed to generate safe obstacle stream.'
   }
 }
@@ -2134,6 +2151,15 @@ onUnmounted(() => {
         frames {{ builderCaps.preview.max_frames.min }}-{{ builderCaps.preview.max_frames.max }},
         gen count {{ builderCaps.generator.count.min }}-{{ builderCaps.generator.count.max }},
         safe risk {{ builderCaps.generator.safe_target_max_risk.min }}-{{ builderCaps.generator.safe_target_max_risk.max }}
+      </span>
+      <span
+        v-if="lastSafeGeneration"
+        class="rounded border px-2 py-1"
+        :class="lastSafeGeneration.accepted ? 'border-emerald-500/50 text-emerald-300' : 'border-amber-500/50 text-amber-300'"
+      >
+        safe result: seed {{ lastSafeGeneration.seed }} · risk {{ lastSafeGeneration.risk }} ·
+        warnings {{ lastSafeGeneration.warnings }} · tries {{ lastSafeGeneration.attempts }} ·
+        {{ lastSafeGeneration.accepted ? 'accepted' : 'best effort' }}
       </span>
     </div>
 
